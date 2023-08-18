@@ -18,12 +18,18 @@
    ;; this wad is the first child of its parent.  If this wad is a
    ;; top-level wad, then this slot contains the preceding top-level
    ;; wad, or NIL if this is the first top-level wad in the buffer.
-   (%left-sibling :initarg :left-sibling :accessor left-sibling)
+   (%left-sibling
+    :initform nil
+    :initarg :left-sibling
+    :accessor left-sibling)
    ;; This slot contains the right sibling wad of this wad, or NIL if
    ;; this wad is the last child of its parent.  If this wad is a
    ;; top-level wad, then this slot contains the following top-level
    ;; wad, or NIL if this is the last top-level wad in the buffer.
-   (%right-sibling :initarg :right-sibling :accessor right-sibling)
+   (%right-sibling
+    :initform nil
+    :initarg :right-sibling
+    :accessor right-sibling)
    ;; This slot contains the absolute start line of the wad.  Its
    ;; contents is valid only when the wad is on the prefix, and when
    ;; the wad is the top-level wad which is the first on the suffix.

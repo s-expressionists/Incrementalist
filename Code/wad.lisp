@@ -119,15 +119,6 @@
                            :min-column-number min-column-number
                            :max-column-number max-column-number)))
 
-(defmethod shared-initialize :after ((wad wad) slot-names &key children)
-  (declare (ignore slot-names))
-  (loop for child in children
-        do (setf (parent child) wad)))
-
-(defmethod (setf chidren) :after (children (wad wad))
-  (loop for child in children
-        do (setf (parent child) wad)))
-
 (defmethod print-object ((object wad) stream)
   (print-unreadable-object (object stream :type t)
     (format stream "(~d,~d -> ~d,~d) rel: ~s"

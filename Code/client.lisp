@@ -108,7 +108,7 @@
                (when (plusp (length word))
                  (let ((source      (cons (cons line word-start-column)
                                           (cons line column)))
-                       ;; FIXME: Set this to nil for now.  
+                       ;; FIXME: Set this to nil for now.
                        (misspelledp nil))
                    (push (make-result-wad 'word-wad stream source '()
                                           :misspelled misspelledp)
@@ -175,23 +175,26 @@
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
-     (result   (eql eclector.parse-result:**definition**))
+     (result   eclector.parse-result:definition)
      (children t)
      (source   t))
-  (multiple-value-bind (state object parse-result)
-      (reader:labeled-object-state client children)
-    (declare (ignore state))
-    (let ((stream   (stream* client))
-          (children (list parse-result)))
+  (let ((stream (stream* client))
+        (labeled-object (eclector.parse-result:labeled-object result)))
+    (multiple-value-bind (state object parse-result)
+        (reader:labeled-object-state client labeled-object)
+      (declare (ignore state))
+      (assert (member parse-result children))
       (make-result-wad 'labeled-object-definition-wad stream source children
                        :expression object))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
-     (result   (eql eclector.parse-result:**reference**))
+     (result   eclector.parse-result:reference)
      (children t)
      (source   t))
-  (let ((object (nth-value 1 (reader:labeled-object-state client children)))
-        (stream (stream* client)))
+  (let* ((stream (stream* client))
+         (labeled-object (eclector.parse-result:labeled-object result))
+         (object (nth-value
+                  1 (reader:labeled-object-state client labeled-object))))
     (make-result-wad 'labeled-object-reference-wad stream source '()
                      :expression object)))

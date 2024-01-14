@@ -4,7 +4,8 @@
   :depends-on ("trivial-gray-streams"
                "cluffer"
                "flexichain"
-               "eclector")
+               "eclector"
+               "spell")
   :serial t
   :components
   ((:file "packages")

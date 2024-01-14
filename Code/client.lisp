@@ -172,6 +172,14 @@
        (make-it 'sharpsign-minus-wad :expression (cdr reason))))))
 
 (defmethod eclector.parse-result:make-expression-result
+    ((client client) (result symbol-token) (children t) (source t))
+  (if (and (null children) (not (string= (package-name result) "COMMON-LISP")))
+      (let ((words (make-word-wads (stream* client) source)))
+        (make-result-wad 'expression-wad (stream* client) source words
+                         :expression result))
+      (call-next-method)))
+
+(defmethod eclector.parse-result:make-expression-result
     ((client client) (result t) (children t) (source t))
   (make-result-wad 'expression-wad (stream* client) source children
                    :expression result))

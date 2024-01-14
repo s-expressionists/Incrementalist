@@ -76,13 +76,6 @@
   (declare (ignore char))
   (backward stream))
 
-(defun skip-whitespace (stream)
-  (loop until (eof-p stream)
-        for char = (read-char stream nil nil)
-        do (unless (member char '(#\Space #\Tab #\Newline))
-             (unread-char char stream)
-             (loop-finish))))
-
 (defun compute-max-line-width (buffer-stream start-line end-line children)
   (let ((lines (lines buffer-stream)))
     (loop with rest = children

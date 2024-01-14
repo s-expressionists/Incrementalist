@@ -127,4 +127,5 @@
                         (unless (every #'relative-p children)
                           (make-relative children (start-line wad))))))))
          (rec wad))
-       (push-to-prefix (cache analyzer) wad)))))
+       (push-to-prefix (cache analyzer) wad)))
+    kind))

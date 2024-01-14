@@ -4,7 +4,9 @@
   (member character '(#\Space #\Newline)))
 
 (defun punctuationp (character)
-  (member character '(#\. #\? #\! #\: #\, #\; #\( #\) #\" #\-)))
+  (member character '(#\. #\? #\! #\: #\, #\;
+                      #\( #\) #\< #\> #\[ #\] #\{ #\}
+                      #\" #\' #\` #\/ #\- #\+ #\* #\% #\= #\#)))
 
 ;;; Return the line number and the column number of CURSOR as two
 ;;; values.

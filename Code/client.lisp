@@ -91,7 +91,7 @@
 (defun make-word-wads (stream source
                        &key (start-column-offset 0)
                             (end-column-offset   0 end-column-offset-p))
-  (destructuring-bind ((start-line . start-column) . (end-line . end-column))
+  (destructuring-bind ((start-line . start-column) . (end-line . end-column*))
       source
     (let* ((cache             (cache stream))
            (word              (make-array 0 :element-type 'character
@@ -104,7 +104,9 @@
                      (punctuationp (punctuationp character)))
                  (values (or spacep punctuationp) punctuationp)))
              (commit (line column checkp)
-               (when (plusp (length word))
+               (when (and (plusp (length word))
+                          (notany #'digit-char-p word)
+                          (notevery #'punctuationp word))
                  (let ((source      (cons (cons line word-start-column)
                                           (cons line column)))
                        (misspelledp (and checkp
@@ -114,13 +116,15 @@
                          words)))
                (setf (fill-pointer word) 0
                      word-start-column   column)))
-        (loop for line     from start-line to (if (zerop end-column)
+        (loop for line     from start-line to (if (zerop end-column*)
                                                   (1- end-line)
                                                   end-line)
               for contents =    (line-contents cache line)
-              do (loop with end-column = (if (and (= line end-line)
-                                                  end-column-offset-p)
-                                             (+ end-column end-column-offset)
+              do (loop with end-column = (if (= line end-line)
+                                             (+ end-column*
+                                                (if end-column-offset-p
+                                                    end-column-offset
+                                                    0))
                                              (length contents))
                        for column from word-start-column below end-column
                        for character = (aref contents column)

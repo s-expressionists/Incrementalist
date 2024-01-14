@@ -81,10 +81,17 @@
 (defmethod reader:read-maybe-nothing :around
     ((client client) (stream analyzer) eof-error-p eof-value)
   (let ((cached (cached-wad stream)))
-    (if (null cached)
+    (if (or (null cached)
+            ;; Can't use zero length cached wad (can happen for
+            ;; error-wad) since the ADVANCE-STREAM-TO-BEYOND-WAD would
+            ;; not advance in that case and the read loop would not
+            ;; make any progress.
+            (when (and (= (start-line cached) (end-line cached))
+                       (= (start-column cached) (end-column cached)))
+              t))
         ;; Nothing has been cached, so call
-        ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and integrate
-        ;; them into the wad tree.
+        ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and
+        ;; integrate them into the wad tree.
         (let ((*errors* '()))
           (multiple-value-bind (object kind result)
               (call-next-method)

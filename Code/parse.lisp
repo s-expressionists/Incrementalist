@@ -13,34 +13,21 @@
           (lambda (condition)
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
-              (let ((line-width (line-length (cache analyzer)
-                                             (current-line-number analyzer)))
-                    (column     (max 0 (+ column (eclector.base:position-offset condition)))))
+              (let* ((line-width   (line-length (cache analyzer)
+                                                (current-line-number analyzer)))
+                     (start-column (max 0 (+ column (eclector.base:position-offset condition))))
+                     (end-column   (+ start-column (eclector.base:range-length condition))))
                 (push (make-wad 'error-wad :max-line-width line-width
                                            :children       '()
                                            :start-line     line
-                                           :start-column   column
+                                           :start-column   start-column
                                            :height         0
-                                           :end-column     column
+                                           :end-column     end-column
                                            :relative-p     nil
                                            :condition      condition)
                       *errors*)))
             (eclector.reader:recover))))
      ,@body))
-
-(defun wad-starts-before-wad-p (wad1 wad2)
-  (or (< (start-line wad1) (start-line wad2))
-      (and (= (start-line wad1) (start-line wad2))
-           (< (start-column wad1) (start-column wad2)))))
-
-(defun wad-ends-after-wad-p (wad1 wad2)
-  (or (> (end-line wad1) (end-line wad2))
-      (and (= (end-line wad1) (end-line wad2))
-           (>= (end-column wad1) (end-column wad2)))))
-
-(defun wad-contains-wad-p (wad1 wad2)
-  (and (wad-starts-before-wad-p wad1 wad2)
-       (wad-ends-after-wad-p wad1 wad2)))
 
 (defun merge-children (children extra-children)
   (merge 'list (copy-list children) (copy-list extra-children)
@@ -77,9 +64,8 @@
                             do (add-children last-child (list child))
                           else if (cond ((not (member child extra-children))
                                          t)
-                                        ((and (or (< (end-line child) (end-line wad))
-                                                  (and (= (end-line child) (end-line wad))
-                                                       (<= (end-column child) (end-column wad))))
+                                        ((and (%position<= (end-line child) (end-column child)
+                                                           (end-line wad) (end-column wad))
                                               (not (relative-p wad)))
                                          (assert (not (relative-p wad)))
                                          t)
@@ -95,10 +81,17 @@
 (defmethod reader:read-maybe-nothing :around
     ((client client) (stream analyzer) eof-error-p eof-value)
   (let ((cached (cached-wad stream)))
-    (if (null cached)
+    (if (or (null cached)
+            ;; Can't use zero length cached wad (can happen for
+            ;; error-wad) since the ADVANCE-STREAM-TO-BEYOND-WAD would
+            ;; not advance in that case and the read loop would not
+            ;; make any progress.
+            (when (and (= (start-line cached) (end-line cached))
+                       (= (start-column cached) (end-column cached)))
+              t))
         ;; Nothing has been cached, so call
-        ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and integrate
-        ;; them into the wad tree.
+        ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and
+        ;; integrate them into the wad tree.
         (let ((*errors* '()))
           (multiple-value-bind (object kind result)
               (call-next-method)
@@ -141,4 +134,5 @@
                         (unless (every #'relative-p children)
                           (make-relative children (start-line wad))))))))
          (rec wad))
-       (push-to-prefix (cache analyzer) wad)))))
+       (push-to-prefix (cache analyzer) wad)))
+    kind))

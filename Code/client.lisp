@@ -91,7 +91,7 @@
 (defun make-word-wads (stream source
                        &key (start-column-offset 0)
                             (end-column-offset   0 end-column-offset-p))
-  (destructuring-bind ((start-line . start-column) . (end-line . end-column))
+  (destructuring-bind ((start-line . start-column) . (end-line . end-column*))
       source
     (let* ((cache             (cache stream))
            (word              (make-array 0 :element-type 'character
@@ -104,24 +104,27 @@
                      (punctuationp (punctuationp character)))
                  (values (or spacep punctuationp) punctuationp)))
              (commit (line column checkp)
-               (declare (ignore checkp)) ; to avoid style warning.
-               (when (plusp (length word))
+               (when (and (plusp (length word))
+                          (notany #'digit-char-p word)
+                          (notevery #'punctuationp word))
                  (let ((source      (cons (cons line word-start-column)
                                           (cons line column)))
-                       ;; FIXME: Set this to nil for now.
-                       (misspelledp nil))
+                       (misspelledp (and checkp
+                                         (null (spell:english-lookup word)))))
                    (push (make-result-wad 'word-wad stream source '()
                                           :misspelled misspelledp)
                          words)))
                (setf (fill-pointer word) 0
                      word-start-column   column)))
-        (loop for line     from start-line to (if (zerop end-column)
+        (loop for line     from start-line to (if (zerop end-column*)
                                                   (1- end-line)
                                                   end-line)
               for contents =    (line-contents cache line)
-              do (loop with end-column = (if (and (= line end-line)
-                                                  end-column-offset-p)
-                                             (+ end-column end-column-offset)
+              do (loop with end-column = (if (= line end-line)
+                                             (+ end-column*
+                                                (if end-column-offset-p
+                                                    end-column-offset
+                                                    0))
                                              (length contents))
                        for column from word-start-column below end-column
                        for character = (aref contents column)
@@ -167,6 +170,22 @@
        (make-it 'sharpsign-plus-wad  :expression (cdr reason)))
       ((cons (eql :sharpsign-minus))
        (make-it 'sharpsign-minus-wad :expression (cdr reason))))))
+
+(defmethod eclector.parse-result:make-expression-result
+    ((client client) (result symbol-token) (children t) (source t))
+  (if (and (null children) (not (string= (package-name result) "COMMON-LISP")))
+      (let ((words (make-word-wads (stream* client) source)))
+        (make-result-wad 'expression-wad (stream* client) source words
+                         :expression result))
+      (call-next-method)))
+
+(defmethod eclector.parse-result:make-expression-result
+    ((client client) (result string) (children t) (source t))
+  (if (null children)
+      (let ((words (make-word-wads (stream* client) source)))
+        (make-result-wad 'expression-wad (stream* client) source words
+                         :expression result))
+      (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result t) (children t) (source t))

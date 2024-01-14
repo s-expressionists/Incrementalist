@@ -101,42 +101,103 @@
   (declare (ignorable children))
   (set-family-relations-of-children wad))
 
-(defmethod shared-initialize :after ((wad wad) slot-names &key)
+(defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))
 
 (defmethod initialize-instance :after ((object wad) &key)
-  (let ((min-column-number (min (start-column object)
-                                (end-column object)
-                                (reduce #'min (children object)
-                                        :initial-value 0
-                                        :key #'min-column-number)))
-        (max-column-number (max (start-column object)
-                                (end-column object)
-                                (reduce #'max (children object)
-                                        :initial-value 0
-                                        :key #'max-column-number))))
-    (reinitialize-instance object
-                           :min-column-number min-column-number
-                           :max-column-number max-column-number)))
+  (let* ((start-column (start-column object))
+         (end-column   (end-column object))
+         (min-column   (reduce #'min (children object)
+                               :initial-value (min start-column end-column)
+                               :key #'min-column-number))
+         (max-column   (reduce #'max (children object)
+                               :initial-value (max start-column end-column)
+                               :key #'max-column-number)))
+    (reinitialize-instance object :min-column-number min-column
+                                  :max-column-number max-column)))
+
+(defun print-wad-position (wad stream)
+  (format stream "~:[abs~;rel~]:~d,~d -> ~d,~d"
+          (relative-p wad)
+          (start-line wad)
+          (start-column wad)
+          (if (relative-p wad)
+              (height wad)
+              (end-line wad))
+          (end-column wad)))
 
 (defmethod print-object ((object wad) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "(~d,~d -> ~d,~d) rel: ~s"
-            (start-line object)
-            (start-column object)
-            (if (relative-p object)
-                (height object)
-                (end-line object))
-            (end-column object)
-            (relative-p object))))
+    (print-wad-position object stream)))
 
 ;;; Define an indirection for MAKE-INSTANCE for creating wads.  The
 ;;; main purpose is so that the creation of wads can be traced.
 (defun make-wad (class &rest initargs)
   (apply #'make-instance class initargs))
 
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely before WAD.  If
+;;; WAD is an absolute wad, then RELATIVE-LINE-NUMBER must be the
+;;; absolute line number of the position.  If WAD is a relative wad,
+;;; then RELATIVE-LINE-NUMBER must be the difference between the
+;;; absolute line number of the position, and the start line of the
+;;; wad to which WAD is relative.  The position is before WAD if
+;;; either RELATIVE-LINE-NUMBER is strictly less than the start line
+;;; of WAD, or if RELATIVE-LINE-NUMBER is equal to the start line of
+;;; WAD, and COLUMN-NUMBER is less than or equal to the start column
+;;; of WAD.
+(defun position-is-before-wad-p (wad relative-line-number column-number)
+  (%position<= relative-line-number column-number
+               (start-line wad) (start-column wad)))
+
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely after WAD.  If
+;;; WAD is an absolute wad, then RELATIVE-LINE-NUMBER must be the
+;;; absolute line number of the position.  If WAD is a relative wad,
+;;; then RELATIVE-LINE-NUMBER must be the difference between the
+;;; absolute line number of the position, and the start line of the
+;;; wad to which WAD is relative.  The position is after WAD if either
+;;; RELATIVE-LINE-NUMBER is strictly greater than the sum of the start
+;;; line of WAD and the height of WAD, or if RELATIVE-LINE-NUMBER is
+;;; equal to the sum of the start line of WAD and the height of WAD,
+;;; and COLUMN-NUMBER is greater than or equal to the end column of
+;;; WAD.
+(defun position-is-after-wad-p (wad relative-line-number column-number)
+  (%position>= relative-line-number column-number
+               (+ (start-line wad) (height wad)) (end-column wad)))
+
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is inside WAD.  If WAD is
+;;; an absolute wad, then RELATIVE-LINE-NUMBER must be the absolute
+;;; line number of the position.  If WAD is a relative wad, then
+;;; RELATIVE-LINE-NUMBER must be the difference between the absolute
+;;; line number of the position, and the start line of the wad to
+;;; which WAD is relative.  The position is inside WAD if it is
+;;; neither before WAD nor after WAD.
+(defun position-is-inside-wad-p (wad relative-line-number column-number)
+  (not (or (position-is-before-wad-p wad relative-line-number column-number)
+           (position-is-after-wad-p wad relative-line-number column-number))))
+
+(defun wad-starts-before-wad-p (wad1 wad2)
+  (%position< (start-line wad1) (start-column wad1)
+              (start-line wad2) (start-column wad2)))
+
+(defun wad-ends-after-wad-p (wad1 wad2)
+  (not (%position< (end-line wad2) (end-column wad2)
+                   (end-line wad1) (end-column wad1))))
+
+(defun wad-contains-wad-p (wad1 wad2)
+  (and (wad-starts-before-wad-p wad1 wad2)
+       (wad-ends-after-wad-p wad1 wad2)))
+
 (defclass expression-wad (wad)
   ((%expression :initarg :expression :accessor expression)))
+
+(defmethod print-object ((object expression-wad) stream)
+  (print-unreadable-object (object stream :type t)
+    (print-wad-position object stream)
+    (format stream " expression: ~S"
+            (class-name (class-of (expression object))))))
 
 (defclass labeled-object-definition-wad (expression-wad)
   ())
@@ -190,6 +251,12 @@
 (defclass error-wad (wad)
   ((%condition :initarg :condition
                :reader  condition*)))
+
+(defmethod print-object ((object error-wad) stream)
+  (print-unreadable-object (object stream :type t)
+    (print-wad-position object stream)
+    (format stream " condition: ~a"
+            (class-name (class-of (condition* object))))))
 
 (defgeneric relative-to-absolute (wad offset)
   (:method ((p wad) offset)

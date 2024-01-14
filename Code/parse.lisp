@@ -13,15 +13,16 @@
           (lambda (condition)
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
-              (let ((line-width (line-length (cache analyzer)
-                                             (current-line-number analyzer)))
-                    (column     (max 0 (+ column (eclector.base:position-offset condition)))))
+              (let* ((line-width   (line-length (cache analyzer)
+                                                (current-line-number analyzer)))
+                     (start-column (max 0 (+ column (eclector.base:position-offset condition))))
+                     (end-column   (+ start-column (eclector.base:range-length condition))))
                 (push (make-wad 'error-wad :max-line-width line-width
                                            :children       '()
                                            :start-line     line
-                                           :start-column   column
+                                           :start-column   start-column
                                            :height         0
-                                           :end-column     column
+                                           :end-column     end-column
                                            :relative-p     nil
                                            :condition      condition)
                       *errors*)))

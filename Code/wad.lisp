@@ -119,16 +119,19 @@
                            :min-column-number min-column-number
                            :max-column-number max-column-number)))
 
+(defun print-wad-position (wad stream)
+  (format stream "~:[abs~;rel~]:~d,~d -> ~d,~d"
+          (relative-p wad)
+          (start-line wad)
+          (start-column wad)
+          (if (relative-p wad)
+              (height wad)
+              (end-line wad))
+          (end-column wad)))
+
 (defmethod print-object ((object wad) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "(~d,~d -> ~d,~d) rel: ~s"
-            (start-line object)
-            (start-column object)
-            (if (relative-p object)
-                (height object)
-                (end-line object))
-            (end-column object)
-            (relative-p object))))
+    (print-wad-position object stream)))
 
 ;;; Define an indirection for MAKE-INSTANCE for creating wads.  The
 ;;; main purpose is so that the creation of wads can be traced.
@@ -137,6 +140,12 @@
 
 (defclass expression-wad (wad)
   ((%expression :initarg :expression :accessor expression)))
+
+(defmethod print-object ((object expression-wad) stream)
+  (print-unreadable-object (object stream :type t)
+    (print-wad-position object stream)
+    (format stream " expression: ~S"
+            (class-name (class-of (expression object))))))
 
 (defclass labeled-object-definition-wad (expression-wad)
   ())
@@ -190,6 +199,12 @@
 (defclass error-wad (wad)
   ((%condition :initarg :condition
                :reader  condition*)))
+
+(defmethod print-object ((object error-wad) stream)
+  (print-unreadable-object (object stream :type t)
+    (print-wad-position object stream)
+    (format stream " condition: ~a"
+            (class-name (class-of (condition* object))))))
 
 (defgeneric relative-to-absolute (wad offset)
   (:method ((p wad) offset)

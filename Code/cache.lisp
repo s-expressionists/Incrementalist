@@ -34,9 +34,6 @@
    ;; The time stamp passed to and returned by the Cluffer update
    ;; protocol.
    (%time-stamp :initform nil :accessor time-stamp)
-   ;; This slot contains the counter that is maintained during the
-   ;; execution of the update function.
-   (%line-counter :initform 0 :accessor line-counter)
    ;; This slot contains a list that parallels the prefix and it
    ;; contains the width of the prefix starting with the first element
    ;; of the prefix.
@@ -179,18 +176,18 @@
 ;;; modifications.  The first time this function is called, we must
 ;;; position the prefix and the suffix according to the number of
 ;;; lines initially skipped.
-(defun ensure-update-initialized (cache)
+(defun ensure-update-initialized (cache line-counter)
   ;; As long as there are wads on the prefix that do not completely
   ;; precede the number of skipped lines, move them to the suffix.
   (loop while (and (not (null (prefix cache)))
                    (>= (end-line (first (prefix cache)))
-                       (line-counter cache)))
+                       line-counter))
         do (prefix-to-suffix cache))
   ;; As long as there are wads on the suffix that completely precede
   ;; the number of skipped lines, move them to the prefix.
   (loop while (and (not (null (suffix cache)))
                    (< (end-line (first (suffix cache)))
-                      (line-counter cache)))
+                      line-counter))
         do (suffix-to-prefix cache)))
 
 ;;; Return true if and only if either there are no more wads, or the
@@ -262,16 +259,15 @@
 ;;; results that are not affected by such modifications.
 (defun scavenge (cache)
   (let ((buffer (cluffer-buffer cache))
-        (cache-initialized-p nil))
+        (cache-initialized-p nil)
+        (line-counter 0))
     (with-accessors ((lines lines)
-                     (cluffer-lines cluffer-lines)
-                     (line-counter line-counter))
+                     (cluffer-lines cluffer-lines))
         cache
-      (setf line-counter 0)
       (labels ((ensure-cache-initialized ()
                  (unless cache-initialized-p
                    (setf cache-initialized-p t)
-                   (ensure-update-initialized cache)))
+                   (ensure-update-initialized cache line-counter)))
                ;; Line deletion
                (delete-cache-line ()
                  (flx:delete* lines line-counter)
@@ -283,8 +279,7 @@
                  ;; associated cluffer line. Those lines correspond to
                  ;; deleted lines between the previously processed line
                  ;; and LINE.
-                 (loop for cache-line = (flx:element* lines line-counter)
-                       for cluffer-line
+                 (loop for cluffer-line
                          = (flx:element* cluffer-lines line-counter)
                        until (eq line cluffer-line)
                        do (delete-cache-line)))
@@ -298,7 +293,7 @@
                  (incf line-counter))
                (create (line)
                  (ensure-cache-initialized)
-                 (let* ((string (coerce (cluffer:items line) 'string)))
+                 (let ((string (coerce (cluffer:items line) 'string)))
                    (flx:insert* lines line-counter string)
                    (flx:insert* cluffer-lines line-counter line))
                  (handle-inserted-line cache line-counter)
@@ -357,7 +352,7 @@
   (let ((top-level-wad wad))
     (loop until (null (parent top-level-wad))
           do (setf top-level-wad (parent top-level-wad)))
-    ;; Then make sure WAD is on prefix. 
+    ;; Then make sure WAD is on prefix.
     (loop with cache = (cache top-level-wad)
           for suffix = (suffix cache)
           until (null suffix)
@@ -377,7 +372,7 @@
                  (> end-column start-column)))
     (if (= first-line last-line)
         (funcall space-function first-line start-column end-column)
-        (progn 
+        (progn
           ;; Handle the first line.
           (let ((line-length (line-length cache first-line)))
             (when (> line-length start-column)

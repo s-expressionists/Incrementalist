@@ -1,6 +1,4 @@
-(cl:in-package #:common-lisp-user)
-
-(defpackage #:incrementalist
+(cl:defpackage #:incrementalist
   (:use #:common-lisp)
   (:shadow #:package-name #:symbol-name)
   (:local-nicknames (#:reader #:eclector.reader)
@@ -67,14 +65,6 @@
    #:name
    #:find-wad-beginning-line
    #:find-wads-containing-position
-   #:make-wad-descriptor-from-wad
    #:lines
-   #:compute-wad-descriptors
-   #:start-line-number
-   #:start-column-number
-   #:end-line-number
-   #:end-column-number
    #:items
-   #:previous-sibling
-   #:next-sibling
    #:buffer))

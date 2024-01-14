@@ -138,6 +138,61 @@
 (defun make-wad (class &rest initargs)
   (apply #'make-instance class initargs))
 
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely before WAD.  If
+;;; WAD is an absolute wad, then RELATIVE-LINE-NUMBER must be the
+;;; absolute line number of the position.  If WAD is a relative wad,
+;;; then RELATIVE-LINE-NUMBER must be the difference between the
+;;; absolute line number of the position, and the start line of the
+;;; wad to which WAD is relative.  The position is before WAD if
+;;; either RELATIVE-LINE-NUMBER is strictly less than the start line
+;;; of WAD, or if RELATIVE-LINE-NUMBER is equal to the start line of
+;;; WAD, and COLUMN-NUMBER is less than or equal to the start column
+;;; of WAD.
+(defun position-is-before-wad-p (wad relative-line-number column-number)
+  (%position<= relative-line-number column-number
+               (start-line wad) (start-column wad)))
+
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely after WAD.  If
+;;; WAD is an absolute wad, then RELATIVE-LINE-NUMBER must be the
+;;; absolute line number of the position.  If WAD is a relative wad,
+;;; then RELATIVE-LINE-NUMBER must be the difference between the
+;;; absolute line number of the position, and the start line of the
+;;; wad to which WAD is relative.  The position is after WAD if either
+;;; RELATIVE-LINE-NUMBER is strictly greater than the sum of the start
+;;; line of WAD and the height of WAD, or if RELATIVE-LINE-NUMBER is
+;;; equal to the sum of the start line of WAD and the height of WAD,
+;;; and COLUMN-NUMBER is greater than or equal to the end column of
+;;; WAD.
+(defun position-is-after-wad-p (wad relative-line-number column-number)
+  (%position>= relative-line-number column-number
+               (+ (start-line wad) (height wad)) (end-column wad)))
+
+;;; Return true if and only if the position indicated by
+;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is inside WAD.  If WAD is
+;;; an absolute wad, then RELATIVE-LINE-NUMBER must be the absolute
+;;; line number of the position.  If WAD is a relative wad, then
+;;; RELATIVE-LINE-NUMBER must be the difference between the absolute
+;;; line number of the position, and the start line of the wad to
+;;; which WAD is relative.  The position is inside WAD if it is
+;;; neither before WAD nor after WAD.
+(defun position-is-inside-wad-p (wad relative-line-number column-number)
+  (not (or (position-is-before-wad-p wad relative-line-number column-number)
+           (position-is-after-wad-p wad relative-line-number column-number))))
+
+(defun wad-starts-before-wad-p (wad1 wad2)
+  (%position< (start-line wad1) (start-column wad1)
+              (start-line wad2) (start-column wad2)))
+
+(defun wad-ends-after-wad-p (wad1 wad2)
+  (not (%position< (end-line wad2) (end-column wad2)
+                   (end-line wad1) (end-column wad1))))
+
+(defun wad-contains-wad-p (wad1 wad2)
+  (and (wad-starts-before-wad-p wad1 wad2)
+       (wad-ends-after-wad-p wad1 wad2)))
+
 (defclass expression-wad (wad)
   ((%expression :initarg :expression :accessor expression)))
 

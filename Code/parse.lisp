@@ -28,20 +28,6 @@
             (eclector.reader:recover))))
      ,@body))
 
-(defun wad-starts-before-wad-p (wad1 wad2)
-  (or (< (start-line wad1) (start-line wad2))
-      (and (= (start-line wad1) (start-line wad2))
-           (< (start-column wad1) (start-column wad2)))))
-
-(defun wad-ends-after-wad-p (wad1 wad2)
-  (or (> (end-line wad1) (end-line wad2))
-      (and (= (end-line wad1) (end-line wad2))
-           (>= (end-column wad1) (end-column wad2)))))
-
-(defun wad-contains-wad-p (wad1 wad2)
-  (and (wad-starts-before-wad-p wad1 wad2)
-       (wad-ends-after-wad-p wad1 wad2)))
-
 (defun merge-children (children extra-children)
   (merge 'list (copy-list children) (copy-list extra-children)
          #'wad-starts-before-wad-p))
@@ -77,9 +63,8 @@
                             do (add-children last-child (list child))
                           else if (cond ((not (member child extra-children))
                                          t)
-                                        ((and (or (< (end-line child) (end-line wad))
-                                                  (and (= (end-line child) (end-line wad))
-                                                       (<= (end-column child) (end-column wad))))
+                                        ((and (%position<= (end-line child) (end-column child)
+                                                           (end-line wad) (end-column wad))
                                               (not (relative-p wad)))
                                          (assert (not (relative-p wad)))
                                          t)

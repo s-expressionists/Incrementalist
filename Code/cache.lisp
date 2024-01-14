@@ -367,9 +367,7 @@
 
 (defun map-empty-area
     (cache first-line start-column last-line end-column space-function)
-  (when (or (> last-line first-line)
-            (and (= last-line first-line)
-                 (> end-column start-column)))
+  (when (%position> last-line end-column first-line start-column)
     (if (= first-line last-line)
         (funcall space-function first-line start-column end-column)
         (progn

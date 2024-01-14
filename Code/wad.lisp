@@ -101,23 +101,20 @@
   (declare (ignorable children))
   (set-family-relations-of-children wad))
 
-(defmethod shared-initialize :after ((wad wad) slot-names &key)
+(defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))
 
 (defmethod initialize-instance :after ((object wad) &key)
-  (let ((min-column-number (min (start-column object)
-                                (end-column object)
-                                (reduce #'min (children object)
-                                        :initial-value 0
-                                        :key #'min-column-number)))
-        (max-column-number (max (start-column object)
-                                (end-column object)
-                                (reduce #'max (children object)
-                                        :initial-value 0
-                                        :key #'max-column-number))))
-    (reinitialize-instance object
-                           :min-column-number min-column-number
-                           :max-column-number max-column-number)))
+  (let* ((start-column (start-column object))
+         (end-column   (end-column object))
+         (min-column   (reduce #'min (children object)
+                               :initial-value (min start-column end-column)
+                               :key #'min-column-number))
+         (max-column   (reduce #'max (children object)
+                               :initial-value (max start-column end-column)
+                               :key #'max-column-number)))
+    (reinitialize-instance object :min-column-number min-column
+                                  :max-column-number max-column)))
 
 (defun print-wad-position (wad stream)
   (format stream "~:[abs~;rel~]:~d,~d -> ~d,~d"

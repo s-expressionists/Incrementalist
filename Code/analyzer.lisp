@@ -47,7 +47,5 @@
                 nil))))))
 
 (defun advance-stream-to-beyond-wad (analyzer wad)
-  (setf (current-line-number analyzer)
-        (end-line wad))
-  (setf (current-item-number analyzer)
-        (end-column wad)))
+  (setf (current-line-number analyzer) (end-line wad)
+        (current-item-number analyzer) (end-column wad)))

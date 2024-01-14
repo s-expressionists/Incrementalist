@@ -169,8 +169,7 @@
 (defun finish-scavenge (cache)
   (loop until (null (worklist cache))
         do (move-to-residue cache))
-  (setf (residue cache)
-        (nreverse (residue cache))))
+  (setf (residue cache) (nreverse (residue cache))))
 
 ;;; This function is called by the three operations that handle
 ;;; modifications.  The first time this function is called, we must
@@ -218,9 +217,8 @@
 ;;; If the worklist is empty then move a wad from the suffix to the
 ;;; worklist (in that case, it is known that the suffix is not empty).
 (defun ensure-worklist-not-empty (cache)
-  (with-accessors ((worklist worklist)) cache
-    (when (null worklist)
-      (push-to-worklist cache (pop-from-suffix cache)))))
+  (when (null (worklist cache))
+    (push-to-worklist cache (pop-from-suffix cache))))
 
 ;;; When this function is called, there is at least one wad, either on
 ;;; the work list or on the suffix that must be processed, i.e., that

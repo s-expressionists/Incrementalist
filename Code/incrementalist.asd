@@ -21,6 +21,5 @@
    (:file "update-cache")
    (:file "find-wad-beginning-line")
    (:file "find-wad-containing-position")
-   (:file "wad-descriptor")
    (:file "mapwad")
    (:file "check-wad-graph")))

@@ -1,6 +1,7 @@
 (cl:in-package #:asdf-user)
 
 (defsystem "incrementalist"
+  :license "BSD" ; see COPYING file
   :depends-on ("trivial-gray-streams"
                "cluffer"
                "flexichain"

@@ -1,0 +1,69 @@
+\input texinfo
+
+@include macros.texi
+@include generated-version.texi
+
+@documentencoding UTF-8
+@documentlanguage en
+
+@syncodeindex vr fn
+@syncodeindex tp fn
+
+@paragraphindent 0
+
+@setfilename incrementalist
+@settitle @sysname{} User's Manual
+@c subtitle Incremental parsing of Common Lisp code.
+
+@copying
+Copyright @copyright{} 2013 Robert Strandh
+Copyright @copyright{} 2024 Jan Moringen
+@end copying
+
+@dircategory Common Lisp
+@direntry
+* Incrementalist User's Manual: (incrementalist). An incremental @commonlisp{} parsing library.
+@end direntry
+
+@titlepage
+@title @sysname{} User's Manual
+
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top @sysname{} User's Manual
+
+This manual is for @sysname{} version @sysversion{}.
+@end ifnottex
+
+@menu
+* Introduction::
+* Representation of the Editor Buffer::
+* Incremental Parsing::
+* Concept index::
+* Function and macro and variable and type index::
+@end menu
+
+@include chapter-intro.texi
+
+@include chapter-buffer-representation.texi
+
+@include chapter-incremental-parsing.texi
+
+@node Concept index
+@unnumbered Concept index
+
+@printindex cp
+
+@node Function and macro and variable and type index
+@unnumbered Function and macro and variable and type index
+
+@printindex fn
+
+@c TODO @include chapter-changelog.texi
+
+@bye

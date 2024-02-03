@@ -1,0 +1,17 @@
+*.cp
+*.cps
+*.fn
+
+*.aux
+*.log
+*.toc
+
+*.png
+
+*.info
+
+*.pdf
+
+*.html
+
+generated-*.*

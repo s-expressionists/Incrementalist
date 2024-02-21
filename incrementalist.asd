@@ -16,16 +16,19 @@
                  :serial      t
                  :components ((:file "packages")
                               (:file "utilities")
-                              (:file "wad")
-                              (:file "buffer-stream")
-                              (:file "cache")
-                              (:file "analyzer")
+                              ;; Model
                               (:file "token")
+                              (:file "wad")
+                              (:file "check-wad-graph")
+                              ;; Cache
+                              (:file "cache")
+                              (:file "buffer-stream")
+                              (:file "analyzer")
                               (:file "client")
                               (:file "parse")
                               (:file "read-forms")
                               (:file "update-cache")
+                              ;; Queries
                               (:file "find-wad-beginning-line")
                               (:file "find-wad-containing-position")
-                              (:file "mapwad")
-                              (:file "check-wad-graph")))))
+                              (:file "mapwad")))))

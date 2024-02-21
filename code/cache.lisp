@@ -76,21 +76,22 @@
                         cache (1+ (end-line wad)) (1- line-count))
                        (max-line-width wad))
                   suffix-width))
-          (progn
-            (setf (right-sibling wad) (first suffix))
-            (setf (left-sibling (first suffix)) wad)
-            (absolute-to-relative (first suffix) (start-line wad))
+          (let ((old-suffix-top (first suffix)))
+            (setf (right-sibling wad)            old-suffix-top
+                  (left-sibling  old-suffix-top) wad)
+            (absolute-to-relative old-suffix-top (start-line wad))
             (push (max (first suffix-width)
                        (max-line-length
                         cache
                         (1+ (end-line wad))
-                        (1- (start-line (first suffix))))
+                        (1- (start-line old-suffix-top)))
                        (max-line-width wad))
                   suffix-width)))
       (if (null prefix)
           (setf (left-sibling wad) nil)
-          (progn (setf (left-sibling wad) (first prefix))
-                 (setf (right-sibling (first prefix)) wad)))
+          (let ((prefix-top (first prefix)))
+            (setf (left-sibling wad)         prefix-top
+                  (right-sibling prefix-top) wad)))
       (push wad suffix))))
 
 (defgeneric pop-from-prefix (cache)
@@ -110,32 +111,44 @@
             (push (max (max-line-length cache 0 (1- (start-line wad)))
                        (max-line-width wad))
                   prefix-width))
-          (progn
-            (setf (left-sibling wad) (first prefix))
-            (setf (right-sibling (first prefix)) wad)
+          (let ((old-prefix-top (first prefix)))
+            (setf (left-sibling  wad)            old-prefix-top
+                  (right-sibling old-prefix-top) wad)
             (push (max (first prefix-width)
                        (max-line-length
                         cache
-                        (1+ (end-line (first prefix)))
+                        (1+ (end-line old-prefix-top))
                         (1- (start-line wad)))
                        (max-line-width wad))
                   prefix-width)))
       (if (null suffix)
           (setf (right-sibling wad) nil)
-          (progn (setf (right-sibling wad) (first suffix))
-                 (setf (left-sibling (first suffix)) wad)))
+          (let ((suffix-top (first suffix)))
+            (setf (right-sibling wad)        suffix-top
+                  (left-sibling  suffix-top) wad)))
       (compute-absolute-line-numbers wad)
       (push wad prefix))))
 
+(defgeneric suffix-to-prefix (cache)
+  (:method ((cache cache))
+    (push-to-prefix cache (pop-from-suffix cache))))
+
+(defgeneric prefix-to-suffix (cache)
+  (:method ((cache cache))
+    (assert (not (null (prefix cache))))
+    (push-to-suffix cache (pop-from-prefix cache))))
+
 (defun gap-start (cache)
-  (if (null (prefix cache))
-      0
-      (1+ (end-line (first (prefix cache))))))
+  (let ((prefix (prefix cache)))
+    (if (null prefix)
+        0
+        (1+ (end-line (first prefix))))))
 
 (defun gap-end (cache)
-  (if (null (suffix cache))
-      (1- (line-count cache))
-      (1- (start-line (first (suffix cache))))))
+  (let ((suffix (suffix cache)))
+    (1- (if (null suffix)
+            (line-count cache)
+            (start-line (first suffix))))))
 
 (defun total-width (cache)
   (max (if (null (prefix-width cache)) 0 (first (prefix-width cache)))
@@ -154,21 +167,10 @@
 (defun push-to-residue (cache wad)
   (push wad (residue cache)))
 
-(defgeneric suffix-to-prefix (cache)
-  (:method ((cache cache))
-    (push-to-prefix cache (pop-from-suffix cache))))
-
-(defgeneric prefix-to-suffix (cache)
-  (:method ((cache cache))
-    (assert (not (null (prefix cache))))
-    (push-to-suffix cache (pop-from-prefix cache))))
-
-(defun move-to-residue (cache)
-  (push-to-residue cache (pop-from-worklist cache)))
-
 (defun finish-scavenge (cache)
+  ;; Move entire worklist to residue
   (loop until (null (worklist cache))
-        do (move-to-residue cache))
+        do (push-to-residue cache (pop-from-worklist cache)))
   (setf (residue cache) (nreverse (residue cache))))
 
 ;;; This function is called by the three operations that handle
@@ -221,7 +223,7 @@
     (push-to-worklist cache (pop-from-suffix cache))))
 
 ;;; When this function is called, there is at least one wad, either on
-;;; the work list or on the suffix that must be processed, i.e., that
+;;; the worklist or on the suffix that must be processed, i.e., that
 ;;; wad either entirely precedes LINE-NUMBER (so that it should be
 ;;; moved to the residue), or it straddles the line with that line
 ;;; number, so that it must be taken apart.
@@ -341,9 +343,9 @@
   (flx:element* (lines cache) line-number))
 
 ;;; This :BEFORE method on the slot accessor
-;;; ABSOLUTE-START-LINE-NUMBER makes sure the slot is on the prefix
-;;; before the primary method is called, so that the absolute start
-;;; line numbers are guaranteed to be computed.
+;;; ABSOLUTE-START-LINE-NUMBER makes sure WAD is on the prefix before
+;;; the primary method is called, so that the absolute start line
+;;; numbers are guaranteed to be computed.
 (defmethod absolute-start-line-number :before ((wad wad))
   ;; First, we find the top-level wad that this wad either is or that
   ;; this wad is a descendant of.

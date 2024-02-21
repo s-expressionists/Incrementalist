@@ -1,5 +1,17 @@
 (cl:in-package #:incrementalist)
 
+(defun make-error-wad (condition start-line start-column height width line-width)
+  (let ((end-column (+ start-column width)))
+    (make-instance 'error-wad :cache          *cache*
+                              :start-line     start-line
+                              :start-column   start-column
+                              :height         height
+                              :end-column     end-column
+                              :max-line-width line-width
+                              :relative-p     nil
+                              :children       '()
+                              :condition      condition)))
+
 ;;; PARSE-AND-CACHE collects Eclector errors in *ERRORS* during
 ;;; parsing and ADD-CHILDREN adds the resulting ERROR-WADs to the
 ;;; appropriate nodes in the wad tree.
@@ -16,15 +28,8 @@
               (let* ((line-width   (line-length (cache analyzer)
                                                 (current-line-number analyzer)))
                      (start-column (max 0 (+ column (eclector.base:position-offset condition))))
-                     (end-column   (+ start-column (eclector.base:range-length condition))))
-                (push (make-wad 'error-wad :max-line-width line-width
-                                           :children       '()
-                                           :start-line     line
-                                           :start-column   start-column
-                                           :height         0
-                                           :end-column     end-column
-                                           :relative-p     nil
-                                           :condition      condition)
+                     (width        (eclector.base:range-length condition)))
+                (push (make-error-wad condition line start-column 0 width line-width)
                       *errors*)))
             (eclector.reader:recover))))
      ,@body))

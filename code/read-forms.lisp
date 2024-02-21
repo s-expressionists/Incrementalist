@@ -1,15 +1,13 @@
 (cl:in-package #:incrementalist)
 
 (defun read-forms (analyzer)
-  (with-accessors ((cache cache)
-                   (current-line-number current-line-number)
-                   (current-item-number current-item-number))
-      analyzer
+  (let ((cache (cache analyzer)))
     (with-accessors ((prefix prefix) (suffix suffix) (residue residue))
         cache
       ;; Position stream after last prefix wad (remember the cache
       ;; prefix is stored in reverse order) if any.
-      (setf (values current-line-number current-item-number)
+      (update-lines-cache analyzer (lines analyzer))
+      (setf (values (line-number analyzer) (item-number analyzer))
             (if (null prefix)
                 (values 0 0)
                 (let ((first (first prefix)))

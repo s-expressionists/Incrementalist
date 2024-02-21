@@ -4,22 +4,17 @@
   ((%buffer :initarg :buffer :reader buffer)
    (%cache :initarg :cache :reader cache)))
 
-(defmethod print-object ((object analyzer) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~A,~A"
-            (current-line-number object) (current-item-number object))))
-
 (defmethod position< ((left basic-wad) (right analyzer))
-  (%position< (start-line left)           (start-column left)
-              (current-line-number right) (current-item-number right)))
+  (%position< (start-line left)   (start-column left)
+              (line-number right) (item-number right)))
 
 (defmethod position> ((left basic-wad) (right analyzer))
-  (%position> (start-line left)           (start-column left)
-              (current-line-number right) (current-item-number right)))
+  (%position> (start-line left)   (start-column left)
+              (line-number right) (item-number right)))
 
 (defmethod position= ((left basic-wad) (right analyzer))
-  (and (= (start-line left)   (current-line-number right))
-       (= (start-column left) (current-item-number right))))
+  (and (= (start-line left)   (line-number right))
+       (= (start-column left) (item-number right))))
 
 ;;; Check whether there is a cached wad with a start position that
 ;;; corresponds to the current stream position of ANALYZER, and if so,
@@ -47,5 +42,5 @@
                 nil))))))
 
 (defun advance-stream-to-beyond-wad (analyzer wad)
-  (setf (current-line-number analyzer) (end-line wad)
-        (current-item-number analyzer) (end-column wad)))
+  (setf (line-number analyzer) (end-line wad)
+        (item-number analyzer) (end-column wad)))

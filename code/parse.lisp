@@ -26,7 +26,7 @@
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
               (let* ((line-width   (line-length (cache analyzer)
-                                                (current-line-number analyzer)))
+                                                (line-number analyzer)))
                      (start-column (max 0 (+ column (eclector.base:position-offset condition))))
                      (width        (eclector.base:range-length condition)))
                 (push (make-error-wad condition line start-column 0 width line-width)

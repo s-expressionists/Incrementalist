@@ -67,7 +67,7 @@
 ;;; Source position
 
 (defmethod eclector.base:source-position ((client client) (stream buffer-stream))
-  (cons (current-line-number stream) (current-item-number stream)))
+  (cons (line-number stream) (item-number stream)))
 
 (defmethod eclector.base:make-source-range ((client client) (start t) (end t))
   (cons start end))
@@ -78,7 +78,7 @@
                         &rest extra-initargs &key &allow-other-keys)
   (destructuring-bind ((start-line . start-column) . (end-line . end-column))
       source
-    (let* ((line-number    (current-line-number stream))
+    (let* ((line-number    (line-number stream))
            (max-line-width (compute-max-line-width
                             stream start-line line-number '())))
       (apply #'make-wad class :start-line     start-line

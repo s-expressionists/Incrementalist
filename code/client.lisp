@@ -7,11 +7,6 @@
   ((stream* :initarg :stream*
             :reader  stream*)))
 
-;;; Source positions
-
-(defmethod eclector.base:source-position ((client client) (stream buffer-stream))
-  (cons (current-line-number stream) (current-item-number stream)))
-
 ;;; Feature expressions
 
 (defmethod reader:check-feature-expression ((client client) (feature-expression t))
@@ -64,13 +59,15 @@
                                :package-marker-2 position-package-marker-2
                                :name (cl:symbol-name symbol))))))))
 
-;;; Result construction
+;;; Source position
 
-(defmethod eclector.base:source-position ((client client) (stream analyzer))
+(defmethod eclector.base:source-position ((client client) (stream buffer-stream))
   (cons (current-line-number stream) (current-item-number stream)))
 
 (defmethod eclector.base:make-source-range ((client client) (start t) (end t))
   (cons start end))
+
+;;; Result construction
 
 (defun make-result-wad (class stream source children
                         &rest extra-initargs &key &allow-other-keys)

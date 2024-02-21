@@ -31,4 +31,26 @@
                               ;; Queries
                               (:file "find-wad-beginning-line")
                               (:file "find-wad-containing-position")
-                              (:file "mapwad")))))
+                              (:file "mapwad"))))
+
+  :in-order-to ((test-op (test-op "incrementalist/test"))))
+
+(defsystem "incrementalist/test"
+  :description "Tests for the incrementalist system."
+  :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
+
+  :version     (:read-file-form "data/version-string.sexp")
+  :depends-on  ("fiveam"
+
+                "incrementalist")
+
+  :components  ((:module     "test"
+                 :serial     t
+                 :components ((:file "package")
+                              ;; Test utilities
+                              (:file "utilities")
+                              ;; Tests
+                              (:file "test"))))
+
+  :perform     (test-op (operation component)
+                 (uiop:symbol-call '#:incrementalist.test '#:run-tests)))

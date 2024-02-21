@@ -1,12 +1,12 @@
 (cl:in-package #:incrementalist)
 
-(defun whitespacep (character)
-  (member character '(#\Space #\Newline)))
+(defun whitespacep (character) ; TODO move to spell-checking
+  (member character '(#\Space #\Tab #\Newline #\Page)))
 
 (defun punctuationp (character)
   (member character '(#\. #\? #\! #\: #\, #\;
                       #\( #\) #\< #\> #\[ #\] #\{ #\}
-                      #\" #\' #\` #\/ #\- #\+ #\* #\% #\= #\#)))
+                      #\" #\' #\` #\/ #\_ #\- #\+ #\* #\% #\= #\#)))
 
 ;;; Positions
 

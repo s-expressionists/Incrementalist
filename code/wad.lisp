@@ -4,13 +4,9 @@
 ;;; is normally skipped, such as a comment or an inactive reader
 ;;; conditional.
 
-;;; During parsing, this variable holds the cache to which all created
-;;; wads belong.
-(defvar *cache*)
-
 (defclass basic-wad ()
   (;; This slot contains the cache that this wad is part of.
-   (%cache :initform *cache* :reader cache)
+   (%cache :initarg :cache :reader cache)
    ;; This slot contains the parent wad of this wad, or NIL if this
    ;; wad is a top-level wad.
    (%parent :initform nil :initarg :parent :accessor parent)
@@ -130,10 +126,14 @@
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)))
 
+;;; During parsing, this variable holds the cache to which all created
+;;; wads belong.
+(defvar *cache*)
+
 ;;; Define an indirection for MAKE-INSTANCE for creating wads.  The
 ;;; main purpose is so that the creation of wads can be traced.
 (defun make-wad (class &rest initargs)
-  (apply #'make-instance class initargs))
+  (apply #'make-instance class :cache *cache* initargs))
 
 ;;; Return true if and only if the position indicated by
 ;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely before WAD.  If

@@ -15,6 +15,11 @@
 (defmethod reader:evaluate-feature-expression ((client client) (feature-expression t))
   nil)
 
+;;; Read-time evaluation
+
+(defmethod reader:evaluate-expression ((client client) (expression t))
+  1)
+
 ;;; Token interpretation
 
 (defmethod reader:interpret-token :around

@@ -4,13 +4,9 @@
 ;;; is normally skipped, such as a comment or an inactive reader
 ;;; conditional.
 
-;;; During parsing, this variable holds the cache to which all created
-;;; wads belong.
-(defvar *cache*)
-
 (defclass basic-wad ()
   (;; This slot contains the cache that this wad is part of.
-   (%cache :initform *cache* :reader cache)
+   (%cache :initarg :cache :reader cache)
    ;; This slot contains the parent wad of this wad, or NIL if this
    ;; wad is a top-level wad.
    (%parent :initform nil :initarg :parent :accessor parent)
@@ -86,16 +82,16 @@
 
 (defun set-family-relations-of-children (wad)
   (let* ((children (children wad))
-         (length (length children)))
+         (length   (length children)))
     (loop for child in children
           do (setf (parent child) wad))
     (when (plusp length)
-      (setf (left-sibling (first children)) nil)
-      (setf (right-sibling (first (last children))) nil)
+      (setf (left-sibling  (first children))        nil
+            (right-sibling (first (last children))) nil)
       (loop for (left right) on children
             repeat (1- length)
-            do (setf (right-sibling left) right)
-               (setf (left-sibling right) left)))))
+            do (setf (right-sibling left) right
+                     (left-sibling right) left)))))
 
 (defmethod (setf children) :after (children (wad wad))
   (declare (ignorable children))
@@ -130,10 +126,14 @@
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)))
 
+;;; During parsing, this variable holds the cache to which all created
+;;; wads belong.
+(defvar *cache*)
+
 ;;; Define an indirection for MAKE-INSTANCE for creating wads.  The
 ;;; main purpose is so that the creation of wads can be traced.
 (defun make-wad (class &rest initargs)
-  (apply #'make-instance class initargs))
+  (apply #'make-instance class :cache *cache* initargs))
 
 ;;; Return true if and only if the position indicated by
 ;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely before WAD.  If
@@ -196,8 +196,7 @@
 (defmethod print-object ((object expression-wad) stream)
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)
-    (format stream " expression: ~S"
-            (class-name (class-of (expression object))))))
+    (format stream " expression: ~S" (expression object))))
 
 (defclass labeled-object-definition-wad (expression-wad)
   ())
@@ -288,11 +287,10 @@
 ;;; relative to the start line of the preceding element.  Return the
 ;;; original list, now containing the modified wads.
 (defun make-relative (absolute-wads offset)
-  (loop with base = offset
+  (loop for base = offset then start-line
         for wad in absolute-wads
         for start-line = (start-line wad)
-        do (absolute-to-relative wad base)
-           (setf base start-line))
+        do (absolute-to-relative wad base))
   absolute-wads)
 
 (defgeneric end-line (wad)

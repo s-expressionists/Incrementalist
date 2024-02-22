@@ -22,8 +22,8 @@ jobs:
           cd documentation
           make
           mkdir -p build build/{pdf,info}
-          cp index.html        build/
-          cp *.png             build/
+          cp index.html          build/
+          cp *.png               build/
           cp incrementalist.html build/
           cp incrementalist.pdf  build/pdf/
           cp incrementalist.info build/info/
@@ -53,4 +53,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4

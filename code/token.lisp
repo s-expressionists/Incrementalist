@@ -3,21 +3,25 @@
 (defclass token () ())
 
 (defclass symbol-token (token)
-  ((%package-marker-1 :initarg :package-marker-1
-                      :reader package-marker-1
+  ((%package-marker-1 :initarg  :package-marker-1
+                      :type     (or null integer)
+                      :reader   package-marker-1
                       :initform nil)
-   (%package-marker-2 :initarg :package-marker-2
-                      :reader package-marker-2
+   (%package-marker-2 :initarg  :package-marker-2
+                      :type     (or null integer)
+                      :reader   package-marker-2
                       :initform nil)
-   (%package-name :initarg :package-name
-                  :reader package-name
-                  :initform nil)
-   (%name :initarg :name
-          :reader name)))
+   (%package-name     :initarg  :package-name
+                      :type     (or null string)
+                      :reader   package-name
+                      :initform nil)
+   (%name             :initarg  :name
+                      :type     string
+                      :reader   name)))
 
 (defmethod print-object ((object symbol-token) stream)
   (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~s ~s ~s ~s"
+    (format stream "[~A]~:[~;:~]~:[~;:~]~A"
             (package-name object)
             (package-marker-1 object)
             (package-marker-2 object)
@@ -44,5 +48,5 @@
                 :reader characters)))
 
 (defmethod print-object ((object other-token) stream)
-  (print-unreadable-object (object stream)
-    (format stream "~a" (characters object))))
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~S" (characters object))))

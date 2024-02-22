@@ -10,7 +10,7 @@
   The purpose of the Incrementalist library is incremental parsing of
   Common Lisp code that is contained in a [[https://github.com/robert-strandh/cluffer][Cluffer]] buffer into a syntax
   tree. The parsing is incremental in the sense that after a small
-  change in the buffer text, the syntax tree can be update with a
+  change in the buffer text, the syntax tree can be updated with a
   small amount of parsing work.
 
   *This library is under active development. Its ASDF system

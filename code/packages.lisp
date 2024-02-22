@@ -53,9 +53,6 @@
    #:non-existing-package-symbol-token
    #:non-existing-symbol-token
    #:existing-symbol-token
-   #:value-token
-   #:numeric-token
-   #:other-token
    #:package-name
    #:package-marker-1
    #:package-marker-2

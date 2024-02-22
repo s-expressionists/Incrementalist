@@ -22,14 +22,6 @@
 
 ;;; Token interpretation
 
-(defmethod reader:interpret-token :around
-    ((client client) input-stream token escape-ranges)
-  (let ((result (call-next-method)))
-    (typecase result
-      (token  result)
-      (number (make-instance 'numeric-token :characters token :value result))
-      (t      (make-instance 'other-token :characters token)))))
-
 (defmethod reader:interpret-symbol-token
     ((client client) input-stream token position-package-marker-1 position-package-marker-2)
   (multiple-value-bind (package-designator symbol-name)

@@ -35,18 +35,3 @@
 
 (defclass existing-symbol-token (symbol-token)
   ())
-
-(defclass value-token (other-token)
-  ((%value :initarg :value
-           :reader value)))
-
-(defclass numeric-token (value-token)
-  ())
-
-(defclass other-token (token)
-  ((%characters :initarg :characters
-                :reader characters)))
-
-(defmethod print-object ((object other-token) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~S" (characters object))))

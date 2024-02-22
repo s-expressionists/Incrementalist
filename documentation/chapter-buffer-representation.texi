@@ -20,7 +20,7 @@ such as @emph{regions}.  It provides operations only on single items,
 and operations to split and join lines.  These editing operations do
 not trigger any view updates which is why they can be invoked a large
 number of times for each user interaction without loss of performance.
-This features is taken advantage of in operations on regions and in
+This feature is taken advantage of in operations on regions and in
 keyboard macros.
 
 @item

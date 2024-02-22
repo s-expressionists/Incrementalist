@@ -1,8 +1,8 @@
 @node Parsing using the @commonlisp{} Reader
 @chapter Parsing using the @commonlisp{} Reader
 
-We use a special version of the @commonlisp{} reader based on
-@eclectorlink{} to parse the contents of a buffer.  We use a special
+We use a special version of the @commonlisp{} reader, i.e., 
+@eclectorlink{}, to parse the contents of a buffer.  We use a special
 version of the reader for the following reasons:
 
 @itemize
@@ -26,8 +26,8 @@ ordinary reader, such as comments and expressions that are skipped by
 certain other reader macros.
 
 @item
-The reader can not fail but must instead recover in some way when an
-invalid syntax is encountered, nor when end of file is encountered in
-the middle of a call.
+The reader can not fail but must instead recover in some way when
+either some invalid syntax is encountered, or when end of file is
+encountered in the middle of a call.
 
 @end itemize

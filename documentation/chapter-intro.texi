@@ -10,8 +10,8 @@ that has been developed in the context of the @climacs{} editor for
 @item
 We implemented a better buffer representation, and extracted it from the
 editor code into a separate library named @clufferlink{}.  The new
-buffer representation will have better performance, especially on large
-buffers, and it will make it easier to write sophisticated parsers for
+buffer representation has better performance, especially on large
+buffers, and it makes it easier to write sophisticated parsers for
 buffer contents.
 
 @item

@@ -1,16 +1,19 @@
 @node Representation of the Editor Buffer
 @chapter Representation of the Editor Buffer
 
-@sysname{} uses the
-@url{https://github.com/robert-strandh/Cluffer,@cluffer{} library} to
-represent its buffers.  We briefly describe the essential aspects of
-that library below.  For detailed information on how it works, see the
-dedicated documentation.
+@sysname{} uses the @clufferlink{} library to represent its buffers.  We
+briefly describe the essential aspects of that library below.  For
+detailed information on how it works, see the dedicated documentation.
 
 @cluffer{} proposes two distinct protocols, namely the @emph{edit
 protocol} and the @emph{update protocol}.
 
-The edit protocol provides operations for editing the buffer
+@itemize
+
+@item
+@cindex edit protocol
+@anchor{term-edit-protocol}
+The @dfn{edit protocol} provides operations for editing the buffer
 contents.  It has been designed to be both simple and very efficient.
 As such, it does not provide operations on larger chunks of contents
 such as @emph{regions}.  It only provides operations on single items,
@@ -20,7 +23,10 @@ number of times for each user interaction without loss of performance.
 This features is taken advantage of in operations on regions and in
 keyboard macros.
 
-The update protocol is designed to be run at the frequency of the
+@item
+@cindex update protocol
+@anchor{term-update-protocol}
+The @dfn{update protocol} is designed to be run at the frequency of the
 event loop.  It is based on the concept of @emph{time stamps}.  Any
 number of edit operations can be performed between two invocations of
 the update protocol, and the update protocol can be invoked at
@@ -29,3 +35,5 @@ that are not currently on display.  Given that the amount of data
 displayed in a view is relatively modest, no attempt is made to
 minimize the modifications to the view.  The smallest unit of an
 update is a @emph{line} of items.
+
+@end itemize

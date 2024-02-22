@@ -6,20 +6,19 @@ GENERATED = generated-version.texi
 
 INPUTS = $(SOURCES) $(GENERATED)
 
-FIGS    = $(wildcard *.fig)
-PDFS    = $(subst .fig,.pdf,$(FIGS))
-FIGURES = $(PDFS)
-IMAGES  = $(subst .pdf,.png,$(FIGURES))
+FIGURES = $(wildcard *.svg)
+PDFS    = $(subst .svg,.pdf,$(FIGURES))
+IMAGES  = $(subst .svg,.png,$(FIGURES))
 
 .PHONY: all clean
 
 all : $(NAME).info $(NAME).pdf $(NAME).html
 
-%.pdf: %.fig
-	fig2dev -Lpdftex -m 0.75  $< $@
+%.pdf: %.svg
+	rsvg-convert --format=pdf $< > $@
 
-%.png: %.fig
-	fig2dev -Lpng -m 1.2 $< $@
+%.png: %.svg
+	rsvg-convert --format=png $< > $@
 
 generated-version.texi: ../data/version-string.sexp
 	sbcl --noinform --disable-debugger --no-sysinit --no-userinit                           \
@@ -31,7 +30,7 @@ generated-version.texi: ../data/version-string.sexp
 $(NAME).info: $(INPUTS) $(IMAGES)
 	makeinfo --output $@ $(NAME).texi
 
-$(NAME).pdf: $(INPUTS) $(FIGURES)
+$(NAME).pdf: $(INPUTS) $(PDFS)
 	texi2pdf $(NAME).texi
 
 $(NAME).html: $(INPUTS) $(IMAGES) $(wildcard *.css)

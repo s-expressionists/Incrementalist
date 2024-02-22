@@ -9,8 +9,7 @@ that has been developed in the context of the @climacs{} editor for
 
 @item
 We implemented a better buffer representation, and extracted it from the
-editor code into a separate library named
-@url{https://github.com/robert-strandh/cluffer,@cluffer{}}.  The new
+editor code into a separate library named @clufferlink{}.  The new
 buffer representation will have better performance, especially on large
 buffers, and it will make it easier to write sophisticated parsers for
 buffer contents.
@@ -19,9 +18,8 @@ buffer contents.
 The incremental parser for @commonlisp{} syntax of the first version of
 @climacs{} was very hard to maintain, and while it was better than that
 of @emacs{}, it was still not good enough.  To improve upon those
-previous approaches, @sysname{} uses
-@url{https://github.com/s-expressionists/eclector,@eclector{}} in order
-to parse buffer contents.  @eclector{} is a library that implements the
+previous approaches, @sysname{} uses @eclectorlink{} in order to parse
+buffer contents.  @eclector{} is a library that implements the
 @commonlisp{} reader, but that can also be customized in many ways.  We
 take advantage of these capabilities to read material that is normally
 skipped, like comments, and for error recovery.  By using a

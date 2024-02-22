@@ -57,7 +57,7 @@ the current time stamp is incremented, possibly more than once.
 At the end of the execution of the command, the @emph{syntax update} is
 executed for all buffers, allowing the contents to be incrementally
 parsed according to the syntax associated with the buffer.
-  
+
 @quotation warning
 There seem to be cases where the syntax of one buffer depends not only
 on its own associated buffer, but also on the contents of other buffers.
@@ -83,116 +83,70 @@ computation as incremental as possible.
 
 @end enumerate
 
-@node Parsing using the @commonlisp{} reader
-@section Parsing using the @commonlisp{} reader
+@node Data Structures
+@section Data Structures
 
-We use a special version of the @commonlisp{} reader based on
-@eclector{} to parse the contents of a buffer.  We use a special version
-of the reader for the following reasons:
-
-@itemize
-
-@item
-We need a different action from that of the standard reader when it
-comes to interpreting tokens.  In particular, we do not necessarily want
-the incremental parser to intern symbols automatically, and we do not
-want the reader to fail when a symbol with an explicit package prefix
-does not exist or when the package corresponding to the package prefix
-does not exists.
-
-@item
-We need for the reader to return not only a resulting expression, but an
-object that describes the start and end locations in the buffer where
-the expression was read.
-
-@item
-The reader needs to return source elements that are not returned by an
-ordinary reader, such as comments and expressions that are skipped by
-certain other reader macros.
-
-@item
-The reader can not fail but must instead recover in some way when an
-incorrect character is encountered, nor when end of file is encountered
-in the middle of a call.
-  
-@end itemize
-
-@node Data Structure
-@section Data Structure
+@node WADs
+@subsection WADs
 
 @cindex wad
 
-We call the data structure for storing return values of the modified
-return together with start and end location a
+We call the data structure for storing the (modified) return value of
+the reader together with start and end location a
 @anchor{term-wad}@dfn{wad}.  It contains the following slots:
 
 @itemize
 
 @item
-The start and the end location of the wad in the buffer.
+The start and the end location of the wad in the buffer.  The start line
+number within this location information is either
+@anchor{term-absolute}@dfn{absolute} which means that it directly
+corresponds to a line number of the underlying buffer or
+@anchor{term-relative}@dfn{relative} which means that it represents an
+offset from the start line number of a parent or sibling wad.  A
+dedicated slot indicates whether the start line number is relative or
+absolute.
 
 @item
-The expression that was read, with some possible modifications.  Tokens,
-in particular symbols, are not represented as themselves for reasons
-mentioned above.
+The ``raw'' expression that was read, with some possible modifications.
+Tokens, in particular symbols, are not represented as themselves for
+reasons mentioned above.
 
 @item
-A list of @emph{children}.  These are wads that were returned by
+A list of @dfn{children}.  These are wads that were returned by
 recursive calls to the reader.  The children are represented in the
 order they were encountered in the buffer.  This order may be different
 from the order in which the corresponding expressions appear in the
-expression resulting from the call to the reader.
+expression resulting from the call to the reader.  Furthermore, the
+descendants of a given wad can contain wads which correspond to source
+elements that would not be present in the s-expression tree returned by
+@t{cl:read} at all such as comments or expressions guarded by feature
+expressions.
 
 @end itemize
-
-@cindex top-level location
-
-A location in the buffer is considered a
-@anchor{term-top-level-location}@dfn{top-level location} if and only if,
-when the buffer is parsed by a number of consecutive calls to @t{read},
-when this location is reached, the reader is in its initial state with
-no recursive pending invocations.
-
-@sysname{} maintains a sequence @footnote{It is not a @commonlisp{}
-sequence, but just a suite represented in a different way.}  of
-@emph{top-level wads}.  A wad is considered top-level if it is the
-result of an immediate call to @t{read}, as opposed to of a recursive
-call.
-
-@cindex prefix
-@cindex suffix
-
-This sequence is organized as two ordinary @commonlisp{} lists, called
-the @anchor{term-prefix}@dfn{prefix} and the
-@anchor{term-suffix}@dfn{suffix}.  Given a top-level location @math{L} in the
-buffer, the prefix contains a list of the top-level wad that precede @math{L}
-and the suffix contains a list of the top-level wads that follow @math{L}.
-The top-level wads in the prefix occur in reverse order compared to
-order in which they appear in the buffer.  The top-level wads in the
-suffix occur in the same order as they appear in the buffer.  the
-location @math{L} is typically immediately before or immediately after the
-top-level expression in which the @emph{cursor} of the current view is
-located, but that is not a requirement.
-@ref{fig:cl-parser-prefix-suffix} illustrates the prefix and the suffix
-of a buffer with five top-level expressions.
-
-@float Figure,fig:cl-parser-prefix-suffix
-@center @image{fig-cl-parser-prefix-suffix}
-@caption{Prefix and suffix containing top-level wads.}
-@end float
-
-Either the prefix or the suffix or both may be the empty list.  The
-location @math{L} may be moved.  It suffices @footnote{Some slots also need
-to be updated as will be discussed later.}  to pop an element off of one
-of the lists and push it onto the other.
 
 The representation of a wad is shown in
 @ref{fig:wad}.
 
 @float Figure,fig:wad
 @center @image{fig-wad}
-@caption{Representation of wad.}
+@caption{Representation of a wad. The major components are highlighted:
+location information in green, tree structure information in blue and
+``raw'' information in orange. Not all wad classes contain children and
+``raw'' data. The faintly rendered tree structure slots are computed
+on-demand and are thus always present but not always bound. }
 @end float
+
+@cindex top-level location
+@cindex top-level wad
+
+A location in the buffer is considered a
+@anchor{term-top-level-location}@dfn{top-level location} if and only if,
+when the buffer is parsed by a number of consecutive calls to @t{read},
+when this location is reached, the reader is in its initial state with
+no recursive pending invocations.  Similarly A wad is considered a
+@anchor{term-top-level-wad}@dfn{top-level wad} if it is the result of an
+immediate call to @t{read}, as opposed to of a recursive call.
 
 Let the @dfn{initial character} of some wad be the first non-whitespace
 character encountered during the call to the reader that produced this
@@ -201,50 +155,94 @@ character encountered during the call to the reader that produced this
 wad, excluding any look-ahead character that could be un-read before the
 wad was returned.
 
-The slot named @t{start-line} is computed as follows:
+The value of the @t{start-line} slot for a wad @var{w} is computed as
+follows:
 
 @itemize
 
 @item
-If the wad is one of the top-level wads in the prefix or the first
-top-level wad in the suffix, then the value of this slot is the absolute
-line number of the initial character of this wad.  The first line of the
-buffer is numbered @math{0}.
+If @var{w} is @ref{term-absolute,absolute}, which is the case if and
+only if @var{w} is one of the top-level wads in the prefix
+(@pxref{Prefix and Suffix}) or the first top-level wad in the suffix,
+then the value of this slot is the absolute line number of the initial
+character of @var{w}.  The first line of the buffer is numbered
+@math{0}.
 
 @item
-If the wad is a top-level wad in the suffix other than the first one,
+Otherwise @var{w} is @ref{term-relative,relative} which is the case for
+different kinds of placements of @var{w} in the overall hierarchical
+structure of wads:
+
+@itemize
+
+@item
+If @var{w} is a top-level wad in the suffix other than the first one,
 then the value of this slot is the number of lines between the value of
 the slot @t{start-line} of the preceding wad and the initial character
-of this wad.  A value of @math{0} indicates the same line as the
+of @var{w}.  A value of @math{0} indicates the same line as the
 @t{start-line} of the preceding wad.
 
 @item
-If this wad is the first in a list of children of some parent wad, then
-the value of this slot is the number of lines between the value of the
-slot @t{start-line} of the parent wad and the initial character of this
-wad.
+If @var{w} is the first in a list of children of some parent wad
+@var{p}, then the value of this slot is the number of lines between the
+start line of @var{p} (which is different from the value of the
+@t{start-line} slot of @var{p} if @var{p} is itself @emph{relative}) and
+the initial character of @var{w}.
 
 @item
-If this wad is the child other than the first in a list of children of
+If @var{w} is the child other than the first in a list of children of
 some parent wad, then the value of this slot is the number of lines
-between the value of the slot @t{start-line} of the preceding sibling
-wad and the initial character of this wad.
+between the start line of the preceding sibling wad and the initial
+character of @var{w}.
 
 @end itemize
+
+@end itemize
+
+The value of the slot @t{height} of some wad @var{w} is the number of
+lines between the start line of @var{w} and the final character of
+@var{w}.  If @var{w} starts and ends on the same line, then the value of
+this slot is @math{0}.
 
 The value of the slot @t{start-column} is the absolute column number of
 the initial character of this wad.  A value of @math{0} means the
 leftmost column.
 
-The value of the slot @t{end-line} of some wad is the number of lines
-between the value of the slot @t{start-line} of the same wad and the
-final character of the wad.  If the wad starts and ends on the same
-line, then the value of this slot is @math{0}.
-
 The value of the slot @t{end-column} is the absolute column number of
 the final character of the wad.
 
-To illustrate the data structure, we use the following example:
+@node Prefix and Suffix
+@subsection Prefix and Suffix
+
+@cindex prefix
+@cindex suffix
+@sysname{} maintains a sequence @footnote{It is not a @commonlisp{}
+sequence, but just a suite represented in a different way.}  of
+@emph{top-level wads}.  This sequence is organized as two ordinary
+@commonlisp{} lists, called the @anchor{term-prefix}@dfn{prefix} and the
+@anchor{term-suffix}@dfn{suffix}.  Given a top-level location @math{L}
+in the buffer, the prefix contains a list of the top-level wad that
+precede @math{L} and the suffix contains a list of the top-level wads
+that follow @math{L}.  The top-level wads in the prefix occur in reverse
+order compared to order in which they appear in the buffer.  The
+top-level wads in the suffix occur in the same order as they appear in
+the buffer.  the location @math{L} is typically immediately before or
+immediately after the top-level expression in which the @emph{cursor} of
+the current view is located, but that is not a requirement.
+@ref{fig:prefix-suffix} illustrates the prefix and the suffix of a
+buffer with five top-level expressions.
+
+@float Figure,fig:prefix-suffix
+@center @image{fig-prefix-suffix}
+@caption{Prefix and suffix containing top-level wads.}
+@end float
+
+Either the prefix or the suffix or both may be the empty list.  The
+location @math{L} may be moved.  It suffices @footnote{Some slots also need
+to be updated as will be discussed later.}  to pop an element off of one
+of the lists and push it onto the other.
+
+To illustrate the above data structures, we use the following example:
 
 @verbatim
 ...
@@ -315,7 +313,7 @@ the following actions are executed:
 Modify the slot @t{start-line} of the first wad of the suffix so that,
 instead of containing the absolute line number, it contains the line
 number relative to the value of the slot @t{start-line} of @math{P}.
-  
+
 @item
 Pop @math{P} from the prefix and push it onto the suffix.  Rather than
 using the straightforward technique, the @t{cons} cell referring to
@@ -419,14 +417,14 @@ Several different lines may be modified between two incremental updates,
 and in different ways.  The first step in an incremental update step is
 to invalidate wads that are no longer known to be correct after these
 modifications.  This step modifies the data structure described in
-@ref{Data Structure} in the following way:
+@ref{Prefix and Suffix} in the following way:
 
 @itemize
 
 @item
 After the invalidation step, the prefix contains the wad preceding the
 first modified line, so that these wads are still valid.
-  
+
 @item
 The suffix contains those wads following the last modified line.  These
 wads are still valid, but they may no longer be top-level wads, because

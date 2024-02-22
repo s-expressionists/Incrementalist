@@ -12,19 +12,28 @@ incrementalist
 @macro commonlisp
 Common Lisp
 @end macro
+
 @macro emacs
-Eclector
+Emacs
 @end macro
+
 @macro eclector
 Eclector
 @end macro
+@macro eclectorlink
+@url{https://github.com/s-expressionists/eclector,@eclector{}}
+@end macro
+
 @macro climacs
 Climacs
 @end macro
+
 @macro cluffer
 Cluffer
 @end macro
-
+@macro clufferlink
+@url{https://github.com/robert-strandh/Cluffer,@cluffer{}}
+@end macro
 
 @c ===================================================================
 @c Lambda list keywords

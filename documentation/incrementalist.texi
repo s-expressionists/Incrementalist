@@ -43,6 +43,7 @@ This manual is for @sysname{} version @sysversion{}.
 @menu
 * Introduction::
 * Representation of the Editor Buffer::
+* Parsing using the @commonlisp{} Reader::
 * Incremental Parsing::
 * Concept index::
 * Function and macro and variable and type index::
@@ -51,6 +52,8 @@ This manual is for @sysname{} version @sysversion{}.
 @include chapter-intro.texi
 
 @include chapter-buffer-representation.texi
+
+@include chapter-reader.texi
 
 @include chapter-incremental-parsing.texi
 

@@ -61,18 +61,7 @@
    (%indentation :initform nil :initarg :indentation :accessor indentation)))
 
 (defclass wad (basic-wad)
-  (;; This slot contains the column number of the leftmost known
-   ;; non-whitespace character of the wad.  It may not be entirely
-   ;; correct if a reader macro reads character by character and such
-   ;; characters happen to be outside the part that is returned by a
-   ;; call to READ.  But we use this information only for
-   ;; highlighting, and selection.  Not for drawing.
-   (%min-column-number :initarg :min-column-number :reader min-column-number)
-   ;; This slot contains the column number of the rightmost known
-   ;; non-whitespace character of the wad.  It may not be entirely
-   ;; correct for the same reason as the preceding slot.
-   (%max-column-number :initarg :max-column-number :reader max-column-number)
-   ;; This slot contains the maximum line width of any line that is
+  (;; This slot contains the maximum line width of any line that is
    ;; part of the wad.
    (%max-line-width :initarg :max-line-width :reader max-line-width)
    ;; This slot contains TRUE if and only if the START-LINE slot is
@@ -99,18 +88,6 @@
 
 (defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))
-
-(defmethod initialize-instance :after ((object wad) &key)
-  (let* ((start-column (start-column object))
-         (end-column   (end-column object))
-         (min-column   (reduce #'min (children object)
-                               :initial-value (min start-column end-column)
-                               :key #'min-column-number))
-         (max-column   (reduce #'max (children object)
-                               :initial-value (max start-column end-column)
-                               :key #'max-column-number)))
-    (reinitialize-instance object :min-column-number min-column
-                                  :max-column-number max-column)))
 
 (defun print-wad-position (wad stream)
   (format stream "~:[abs~;rel~]:~d,~d -> ~d,~d"

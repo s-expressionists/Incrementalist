@@ -36,8 +36,6 @@
    #:end-line
    #:start-column
    #:end-column
-   #:min-column-number
-   #:max-column-number
    #:children
    #:expression
    #:token

@@ -1,15 +1,13 @@
 (cl:in-package #:incrementalist)
 
-(defun make-error-wad (condition start-line start-column height width line-width)
+(defun make-error-wad (condition start-line start-column height width)
   (let ((end-column (+ start-column width)))
     (make-instance 'error-wad :cache          *cache*
+                              :relative-p     nil
                               :start-line     start-line
                               :start-column   start-column
                               :height         height
                               :end-column     end-column
-                              :max-line-width line-width
-                              :relative-p     nil
-                              :children       '()
                               :condition      condition)))
 
 ;;; PARSE-AND-CACHE collects Eclector errors in *ERRORS* during
@@ -25,11 +23,9 @@
           (lambda (condition)
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
-              (let* ((line-width   (line-length (cache analyzer)
-                                                (line-number analyzer)))
-                     (start-column (max 0 (+ column (eclector.base:position-offset condition))))
+              (let* ((start-column (max 0 (+ column (eclector.base:position-offset condition))))
                      (width        (eclector.base:range-length condition)))
-                (push (make-error-wad condition line start-column 0 width line-width)
+                (push (make-error-wad condition line start-column 0 width)
                       *errors*)))
             (eclector.reader:recover))))
      ,@body))

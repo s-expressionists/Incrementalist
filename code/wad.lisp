@@ -67,7 +67,7 @@
    ;; This slot contains TRUE if and only if the START-LINE slot is
    ;; relative to some other line.
    (%relative-p :initarg :relative-p :accessor relative-p)
-   (%children :initform '() :initarg :children :accessor children)))
+   (%children :initform '() :initarg :children :reader children)))
 
 (defun set-family-relations-of-children (wad)
   (let* ((children (children wad))
@@ -81,10 +81,6 @@
             repeat (1- length)
             do (setf (right-sibling left) right
                      (left-sibling right) left)))))
-
-(defmethod (setf children) :after (children (wad wad))
-  (declare (ignorable children))
-  (set-family-relations-of-children wad))
 
 (defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))

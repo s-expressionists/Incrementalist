@@ -51,75 +51,73 @@
 
 (defgeneric pop-from-suffix (cache)
   (:method ((cache cache))
-    (with-accessors ((suffix suffix)
-                     (suffix-width suffix-width))
-        cache
-      (assert (not (null suffix)))
-      (pop suffix-width)
-      (let ((result (pop suffix)))
-        (unless (null suffix)
-          (relative-to-absolute (first suffix) (start-line result)))
-        (link-siblings (first (prefix cache)) (first suffix))
-        result))))
+    (let* ((old-suffix     (suffix cache))
+           (old-suffix-top (first old-suffix))
+           (new-suffix     (rest old-suffix))
+           (new-suffix-top (first new-suffix)))
+      (assert (not (null old-suffix)))
+      (pop (suffix-width cache))
+      (setf (suffix cache) new-suffix)
+      (unless (null new-suffix-top)
+        (relative-to-absolute new-suffix-top (start-line old-suffix-top)))
+      (link-siblings (first (prefix cache)) new-suffix-top)
+      old-suffix-top)))
 
 (defgeneric push-to-suffix (cache wad)
   (:method ((cache cache) (wad wad))
     (assert (not (relative-p wad)))
-    (with-accessors ((suffix suffix)
-                     (prefix prefix)
-                     (suffix-width suffix-width)
-                     (line-count line-count))
-        cache
-      (if (null suffix)
+    (let* ((old-suffix       (suffix cache))
+           (old-suffix-top   (first old-suffix))
+           (new-suffix       (list* wad old-suffix))
+           (old-suffix-width (suffix-width cache))
+           (new-width        (max-line-width wad)))
+      (if (null old-suffix-top)
+          (alexandria:maxf
+           new-width
+           (max-line-length cache (1+ (end-line wad)) (1- (line-count cache))))
           (progn
-            (setf (right-sibling wad) nil)
-            (push (max (max-line-length
-                        cache (1+ (end-line wad)) (1- line-count))
-                       (max-line-width wad))
-                  suffix-width))
-          (let ((old-suffix-top (first suffix)))
-            (link-siblings wad old-suffix-top)
             (absolute-to-relative old-suffix-top (start-line wad))
-            (push (max (first suffix-width)
-                       (max-line-length
-                        cache
-                        (1+ (end-line wad))
-                        (1- (start-line old-suffix-top)))
-                       (max-line-width wad))
-                  suffix-width)))
-      (push wad suffix)
-      (link-siblings (first prefix) wad))))
+            (alexandria:maxf
+             new-width
+             (first old-suffix-width)
+             (max-line-length
+              cache (1+ (end-line wad)) (1- (start-line old-suffix-top))))))
+      (setf (suffix-width cache) (list* new-width old-suffix-width)
+            (suffix cache)       new-suffix)
+      (link-siblings (first (prefix cache)) wad)
+      (link-siblings wad                    old-suffix-top))))
 
 (defgeneric pop-from-prefix (cache)
   (:method ((cache cache))
-    (pop (prefix-width cache))
-    (let ((result (pop (prefix cache))))
-      (link-siblings (first (prefix cache)) (first (suffix cache)))
-      result)))
+    (let* ((old-prefix     (prefix cache))
+           (old-prefix-top (first old-prefix))
+           (new-prefix     (rest old-prefix))
+           (new-prefix-top (first new-prefix)))
+      (pop (prefix-width cache))
+      (setf (prefix cache) new-prefix)
+      (link-siblings new-prefix-top (first (suffix cache)))
+      old-prefix-top)))
 
 (defgeneric push-to-prefix (cache wad)
   (:method ((cache cache) (wad wad))
-    (with-accessors ((suffix suffix)
-                     (prefix prefix)
-                     (prefix-width prefix-width))
-        cache
-      (if (null prefix)
-          (progn
-            (setf (left-sibling wad) nil)
-            (push (max (max-line-length cache 0 (1- (start-line wad)))
-                       (max-line-width wad))
-                  prefix-width))
-          (let ((old-prefix-top (first prefix)))
-            (link-siblings old-prefix-top wad)
-            (push (max (first prefix-width)
-                       (max-line-length
-                        cache
-                        (1+ (end-line old-prefix-top))
-                        (1- (start-line wad)))
-                       (max-line-width wad))
-                  prefix-width)))
-      (push wad prefix)
-      (link-siblings wad (first (suffix cache)))
+    (let* ((old-prefix       (prefix cache))
+           (old-prefix-top   (first old-prefix))
+           (new-prefix       (list* wad old-prefix))
+           (old-prefix-width (prefix-width cache))
+           (old-width        (first old-prefix-width))
+           (new-width        (max-line-width wad)))
+      (if (null old-prefix-top)
+          (alexandria:maxf
+           new-width (max-line-length cache 0 (1- (start-line wad))))
+          (alexandria:maxf
+           new-width
+           old-width
+           (max-line-length
+            cache (1+ (end-line old-prefix-top)) (1- (start-line wad)))))
+      (setf (prefix-width cache) (list* new-width old-prefix-width)
+            (prefix       cache) new-prefix)
+      (link-siblings old-prefix-top wad)
+      (link-siblings wad            (first (suffix cache)))
       (compute-absolute-line-numbers wad))))
 
 (defgeneric suffix-to-prefix (cache)
@@ -144,9 +142,11 @@
             (start-line (first suffix))))))
 
 (defun total-width (cache)
-  (max (if (null (prefix-width cache)) 0 (first (prefix-width cache)))
-       (max-line-length cache (gap-start cache) (gap-end cache))
-       (if (null (suffix-width cache)) 0 (first (suffix-width cache)))))
+  (let ((prefix-width (prefix-width cache))
+        (suffix-width (suffix-width cache)))
+    (max (if (null prefix-width) 0 (first prefix-width))
+         (max-line-length cache (gap-start cache) (gap-end cache))
+         (if (null suffix-width) 0 (first suffix-width)))))
 
 (defun pop-from-worklist (cache)
   (pop (worklist cache)))
@@ -173,25 +173,26 @@
 (defun ensure-update-initialized (cache line-counter)
   ;; As long as there are wads on the prefix that do not completely
   ;; precede the number of skipped lines, move them to the suffix.
-  (loop while (and (not (null (prefix cache)))
-                   (>= (end-line (first (prefix cache)))
-                       line-counter))
+  (loop for prefix = (prefix cache)
+        while (and (not (null prefix))
+                   (>= (end-line (first prefix)) line-counter))
         do (prefix-to-suffix cache))
   ;; As long as there are wads on the suffix that completely precede
   ;; the number of skipped lines, move them to the prefix.
-  (loop while (and (not (null (suffix cache)))
-                   (< (end-line (first (suffix cache)))
-                      line-counter))
+  (loop for suffix = (suffix cache)
+        while (and (not (null suffix))
+                   (< (end-line (first suffix)) line-counter))
         do (suffix-to-prefix cache)))
 
 ;;; Return true if and only if either there are no more wads, or the
 ;;; first wad starts at a line that is strictly greater than
 ;;; LINE-NUMBER.
 (defun next-wad-is-beyond-line-p (cache line-number)
-  (with-accessors ((suffix suffix) (worklist worklist)) cache
+  (let ((worklist (worklist cache)))
     (if (null worklist)
-        (or (null suffix)
-            (> (start-line (first suffix)) line-number))
+        (let ((suffix (suffix cache)))
+          (or (null suffix)
+              (> (start-line (first suffix)) line-number)))
         (> (start-line (first worklist)) line-number))))
 
 ;;; Return true if and only if LINE-NUMBER is one of the lines of WAD.
@@ -251,61 +252,60 @@
 ;;; parts of the cache that are no longer valid, while keeping parse
 ;;; results that are not affected by such modifications.
 (defun scavenge (cache)
-  (let ((buffer (cluffer-buffer cache))
+  (let ((buffer              (cluffer-buffer cache))
+        (lines               (lines cache))
+        (cluffer-lines       (cluffer-lines cache))
         (cache-initialized-p nil)
-        (line-counter 0))
-    (with-accessors ((lines lines)
-                     (cluffer-lines cluffer-lines))
-        cache
-      (labels ((ensure-cache-initialized ()
-                 (unless cache-initialized-p
-                   (setf cache-initialized-p t)
-                   (ensure-update-initialized cache line-counter)))
-               ;; Line deletion
-               (delete-cache-line ()
-                 (flx:delete* lines line-counter)
-                 (flx:delete* cluffer-lines line-counter)
-                 (handle-deleted-line cache line-counter))
-               (remove-deleted-lines (line)
-                 ;; Look at cache lines starting at LINE-COUNTER. Delete
-                 ;; all cache lines that do not have LINE as their
-                 ;; associated cluffer line. Those lines correspond to
-                 ;; deleted lines between the previously processed line
-                 ;; and LINE.
-                 (loop for cluffer-line
-                         = (flx:element* cluffer-lines line-counter)
-                       until (eq line cluffer-line)
-                       do (delete-cache-line)))
-               ;; Handlers for Cluffer's update protocol events.
-               (skip (count)
-                 (incf line-counter count))
-               (modify (line)
-                 (ensure-cache-initialized)
-                 (remove-deleted-lines line)
-                 (handle-modified-line cache line-counter)
-                 (incf line-counter))
-               (create (line)
-                 (ensure-cache-initialized)
-                 (let ((string (coerce (cluffer:items line) 'string)))
-                   (flx:insert* lines line-counter string)
-                   (flx:insert* cluffer-lines line-counter line))
-                 (handle-inserted-line cache line-counter)
-                 (incf line-counter))
-               (sync (line)
-                 (remove-deleted-lines line)
-                 (incf line-counter)))
-        ;; Run update protocol. The handler functions defined above
-        ;; change the cache lines and the worklist so that they
-        ;; correspond to the new buffer state.
-        (setf (time-stamp cache)
-              (cluffer:update buffer
-                              (time-stamp cache)
-                              #'sync #'skip #'modify #'create))
-        ;; Remove trailing cache lines after the last
-        ;; skipped/modified/... cache line, that no longer correspond
-        ;; to existing lines in the cluffer buffer.
-        (loop while (< line-counter (flx:nb-elements lines))
-              do (delete-cache-line)))))
+        (line-counter        0))
+    (labels ((ensure-cache-initialized ()
+               (unless cache-initialized-p
+                 (setf cache-initialized-p t)
+                 (ensure-update-initialized cache line-counter)))
+             ;; Line deletion
+             (delete-cache-line ()
+               (flx:delete* lines line-counter)
+               (flx:delete* cluffer-lines line-counter)
+               (handle-deleted-line cache line-counter))
+             (remove-deleted-lines (line)
+               ;; Look at cache lines starting at LINE-COUNTER. Delete
+               ;; all cache lines that do not have LINE as their
+               ;; associated cluffer line. Those lines correspond to
+               ;; deleted lines between the previously processed line
+               ;; and LINE.
+               (loop for cluffer-line
+                        = (flx:element* cluffer-lines line-counter)
+                     until (eq line cluffer-line)
+                     do (delete-cache-line)))
+             ;; Handlers for Cluffer's update protocol events.
+             (skip (count)
+               (incf line-counter count))
+             (modify (line)
+               (ensure-cache-initialized)
+               (remove-deleted-lines line)
+               (handle-modified-line cache line-counter)
+               (incf line-counter))
+             (create (line)
+               (ensure-cache-initialized)
+               (let ((string (coerce (cluffer:items line) 'string)))
+                 (flx:insert* lines line-counter string)
+                 (flx:insert* cluffer-lines line-counter line))
+               (handle-inserted-line cache line-counter)
+               (incf line-counter))
+             (sync (line)
+               (remove-deleted-lines line)
+               (incf line-counter)))
+      ;; Run update protocol. The handler functions defined above
+      ;; change the cache lines and the worklist so that they
+      ;; correspond to the new buffer state.
+      (setf (time-stamp cache)
+            (cluffer:update buffer
+                            (time-stamp cache)
+                            #'sync #'skip #'modify #'create))
+      ;; Remove trailing cache lines after the last
+      ;; skipped/modified/... cache line, that no longer correspond
+      ;; to existing lines in the cluffer buffer.
+      (loop while (< line-counter (flx:nb-elements lines))
+            do (delete-cache-line))))
   (finish-scavenge cache))
 
 ;;; Given a cache, return the number of lines contained in the cache.

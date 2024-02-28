@@ -59,6 +59,7 @@
       (let ((result (pop suffix)))
         (unless (null suffix)
           (relative-to-absolute (first suffix) (start-line result)))
+        (link-siblings (first (prefix cache)) (first suffix))
         result))))
 
 (defgeneric push-to-suffix (cache wad)
@@ -77,8 +78,7 @@
                        (max-line-width wad))
                   suffix-width))
           (let ((old-suffix-top (first suffix)))
-            (setf (right-sibling wad)            old-suffix-top
-                  (left-sibling  old-suffix-top) wad)
+            (link-siblings wad old-suffix-top)
             (absolute-to-relative old-suffix-top (start-line wad))
             (push (max (first suffix-width)
                        (max-line-length
@@ -87,17 +87,15 @@
                         (1- (start-line old-suffix-top)))
                        (max-line-width wad))
                   suffix-width)))
-      (if (null prefix)
-          (setf (left-sibling wad) nil)
-          (let ((prefix-top (first prefix)))
-            (setf (left-sibling wad)         prefix-top
-                  (right-sibling prefix-top) wad)))
-      (push wad suffix))))
+      (push wad suffix)
+      (link-siblings (first prefix) wad))))
 
 (defgeneric pop-from-prefix (cache)
   (:method ((cache cache))
     (pop (prefix-width cache))
-    (pop (prefix cache))))
+    (let ((result (pop (prefix cache))))
+      (link-siblings (first (prefix cache)) (first (suffix cache)))
+      result)))
 
 (defgeneric push-to-prefix (cache wad)
   (:method ((cache cache) (wad wad))
@@ -112,8 +110,7 @@
                        (max-line-width wad))
                   prefix-width))
           (let ((old-prefix-top (first prefix)))
-            (setf (left-sibling  wad)            old-prefix-top
-                  (right-sibling old-prefix-top) wad)
+            (link-siblings old-prefix-top wad)
             (push (max (first prefix-width)
                        (max-line-length
                         cache
@@ -121,13 +118,9 @@
                         (1- (start-line wad)))
                        (max-line-width wad))
                   prefix-width)))
-      (if (null suffix)
-          (setf (right-sibling wad) nil)
-          (let ((suffix-top (first suffix)))
-            (setf (right-sibling wad)        suffix-top
-                  (left-sibling  suffix-top) wad)))
-      (compute-absolute-line-numbers wad)
-      (push wad prefix))))
+      (push wad prefix)
+      (link-siblings wad (first (suffix cache)))
+      (compute-absolute-line-numbers wad))))
 
 (defgeneric suffix-to-prefix (cache)
   (:method ((cache cache))

@@ -161,18 +161,24 @@
                     :accessor indentation
                     :initform nil)))
 
+(declaim (inline link-siblings))
+(defun link-siblings (left right)
+  (unless (null left)
+    (setf (right-sibling left) right))
+  (unless (null right)
+    (setf (left-sibling right) left)))
+
 (defun set-family-relations-of-children (wad)
   (let* ((children (children wad))
          (length   (length children)))
     (loop for child in children
           do (setf (parent child) wad))
     (when (plusp length)
-      (setf (left-sibling  (first children))        nil
-            (right-sibling (first (last children))) nil)
+      (link-siblings nil (first children))
+      (link-siblings (first (last children)) nil)
       (loop for (left right) on children
             repeat (1- length)
-            do (setf (right-sibling left) right
-                     (left-sibling right) left)))))
+            do (link-siblings left right)))))
 
 (defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))

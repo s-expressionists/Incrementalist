@@ -130,19 +130,27 @@
   ;; Make sure the wad itself is absolute, so that we need to compute
   ;; the absolute line numbers only of its children.
   (assert (not (relative-p top-level-wad)))
-  (setf (absolute-start-line-number top-level-wad)
-        (start-line top-level-wad))
-  (labels ((compute-line-numbers (relative-wads offset)
-             (loop with base = offset
-                   for wad in relative-wads
-                   for absolute-start-line-number = (+ base (start-line wad))
-                   do (setf (absolute-start-line-number wad)
-                            absolute-start-line-number)
-                      (setf base absolute-start-line-number)
-                      (compute-line-numbers
-                       (children wad) absolute-start-line-number))))
-    (compute-line-numbers
-     (children top-level-wad) (start-line top-level-wad))))
+  (labels ((process-children (parent offset)
+             (let ((base offset))
+               (flet ((process-child (child)
+                        (assert (relative-p child))
+                        (let* ((start-line          (start-line child))
+                               (absolute-start-line (+ base start-line)))
+                          (declare (type alexandria:array-index
+                                         start-line absolute-start-line))
+                          (setf (absolute-start-line-number child)
+                                absolute-start-line)
+                          (process-wad child absolute-start-line)
+                          (setf base absolute-start-line))))
+                 (declare (dynamic-extent #'process-child))
+                 (mapc #'process-child (children parent)))))
+           (process-wad (wad wad-start-line)
+             (process-children wad wad-start-line)))
+    (let ((start-line (start-line top-level-wad)))
+      (declare (type alexandria:array-index start-line))
+      (setf (absolute-start-line-number top-level-wad) start-line)
+      (process-wad top-level-wad start-line)))
+  top-level-wad)
 
 (defmethod items ((wad basic-wad))
   (declare (optimize speed))

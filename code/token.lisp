@@ -19,13 +19,21 @@
                       :type     string
                       :reader   name)))
 
+(defun maybe-truncate-string (thing &key (limit 32))
+  (cond ((not (stringp thing))
+         thing)
+        ((<= (length thing) limit)
+         thing)
+        (t
+         (concatenate 'string (subseq thing 0 (1- limit)) "…"))))
+
 (defmethod print-object ((object symbol-token) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "[~A]~:[~;:~]~:[~;:~]~A"
-            (package-name object)
+            (maybe-truncate-string (package-name object))
             (package-marker-1 object)
             (package-marker-2 object)
-            (name object))))
+            (maybe-truncate-string (name object)))))
 
 (defclass non-existing-package-symbol-token (symbol-token)
   ())

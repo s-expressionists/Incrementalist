@@ -34,6 +34,8 @@
 
 (defgeneric end-column (wad))
 
+(defgeneric items (wad))
+
 ;;; Wad protocol
 ;;; extends basic wad protocol
 

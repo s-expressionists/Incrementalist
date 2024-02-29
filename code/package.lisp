@@ -40,7 +40,7 @@
    #:end-line
    #:start-column
    #:end-column
-   ;; #:items not implemented
+   #:items
 
    #:indentation ; wad protocol
 

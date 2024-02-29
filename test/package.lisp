@@ -7,6 +7,7 @@
 
   (:import-from #:fiveam
    #:def-suite
+   #:def-suite*
    #:in-suite
    #:test
    #:is

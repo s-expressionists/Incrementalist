@@ -50,6 +50,8 @@
                  :components ((:file "package")
                               ;; Test utilities
                               (:file "utilities")
+                              ;; Model
+                              (:file "wad")
                               ;; Tests
                               (:file "test"))))
 

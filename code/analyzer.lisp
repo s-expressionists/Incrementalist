@@ -1,8 +1,29 @@
 (cl:in-package #:incrementalist)
 
 (defclass analyzer (buffer-stream)
-  ((%buffer :initarg :buffer :reader buffer)
-   (%cache :initarg :cache :reader cache)))
+  ((%buffer :initarg :buffer
+            :reader  buffer)
+   (%cache  :initarg :cache
+            :reader  cache))
+  (:default-initargs
+   :buffer (alexandria:required-argument :buffer)
+   :lines  nil))
+
+(defmethod shared-initialize :around ((instance   analyzer)
+                                      (slot-names t)
+                                      &rest args
+                                      &key (buffer nil buffer-supplied-p)
+                                           (cache  nil cache-supplied-p))
+  (cond ((not buffer-supplied-p)
+         (call-next-method))
+        (cache-supplied-p
+         (let ((lines (lines cache)))
+           (apply #'call-next-method instance slot-names :lines lines args)))
+        (t
+         (let* ((cache (make-instance 'cache :cluffer-buffer buffer))
+                (lines (lines cache)))
+           (apply #'call-next-method instance slot-names
+                  :cache cache :lines lines args)))))
 
 (defmethod position< ((left basic-wad) (right analyzer))
   (%position< (start-line left)   (start-column left)

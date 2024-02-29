@@ -13,10 +13,8 @@
 
 (defun prepared-analyzer (buffer-content)
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
-    (let* ((cache    (make-instance 'inc::cache :cluffer-buffer buffer))
-           (analyzer (make-instance 'inc:analyzer :buffer buffer
-                                                  :lines  (inc::lines cache)
-                                                  :cache  cache)))
+    (let* ((analyzer (make-instance 'inc:analyzer :buffer buffer))
+           (cache    (inc:cache analyzer)))
       (values analyzer cache buffer cursor))))
 
 (defun parse-result (buffer-content)

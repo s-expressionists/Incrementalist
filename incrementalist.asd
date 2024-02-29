@@ -16,6 +16,7 @@
                  :serial      t
                  :components ((:file "package")
                               (:file "utilities")
+                              (:file "protocol")
                               ;; Model
                               (:file "token")
                               (:file "wad")

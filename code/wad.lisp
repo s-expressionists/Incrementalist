@@ -86,10 +86,9 @@
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)))
 
-(defgeneric end-line (wad)
-  (:method ((wad basic-wad))
-    (assert (not (relative-p wad)))
-    (+ (start-line wad) (height wad))))
+(defmethod end-line ((wad basic-wad))
+  (assert (not (relative-p wad)))
+  (+ (start-line wad) (height wad)))
 
 (defgeneric relative-to-absolute (wad offset)
   (:method ((p basic-wad) offset)

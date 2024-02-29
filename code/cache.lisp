@@ -308,22 +308,11 @@
             do (delete-cache-line))))
   (finish-scavenge cache))
 
-;;; Given a cache, return the number of lines contained in the cache.
-(defgeneric line-count (cache))
-
 (defmethod line-count ((cache cache))
   (flx:nb-elements (lines cache)))
 
-;;; Given a cache and a line number, return the number of items in the
-;;; line with that line number.
-(defgeneric line-length (cache line-number))
-
 (defmethod line-length ((cache cache) line-number)
   (length (flx:element* (lines cache) line-number)))
-
-;;; Given a cache and a line number, return the contents of that line
-;;; as a vector if items.
-(defgeneric line-contents (cache line-number))
 
 (defmethod line-contents ((cache cache) line-number)
   (flx:element* (lines cache) line-number))

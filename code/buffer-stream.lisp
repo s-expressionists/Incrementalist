@@ -1,7 +1,7 @@
 (cl:in-package #:incrementalist)
 
 ;;; A class for presenting a snapshot of the contents of a Cluffer
-;;; buffer a (character input) stream.
+;;; buffer as a (character input) stream.
 ;;;
 ;;; The operations `cl:file-position' (reading and writing) are not
 ;;; supported at the moment.
@@ -77,7 +77,6 @@
            #\Newline))))
 
 (defmethod stream:stream-read-char ((stream buffer-stream))
-  (declare (optimize speed))
   (let* (line-number
          (item-number   (item-number stream))
          (end-of-line-p (= item-number (the alexandria:array-index

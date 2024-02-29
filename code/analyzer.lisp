@@ -42,25 +42,34 @@
 ;;; return that wad.  If there is no such parse result, then return
 ;;; NIL.  If there are cached wads that entirely precede the current
 ;;; stream position, then remove them.
+;;;
+;;; If we return a wad at all, it has the following properties:
+;;; 1. it is absolute
+;;  2. all its descendants are relative
+;;; 3. the absolute line start line number are up-to-date for the
+;;;    returned wad and all its descendants
 (defun cached-wad (analyzer)
   (let ((cache (cache analyzer)))
     (with-accessors ((residue residue) (suffix suffix)) cache
       (loop while (and (not (null residue))
                        (position< (first residue) analyzer))
             do (pop-from-residue cache))
-      (if (not (null residue))
-          (if (position= (first residue) analyzer)
-              (first residue)
-              nil)
-          (progn
-            (loop while (and (not (null suffix))
-                             (position< (first suffix) analyzer))
-                  do (pop-from-suffix cache))
-            (if (not (null suffix))
-                (if (position= (first suffix) analyzer)
-                    (pop-from-suffix cache)
-                    nil)
-                nil))))))
+      (let ((result (if (not (null residue))
+                        (if (position= (first residue) analyzer)
+                            (first residue)
+                            nil)
+                        (progn
+                          (loop while (and (not (null suffix))
+                                           (position< (first suffix) analyzer))
+                                do (pop-from-suffix cache))
+                          (if (not (null suffix))
+                              (if (position= (first suffix) analyzer)
+                                  (pop-from-suffix cache)
+                                  nil)
+                              nil)))))
+        (if (null result)
+            result
+            (compute-absolute-line-numbers result))))))
 
 (defun advance-stream-to-beyond-wad (analyzer wad)
   (setf (line-number analyzer) (end-line wad)

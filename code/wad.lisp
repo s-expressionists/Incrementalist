@@ -184,16 +184,17 @@
     (setf (left-sibling right) left)))
 
 (defun set-family-relations-of-children (wad)
-  (let* ((children (children wad))
-         (length   (length children)))
-    (loop for child in children
-          do (setf (parent child) wad))
-    (when (plusp length)
-      (link-siblings nil (first children))
-      (link-siblings (first (last children)) nil)
-      (loop for (left right) on children
-            repeat (1- length)
-            do (link-siblings left right)))))
+  (let ((previous nil))
+    (flet ((adjust-child (child)
+             (let ((parent (parent child)))
+               (if (null parent)
+                   (setf (parent child) wad)
+                   (assert (eq parent wad)))
+               (link-siblings previous child)
+               (setf previous child))))
+      (declare (dynamic-extent #'adjust-child))
+      (mapc #'adjust-child (children wad))
+      (link-siblings previous nil))))
 
 (defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
   (set-family-relations-of-children wad))

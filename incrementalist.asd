@@ -14,7 +14,7 @@
 
   :components  ((:module "code"
                  :serial      t
-                 :components ((:file "packages")
+                 :components ((:file "package")
                               (:file "utilities")
                               ;; Model
                               (:file "token")

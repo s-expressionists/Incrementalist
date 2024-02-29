@@ -323,10 +323,10 @@
 
 (defclass error-wad (basic-wad)
   ((%condition :initarg :condition
-               :reader  condition*)))
+               :reader  condition)))
 
 (defmethod print-object ((object error-wad) stream)
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)
     (format stream " condition: ~a"
-            (class-name (class-of (condition* object))))))
+            (class-name (class-of (condition object))))))

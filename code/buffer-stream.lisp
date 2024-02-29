@@ -12,7 +12,7 @@
 ;;; and `%item-number' slots.  The remaining slots cache information
 ;;; that would be too costly to compute or retrieve in every stream
 ;;; operation.
-(defclass buffer-stream (gs:fundamental-character-input-stream)
+(defclass buffer-stream (stream:fundamental-character-input-stream)
   ((%lines       :initarg  :lines
                  :reader   lines)
    ;; Current position
@@ -61,7 +61,7 @@
 
 ;;; Gray stream protocol
 
-(defmethod gs:stream-peek-char ((stream buffer-stream))
+(defmethod stream:stream-peek-char ((stream buffer-stream))
   (let* ((item-number   (item-number stream))
          (end-of-line-p (= item-number (the alexandria:array-index
                                             (%item-count stream)))))
@@ -76,7 +76,7 @@
           (t
            #\Newline))))
 
-(defmethod gs:stream-read-char ((stream buffer-stream))
+(defmethod stream:stream-read-char ((stream buffer-stream))
   (declare (optimize speed))
   (let* (line-number
          (item-number   (item-number stream))
@@ -98,7 +98,7 @@
              (setf (line-number stream) (1+ line-number) ; updates cache
                    (item-number stream) 0))))))
 
-(defmethod gs:stream-unread-char ((stream buffer-stream) (char t))
+(defmethod stream:stream-unread-char ((stream buffer-stream) (char t))
   (let* (line-number
          (item-number         (item-number stream))
          (beginning-of-line-p (zerop item-number)))

@@ -14,12 +14,12 @@
 (defun prepared-analyzer (buffer-content)
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((cache    (make-instance 'inc::cache :cluffer-buffer buffer))
-           (analyzer (make-instance 'inc::analyzer :buffer buffer
-                                                   :lines  (inc:lines cache)
-                                                   :cache  cache)))
+           (analyzer (make-instance 'inc:analyzer :buffer buffer
+                                                  :lines  (inc::lines cache)
+                                                  :cache  cache)))
       (values analyzer cache buffer cursor))))
 
 (defun parse-result (buffer-content)
   (multiple-value-bind (analyzer cache) (prepared-analyzer buffer-content)
-    (inc::update-cache analyzer)
+    (inc:update-cache analyzer)
     (append (reverse (inc::prefix cache)) (inc::suffix cache))))

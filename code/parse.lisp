@@ -72,7 +72,7 @@
                                          t)
                                         (t
                                          (warn "Dropping ~A (~A)~&  parent         ~A~&  previous child ~A"
-                                               child (class-name (class-of (condition* child)))
+                                               child (class-name (class-of (condition child)))
                                                wad
                                                last-child)
                                          nil))

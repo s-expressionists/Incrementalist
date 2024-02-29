@@ -58,7 +58,7 @@
                   do (pop-from-suffix cache))
             (if (not (null suffix))
                 (if (position= (first suffix) analyzer)
-                    (first suffix)
+                    (pop-from-suffix cache)
                     nil)
                 nil))))))
 

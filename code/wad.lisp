@@ -34,12 +34,13 @@
    (%relative-p   :initarg :relative-p
                   :accessor relative-p)
    ;; This slot contains the absolute start line of the wad.  Its
-   ;; contents is valid only when the wad is on the prefix, and when
-   ;; the wad is the top-level wad which is the first on the suffix.
-   ;; With a wad in a different place, this slot may contain some
-   ;; obsolete value.  We define a :BEFORE method on the slot reader
-   ;; so that the wad of the argument will always be on the prefix
-   ;; when the absolute line number is asked for.
+   ;; contents is valid only in certain situations, for example, when
+   ;; the wad is on the prefix, and when the wad is the top-level wad
+   ;; which is the first on the suffix.  With a wad in a different
+   ;; place, this slot may contain some obsolete value.  When
+   ;; assertions are enabled, we define a :BEFORE method on the slot
+   ;; reader to detect some of those situations and prevent the value
+   ;; from being read in those cases.
    (%absolute-start-line-number :initarg  :absolute-start-line-number
                                 :type     (integer 0)
                                 :accessor absolute-start-line-number)

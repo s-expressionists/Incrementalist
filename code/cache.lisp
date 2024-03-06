@@ -43,6 +43,32 @@
    ;; of the suffix.
    (%suffix-width :initform '() :accessor suffix-width)))
 
+(defmethod print-object ((object cache) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~:D line~:P → prefix ~:D suffix ~:D"
+            (flx:nb-elements (lines object))
+            (length (prefix object))
+            (length (suffix object)))))
+
+(defmethod describe-object ((object cache) stream)
+  (princ object stream)
+  (let* ((lines  (lines object))
+         (lines  (loop for i below (flx:nb-elements lines)
+                       collect (list i (flx:element* lines i))))
+         (prefix (reverse (prefix object)))
+         (suffix (suffix object)))
+   (format stream "~2%~
+                   ~@<Lines (~:D)~@:_~
+                   ~<  ~@;~:[«no wads»~;~:*~{~{~4D│~A│~}~^~@:_~}~]~:>~@:_~
+                   Prefix (~:D wad~:P)~@:_~
+                   ~2@T~<~:[«no wads»~;~:*~{~A~^~@:_~}~]~:>~@:_~
+                   Suffix (~:D wad~:P)~@:_~
+                   ~2@T~<~:[«no wads»~;~:*~{~A~^~@:_~}~]~:>~@:_~
+                   ~:>"
+           (length lines) (list lines)
+           (length prefix) (list prefix)
+           (length suffix) (list suffix))))
+
 ;;; Given a cache and an interval of lines, return the maxium length
 ;;; of any lines in the interval.
 (defun max-line-length (cache first-line-number last-line-number)

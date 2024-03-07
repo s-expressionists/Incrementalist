@@ -1,12 +1,5 @@
 (cl:in-package #:incrementalist)
 
-;;; This function is required because semicolon comment wads actually
-;;; have a height of 1.
-(defun effective-height (wad)
-  (if (typep wad 'semicolon-comment-wad)
-      0
-      (height wad)))
-
 ;;; This function is used by the INDENT-LINE command.  Given a line
 ;;; number, it returns a wad that starts on a particular line number,
 ;;; such that no other wad starts to the left of it on the same line.
@@ -23,19 +16,16 @@
       wad
       (loop for child in (children wad)
             for absolute-line-number = start-line-number
-              then (if (relative-p child)
-                       (+ absolute-line-number (start-line child))
-                       (start-line child))
+              then (+ absolute-line-number (start-line child))
             when (<= absolute-line-number
                      line-number
-                     (+ absolute-line-number (effective-height child)))
+                     (+ absolute-line-number (height child)))
               return (search-wad child absolute-line-number line-number))))
 
 (defun find-wad-beginning-line (cache line-number)
   (loop until (null (suffix cache))
         do (suffix-to-prefix cache))
   (loop for wad in (reverse (prefix cache))
-        when (<= (start-line wad)
-                 line-number
-                 (+ (start-line wad) (effective-height wad)))
-          return (search-wad wad (start-line wad) line-number)))
+        for start-line = (start-line wad)
+        when (<= start-line line-number (+ start-line (height wad)))
+          return (search-wad wad start-line line-number)))

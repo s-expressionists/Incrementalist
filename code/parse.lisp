@@ -87,9 +87,8 @@
             ;; error-wad) since the ADVANCE-STREAM-TO-BEYOND-WAD would
             ;; not advance in that case and the read loop would not
             ;; make any progress.
-            (when (and (= (start-line cached) (end-line cached))
-                       (= (start-column cached) (end-column cached)))
-              t))
+            (and (= (start-line cached) (end-line cached))
+                 (= (start-column cached) (end-column cached))))
         ;; Nothing has been cached, so call
         ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and
         ;; integrate them into the wad tree.
@@ -114,11 +113,12 @@
 (defun parse-and-cache (analyzer client)
   ;; Use ECLECTOR.READER:READ-MAYBE-NOTHING to read either a single
   ;; skipped input or an object. Both are pushed into the prefix of
-  ;; the FOLIO-STREAM. For any error during parsing,
-  ;; WITH-ERROR-RECORDING creates an ERROR-WAD records it in *ERRORS*,
-  ;; then asks Eclector to perform the appropriate recovery. The
-  ;; READ-MAYBE-NOTHING method takes care of integrating the collected
-  ;; ERROR-WADs into the wad tree.
+  ;; the cache that is associated with ANALYZER.
+  ;;
+  ;; For any errors during parsing, WITH-ERROR-RECORDING creates an
+  ;; ERROR-WAD records it in *ERRORS*, then asks Eclector to perform
+  ;; the appropriate recovery. The READ-MAYBE-NOTHING method takes
+  ;; care of integrating the collected ERROR-WADs into the wad tree.
   (multiple-value-bind (object kind wad)
       (with-error-recording ()
         (eclector.reader:read-maybe-nothing client analyzer nil nil))

@@ -127,6 +127,7 @@
            (old-prefix-top (first old-prefix))
            (new-prefix     (rest old-prefix))
            (new-prefix-top (first new-prefix)))
+      (assert (not (null old-prefix)))
       (pop (prefix-width cache))
       (setf (prefix cache) new-prefix)
       (link-siblings new-prefix-top (first (suffix cache)))
@@ -160,7 +161,6 @@
 
 (defgeneric prefix-to-suffix (cache)
   (:method ((cache cache))
-    (assert (not (null (prefix cache))))
     (push-to-suffix cache (pop-from-prefix cache))))
 
 (defun gap-start (cache)
@@ -223,11 +223,11 @@
 ;;; LINE-NUMBER.
 (defun next-wad-is-beyond-line-p (cache line-number)
   (let ((worklist (worklist cache)))
-    (if (null worklist)
+    (if (not (null worklist))
+        (> (start-line (first worklist)) line-number)
         (let ((suffix (suffix cache)))
           (or (null suffix)
-              (> (start-line (first suffix)) line-number)))
-        (> (start-line (first worklist)) line-number))))
+              (> (start-line (first suffix)) line-number))))))
 
 ;;; Return true if and only if LINE-NUMBER is one of the lines of WAD.
 ;;; The START-LINE of WAD is an absolute line number.
@@ -241,8 +241,8 @@
 (defun adjust-worklist-and-suffix (cache increment)
   (loop for wad in (worklist cache)
         do (incf (start-line wad) increment))
-  (unless (null (suffix cache))
-    (incf (start-line (first (suffix cache))) increment)))
+  (alexandria:when-let ((suffix (suffix cache)))
+    (incf (start-line (first suffix)) increment)))
 
 ;;; If the worklist is empty then move a wad from the suffix to the
 ;;; worklist (in that case, it is known that the suffix is not empty).
@@ -256,14 +256,13 @@
 ;;; moved to the residue), or it straddles the line with that line
 ;;; number, so that it must be taken apart.
 (defun process-next-wad (cache line-number)
-  (with-accessors ((worklist worklist)) cache
-    (ensure-worklist-not-empty cache)
-    (let ((wad (pop-from-worklist cache)))
-      (if (line-is-inside-wad-p wad line-number)
-          (let ((children (children wad)))
-            (make-absolute children (start-line wad))
-            (setf worklist (append children worklist)))
-          (push-to-residue cache wad)))))
+  (ensure-worklist-not-empty cache)
+  (let ((wad (pop-from-worklist cache)))
+    (if (line-is-inside-wad-p wad line-number)
+        (let ((children (children wad)))
+          (make-absolute children (start-line wad))
+          (setf (worklist cache) (append children (worklist cache))))
+        (push-to-residue cache wad))))
 
 (defun handle-modified-line (cache line-number)
   (let* ((cluffer-line (flx:element* (cluffer-lines cache) line-number))

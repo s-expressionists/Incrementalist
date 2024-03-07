@@ -28,7 +28,8 @@
           do (check-wad child wad))))
 
 (defun check-wad-graph (cache)
-  (with-accessors ((prefix prefix) (suffix suffix)) cache
+  (let ((prefix (prefix cache))
+        (suffix (suffix cache)))
     (unless (null prefix)
       (unless (null (left-sibling (first (last prefix))))
         (report "b: Left sibling of last (~s) is ~s rather than NIL.~s"

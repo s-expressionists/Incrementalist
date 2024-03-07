@@ -154,8 +154,7 @@
   top-level-wad)
 
 (defmethod items ((wad basic-wad))
-  (declare (optimize speed))
-  (with-output-to-string (stream)     ; assume character items for now
+  (with-output-to-string (stream) ; assume character items for now
     (loop with cache                                     =    (cache wad)
           with start-line of-type alexandria:array-index =    (absolute-start-line wad)
           for i           of-type (or (eql -1) alexandria:array-index) from (height wad) downto 0
@@ -167,7 +166,7 @@
                                                                   (length line))
           do (write-string line stream :start start-column :end end-column)
           unless (zerop i)
-          do (write-char #\Newline stream))))
+            do (write-char #\Newline stream))))
 
 (defclass wad (family-relations-mixin basic-wad)
   (;; This slot contains the maximum line width of any line that is

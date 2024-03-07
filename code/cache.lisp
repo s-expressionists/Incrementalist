@@ -351,11 +351,11 @@
 (defmethod line-contents ((cache cache) line-number)
   (flx:element* (lines cache) line-number))
 
-;;; This :BEFORE method on the slot accessor
-;;; ABSOLUTE-START-LINE-NUMBER makes sure WAD is on the prefix before
-;;; the primary method is called, so that the absolute start line
-;;; numbers are guaranteed to be computed.
-(defmethod absolute-start-line-number :before ((wad wad))
+;;; This :BEFORE method on the slot accessor ABSOLUTE-START-LINE makes
+;;; sure WAD is on the prefix before the primary method is called, so
+;;; that the absolute start line numbers are guaranteed to be
+;;; computed.
+(defmethod absolute-start-line :before ((wad wad))
   ;; First, we find the top-level wad that this wad either is or that
   ;; this wad is a descendant of.
   (let ((top-level-wad wad))

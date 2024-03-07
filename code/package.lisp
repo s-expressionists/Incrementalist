@@ -35,7 +35,7 @@
    #:left-sibling
    #:right-sibling
 
-   #:absolute-start-line-number ; basic wad protocol
+   #:absolute-start-line ; basic wad protocol
    #:height
    #:end-line
    #:start-column

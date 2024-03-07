@@ -27,12 +27,12 @@
 
 (defclass basic-wad ()
   (;; This slot contains the cache that this wad is part of.
-   (%cache        :initarg  :cache
-                  :reader   cache)
+   (%cache               :initarg  :cache
+                         :reader   cache)
    ;; This slot contains TRUE if and only if the START-LINE slot is
    ;; relative to some other line.
-   (%relative-p   :initarg :relative-p
-                  :accessor relative-p)
+   (%relative-p          :initarg :relative-p
+                         :accessor relative-p)
    ;; This slot contains the absolute start line of the wad.  Its
    ;; contents is valid only in certain situations, for example, when
    ;; the wad is on the prefix, and when the wad is the top-level wad
@@ -41,42 +41,42 @@
    ;; assertions are enabled, we define a :BEFORE method on the slot
    ;; reader to detect some of those situations and prevent the value
    ;; from being read in those cases.
-   (%absolute-start-line-number :initarg  :absolute-start-line-number
-                                :type     (integer 0)
-                                :accessor absolute-start-line-number)
+   (%absolute-start-line :initarg  :absolute-start-line
+                         :type     (integer 0)
+                         :accessor absolute-start-line)
    ;; This slot contains information about the start line of the wad.
    ;; Simple applications might always store the absolute line number
    ;; of the first line of the wad in this slot.  Other applications
    ;; might store a line number relative to some other wad.
-   (%start-line   :initarg  :start-line
-                  :type     (integer 0)
-                  :accessor start-line)
+   (%start-line          :initarg  :start-line
+                         :type     (integer 0)
+                         :accessor start-line)
    ;; This slot contains the difference between the start line and the
    ;; end line.  A value of 0 indicates that the wad starts and ends
    ;; in the same line.
-   (%height       :initarg  :height
-                  :type     (integer 0)
-                  :reader   height)
+   (%height              :initarg  :height
+                         :type     (integer 0)
+                         :reader   height)
    ;; This slot contains the absolute column of the first character in
    ;; this wad.  A value of 0 indicates that this wad starts in the
    ;; leftmost position in the source code.
-   (%start-column :initarg  :start-column
-                  :type     (integer 0)
-                  :accessor start-column)
+   (%start-column        :initarg  :start-column
+                         :type     (integer 0)
+                         :accessor start-column)
    ;; This slot contains the absolute column of the last character of
    ;; the wad.  The value of this slot can never be 0.  If the last
    ;; character of the wad is the leftmost character in a line, then
    ;; this slot contains the value 1.
-   (%end-column   :initarg  :end-column
-                  :type     (integer 0) ; TODO despite what the comment says, 0 is used in some cases
-                  :accessor end-column)))
+   (%end-column          :initarg  :end-column
+                         :type     (integer 0) ; TODO despite what the comment says, 0 is used in some cases
+                         :accessor end-column)))
 
 (defun print-wad-position (wad stream)
   (format stream "~:[abs~;rel~]:~d[~d],~d -> ~d,~d"
           (relative-p wad)
           (start-line wad)
-          (when (slot-boundp wad '%absolute-start-line-number)
-            (slot-value wad '%absolute-start-line-number))
+          (when (slot-boundp wad '%absolute-start-line)
+            (slot-value wad '%absolute-start-line))
           (start-column wad)
           (if (relative-p wad)
               (height wad)
@@ -139,7 +139,7 @@
                                (absolute-start-line (+ base start-line)))
                           (declare (type alexandria:array-index
                                          start-line absolute-start-line))
-                          (setf (absolute-start-line-number child)
+                          (setf (absolute-start-line child)
                                 absolute-start-line)
                           (process-wad child absolute-start-line)
                           (setf base absolute-start-line))))
@@ -149,7 +149,7 @@
              (process-children wad wad-start-line)))
     (let ((start-line (start-line top-level-wad)))
       (declare (type alexandria:array-index start-line))
-      (setf (absolute-start-line-number top-level-wad) start-line)
+      (setf (absolute-start-line top-level-wad) start-line)
       (process-wad top-level-wad start-line)))
   top-level-wad)
 
@@ -157,7 +157,7 @@
   (declare (optimize speed))
   (with-output-to-string (stream)     ; assume character items for now
     (loop with cache                                     =    (cache wad)
-          with start-line of-type alexandria:array-index =    (absolute-start-line-number wad)
+          with start-line of-type alexandria:array-index =    (absolute-start-line wad)
           for i           of-type (or (eql -1) alexandria:array-index) from (height wad) downto 0
           for line-number of-type alexandria:array-index from start-line
           for line        of-type simple-string          =    (line-contents cache line-number)

@@ -51,7 +51,15 @@
 
 (defgeneric condition (error-wad))
 
+;;; Associated buffer protocol
+
+;;; Return the Cluffer buffer associated with OBJECT.
+(defgeneric buffer (object))
+
 ;;; Cache protocol
+;;; Extends associated buffer protocol
+
+(defgeneric time-stamp (cache))
 
 ;;; Given a cache, return the number of lines contained in the cache.
 (defgeneric line-count (cache))
@@ -63,3 +71,20 @@
 ;;; Given a cache and a line number, return the contents of that line
 ;;; as a vector if items.
 (defgeneric line-contents (cache line-number))
+
+(defgeneric find-wad-beginning-line (cache line-number))
+
+;;; Return a list of pairs of the form (N . W) where W is a wad, and N
+;;; is the absolute start line number of W, of wads containing the
+;;; position defined by LINE-NUMBER and COLUMN-NUMBER.  The list is
+;;; ordered from the innermost wad containing the position to the
+;;; top-level wad containing the position.  The empty list is returned
+;;; if the position is inside no wad.
+(defgeneric find-wads-containing-position (cache line-number column-number))
+
+;;; Analyzer protocol
+;;; Extends associated buffer protocol
+
+(defgeneric cache (analyzer))
+
+(defgeneric buffer (analyzer))

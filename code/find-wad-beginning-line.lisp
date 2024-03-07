@@ -22,7 +22,7 @@
                      (+ absolute-line-number (height child)))
               return (search-wad child absolute-line-number line-number))))
 
-(defun find-wad-beginning-line (cache line-number)
+(defmethod find-wad-beginning-line ((cache cache) (line-number integer))
   (loop until (null (suffix cache))
         do (suffix-to-prefix cache))
   (loop for wad in (reverse (prefix cache))

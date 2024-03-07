@@ -19,5 +19,5 @@
 
 (defun parse-result (buffer-content)
   (multiple-value-bind (analyzer cache) (prepared-analyzer buffer-content)
-    (inc:update-cache analyzer)
+    (inc:update analyzer)
     (append (reverse (inc::prefix cache)) (inc::suffix cache))))

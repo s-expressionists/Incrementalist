@@ -20,7 +20,7 @@
          (let ((lines (lines cache)))
            (apply #'call-next-method instance slot-names :lines lines args)))
         (t
-         (let* ((cache (make-instance 'cache :cluffer-buffer buffer))
+         (let* ((cache (make-instance 'cache :buffer buffer))
                 (lines (lines cache)))
            (apply #'call-next-method instance slot-names
                   :cache cache :lines lines args)))))

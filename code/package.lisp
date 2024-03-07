@@ -73,8 +73,15 @@
    #:error-wad
    #:condition) ; reader
 
-  ;; Cache protocol
+  ;; Associated buffer protocol
   (:export
+   :buffer)
+
+  ;; Cache protocol
+  ;; Extends associated buffer protocol
+  (:export
+   #:time-stamp
+
    #:line-count ; readers
 
    #:line-length
@@ -86,9 +93,9 @@
    #:find-wads-containing-position)
 
   ;; Analyzer protocol
+  ;; Extends associated buffer protocol
   (:export
    #:analyzer ; class
    #:cache ; readers
-   #:buffer
 
-   #:update-cache))
+   #:update))

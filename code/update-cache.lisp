@@ -1,5 +1,5 @@
 (cl:in-package #:incrementalist)
 
-(defun update-cache (analyzer)
+(defmethod update ((analyzer analyzer))
   (scavenge (cache analyzer))
   (read-forms analyzer))

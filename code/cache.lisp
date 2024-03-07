@@ -12,36 +12,44 @@
 (defclass cache ()
   (;; This slot contains the Cluffer buffer that is being analyzed by
    ;; this cache instance.
-   (%cluffer-buffer :initarg :cluffer-buffer :reader cluffer-buffer)
-   (%lines :initform (make-instance 'flx:standard-flexichain)
-           :reader lines)
-   (%cluffer-lines :initform (make-instance 'flx:standard-flexichain)
-                   :reader cluffer-lines)
+   (%buffer        :initarg  :buffer
+                   :reader   buffer)
+   ;; The time stamp passed to and returned by the Cluffer update
+   ;; protocol.
+   (%time-stamp    :initform nil
+                   :accessor time-stamp)
+   ;; This slot contains a list that parallels the prefix and it
+   ;; contains the width of the prefix starting with the first element
+   ;; of the prefix.
+   (%lines         :reader   lines
+                   :initform (make-instance 'flx:standard-flexichain))
+   (%cluffer-lines :reader   cluffer-lines
+                   :initform (make-instance 'flx:standard-flexichain))
    ;; The prefix contains top-level wads in reverse order, so that the
    ;; last wad in the prefix is the first wad in the buffer.  Every
    ;; top-level wad in the prefix has an absolute line number.
-   (%prefix :initform '() :accessor prefix)
+   (%prefix        :accessor prefix
+                   :initform '())
+   (%prefix-width  :accessor prefix-width
+                   :initform '())
    ;; The suffix contains top-level wads in the right order.  The
    ;; first top-level wad on the suffix has an absolute line number.
    ;; All the others have relative line numbers.
-   (%suffix :initform '() :accessor suffix)
+   (%suffix        :accessor suffix
+                   :initform '())
+   ;; This slot contains a list that parallels the suffix and it
+   ;; contains the width of the suffix starting with the first element
+   ;; of the suffix.
+   (%suffix-width  :accessor suffix-width
+                   :initform '())
    ;; The residue is normally empty.  The SCAVENGE phase puts orphan
    ;; wads that are still valid on the residue, and these are used by
    ;; the READ-FORMS phase to avoid reading characters when the result
    ;; is known.
-   (%residue :initform '() :accessor residue)
-   (%worklist :initform '() :accessor worklist)
-   ;; The time stamp passed to and returned by the Cluffer update
-   ;; protocol.
-   (%time-stamp :initform nil :accessor time-stamp)
-   ;; This slot contains a list that parallels the prefix and it
-   ;; contains the width of the prefix starting with the first element
-   ;; of the prefix.
-   (%prefix-width :initform '() :accessor prefix-width)
-   ;; This slot contains a list that parallels the suffix and it
-   ;; contains the width of the suffix starting with the first element
-   ;; of the suffix.
-   (%suffix-width :initform '() :accessor suffix-width)))
+   (%residue       :accessor residue
+                   :initform '())
+   (%worklist      :accessor worklist
+                   :initform '())))
 
 (defmethod print-object ((object cache) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -278,7 +286,7 @@
 ;;; parts of the cache that are no longer valid, while keeping parse
 ;;; results that are not affected by such modifications.
 (defun scavenge (cache)
-  (let ((buffer              (cluffer-buffer cache))
+  (let ((buffer              (buffer cache))
         (lines               (lines cache))
         (cluffer-lines       (cluffer-lines cache))
         (cache-initialized-p nil)

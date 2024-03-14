@@ -211,3 +211,25 @@
                   1 (reader:labeled-object-state client labeled-object))))
     (make-result-wad 'labeled-object-reference-wad stream source '()
                      :expression object)))
+;;; S-expression generation
+
+(flet ((make-form (symbol-name package-name &rest rest)
+         (let ((head (make-instance 'existing-symbol-token
+                                    :name         symbol-name
+                                    :package-name package-name)))
+           (list* head rest))))
+
+  (defmethod eclector.reader:wrap-in-quote ((client client) (material t))
+    (make-form "QUOTE" "COMMON-LISP" material))
+
+  (defmethod eclector.reader:wrap-in-quasiquote ((client client) (form t))
+    (make-form "QUASIQUOTE" "KEYWORD" form))
+
+  (defmethod eclector.reader:wrap-in-unquote ((client client) (form t))
+    (make-form "UNQUOTE" "KEYWORD" form))
+
+  (defmethod eclector.reader:wrap-in-unquote-splicing ((client client) (form t))
+    (make-form "UNQUOTE-SPLICING" "KEYWORD" form))
+
+  (defmethod eclector.reader:wrap-in-function ((client client) (name t))
+    (make-form "FUNCTION" "COMMON-LISP" name)))

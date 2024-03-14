@@ -115,9 +115,7 @@
     `(let ((result (basic-wad ,class ,stream ,source
                               :children ,children
                               ,@extra-initargs)))
-       (set-family-relations-of-children result)
-       (make-relative ,children (start-line result))
-       result)))
+       (make-children-relative-and-set-family-relations result))))
 
 (defun make-word-wads (stream source
                        &key (start-column-offset 0)

@@ -91,17 +91,64 @@
   (assert (not (relative-p wad)))
   (+ (start-line wad) (height wad)))
 
+(defclass wad (family-relations-mixin basic-wad)
+  (;; This slot contains the maximum line width of any line that is
+   ;; part of the wad.
+   (%max-line-width :initarg  :max-line-width
+                    :reader   max-line-width)
+   (%children       :initarg  :children
+                    :reader   children
+                    :initform '())
+   ;; This slot contains the absolute column that the first character
+   ;; of this wad should be positioned in, as computed by the rules of
+   ;; indentation.  If this wad is not the first one on the line, then
+   ;; this slot contains NIL.
+   (%indentation    :initarg  :indentation
+                    :accessor indentation
+                    :initform nil)))
+
+(declaim (inline link-siblings))
+(defun link-siblings (left right)
+  (unless (null left)
+    (setf (right-sibling left) right))
+  (unless (null right)
+    (setf (left-sibling right) left)))
+
+(defun make-children-relative-and-set-family-relations (wad)
+  (assert (not (relative-p wad)))
+  (let ((previous nil)
+        (base     (start-line wad)))
+    (flet ((adjust-child (child)
+             ;; Make relative
+             (setf base (absolute-to-relative child base))
+             ;; Set relations
+             (let ((parent (parent child)))
+               (if (null parent)
+                   (setf (parent child) wad)
+                   (assert (eq parent wad)))
+               (link-siblings previous child)
+               (setf previous child))))
+      (declare (dynamic-extent #'adjust-child))
+      (mapc #'adjust-child (children wad))
+      (link-siblings previous nil)))
+  wad)
+
 (defgeneric relative-to-absolute (wad offset)
-  (:method ((p basic-wad) offset)
-    (assert (relative-p p))
-    (incf (start-line p) offset)
-    (setf (relative-p p) nil)))
+  (:method ((wad wad) offset)
+    (assert (relative-p wad))
+    (let ((new-start-line (+ (start-line wad) offset)))
+      (setf (start-line          wad) new-start-line
+            (absolute-start-line wad) new-start-line
+            (relative-p          wad) nil
+            (parent              wad) nil))))
 
 (defgeneric absolute-to-relative (wad offset)
-  (:method ((p basic-wad) offset)
-    (assert (not (relative-p p)))
-    (decf (start-line p) offset)
-    (setf (relative-p p) t)))
+  (:method ((wad basic-wad) offset)
+    (assert (not (relative-p wad)))
+    (setf (relative-p wad) t)
+    (let ((absolute-start-line (start-line wad)))
+      (setf (start-line wad) (- absolute-start-line offset))
+      absolute-start-line)))
 
 ;;; RELATIVE-WADS is a list of wads where the start line of the first
 ;;; element is relative to OFFSET, and the start line of each of the
@@ -123,13 +170,12 @@
 (defun make-relative (absolute-wads offset)
   (loop for base = offset then start-line
         for wad in absolute-wads
-        for start-line = (start-line wad)
-        do (absolute-to-relative wad base))
+        for start-line = (absolute-to-relative wad base))
   absolute-wads)
 
 (defun compute-absolute-line-numbers (top-level-wad)
-  ;; Make sure the wad itself is absolute, so that we need to compute
-  ;; the absolute line numbers only of its children.
+  ;; Make sure TOP-LEVEL-WAD itself is absolute, so that we need to
+  ;; compute the absolute line numbers only of its descendants.
   (assert (not (relative-p top-level-wad)))
   (labels ((process-children (parent offset)
              (let ((base offset))
@@ -167,42 +213,6 @@
           do (write-string line stream :start start-column :end end-column)
           unless (zerop i)
             do (write-char #\Newline stream))))
-
-(defclass wad (family-relations-mixin basic-wad)
-  (;; This slot contains the maximum line width of any line that is
-   ;; part of the wad.
-   (%max-line-width :initarg  :max-line-width
-                    :reader   max-line-width)
-   (%children       :initarg  :children
-                    :reader   children
-                    :initform '())
-   ;; This slot contains the absolute column that the first character
-   ;; of this wad should be positioned in, as computed by the rules of
-   ;; indentation.  If this wad is not the first one on the line, then
-   ;; this slot contains NIL.
-   (%indentation    :initarg  :indentation
-                    :accessor indentation
-                    :initform nil)))
-
-(declaim (inline link-siblings))
-(defun link-siblings (left right)
-  (unless (null left)
-    (setf (right-sibling left) right))
-  (unless (null right)
-    (setf (left-sibling right) left)))
-
-(defun set-family-relations-of-children (wad)
-  (let ((previous nil))
-    (flet ((adjust-child (child)
-             (let ((parent (parent child)))
-               (if (null parent)
-                   (setf (parent child) wad)
-                   (assert (eq parent wad)))
-               (link-siblings previous child)
-               (setf previous child))))
-      (declare (dynamic-extent #'adjust-child))
-      (mapc #'adjust-child (children wad))
-      (link-siblings previous nil))))
 
 ;;; During parsing, this variable holds the cache to which all created
 ;;; wads belong.

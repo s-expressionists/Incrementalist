@@ -42,6 +42,7 @@
    #:end-column
    #:items
 
+   #:errors
    #:indentation ; wad protocol
 
    #:wad ; class

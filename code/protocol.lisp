@@ -39,6 +39,8 @@
 ;;; Wad protocol
 ;;; extends basic wad protocol
 
+(defgeneric errors (wad))
+
 (defgeneric indentation (wad))
 
 ;;; Specialized wads

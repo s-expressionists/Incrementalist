@@ -99,6 +99,22 @@
    (%children       :initarg  :children
                     :reader   children
                     :initform '())
+   ;; This slot stores different kind of errors which are represented
+   ;; as `error-wad's. Character syntax errors as reported by Eclector
+   ;; are stored in the "closest surrounding" wad. S-expression syntax
+   ;; errors are stored in the containing top-level wad.
+   ;;
+   ;; Invariants for errors:
+   ;; The error wad are relative iff containing wad is relative. The
+   ;; start-line of relative error wads is relative to the parent of
+   ;; the containing wad, not relative to preceding wads. So when
+   ;; turning the containing wad from relative to absolute, each error
+   ;; wad must be processed with the same offset as the containing
+   ;; wad.
+   (%errors         :initarg  :errors
+                    :type     list
+                    :accessor errors
+                    :initform '())
    ;; This slot contains the absolute column that the first character
    ;; of this wad should be positioned in, as computed by the rules of
    ;; indentation.  If this wad is not the first one on the line, then
@@ -192,7 +208,14 @@
                  (declare (dynamic-extent #'process-child))
                  (mapc #'process-child (children parent)))))
            (process-wad (wad wad-start-line)
-             (process-children wad wad-start-line)))
+             (process-children wad wad-start-line)
+             (loop for base = wad-start-line then absolute-start-line
+                   for error-wad in (errors wad)
+                   for start-line of-type alexandria:array-index
+                      = (start-line error-wad)
+                   for absolute-start-line = (+ base start-line)
+                   do (setf (absolute-start-line error-wad)
+                            absolute-start-line))))
     (let ((start-line (start-line top-level-wad)))
       (declare (type alexandria:array-index start-line))
       (setf (absolute-start-line top-level-wad) start-line)
@@ -338,7 +361,7 @@
 ;;; comment or a block comment).  A `word-wad' does not have any
 ;;; children.
 
-(defclass word-wad (no-expression-wad wad) ; TODO should not inherit errors, indentation
+(defclass word-wad (no-expression-wad wad) ; TODO should not inherit indentation; should use errors slot for misspelled information
   ((%misspelled :initarg :misspelled
                 :reader  misspelled)))
 

@@ -61,9 +61,8 @@
         ;; Eclector's result stack and advance STREAM.
         (multiple-value-prog1
             (etypecase cached
-              (skipped-wad    (values nil                 :skip   cached t))
-              (expression-wad (values (expression cached) :object cached t)))
-          (assert (not (relative-p cached)))
+              (non-cst-wad (values nil              :skip   cached t))
+              (cst-wad     (values (cst:raw cached) :object cached t)))
           (push cached (first eclector.parse-result::*stack*)) ; HACK
           (advance-stream-to-beyond-wad stream cached)))))
 
@@ -81,16 +80,10 @@
         (eclector.reader:read-maybe-nothing client analyzer nil nil))
     (declare (ignore object))
     (case kind
-      (:eof)              ; nothing to do for end of input
-      (:whitespace)       ; nothing to do for whitespace
-      (t                  ; got a tree of absolute wads. make relative
-       (labels ((rec (wad)
-                  (unless (relative-p wad) ; TODO can it be relative due to caching or what?
-                    (let ((children (children wad)))
-                      (when children
-                        (map nil #'rec children)
-                        (unless (every #'relative-p children)
-                          (make-relative children (start-line wad))))))))
-         (rec wad))
-       (push-to-prefix (cache analyzer) wad)))
-    kind))
+      (:eof)        ; nothing to do for end of input
+      (:whitespace) ; nothing to do for whitespace
+      (t            ; got a top-level, absolute wads
+       (if (null wad) ; or possibly nothing, but only if KIND is `:skip'
+           (assert (eq kind :skip))
+           (push-to-prefix (cache analyzer) wad))))
+    (values kind wad)))

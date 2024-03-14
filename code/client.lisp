@@ -1,6 +1,8 @@
 (cl:in-package #:incrementalist)
 
-(defclass client (eclector.parse-result:parse-result-client)
+(defclass client (eclector.concrete-syntax-tree:definition-csts-mixin
+                  eclector.concrete-syntax-tree:reference-csts-mixin
+                  eclector.concrete-syntax-tree:cst-client)
   ;; TODO it would be nicer not to store the stream in the client like
   ;; this, but the method on make-expression-result needs the stream
   ;; and cannot access it in other ways.
@@ -211,8 +213,8 @@
       (let ((words (make-word-wads (stream* client) source)))
         (if (null words)
             (call-next-method)
-            (wad-with-children 'expression-wad (stream* client) source words
-                               :expression result)))
+            (wad-with-children
+             'atom-wad-with-extra-children (stream* client) source words :raw result)))
       (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
@@ -221,40 +223,133 @@
       (let ((words (make-word-wads (stream* client) source)))
         (if (null words)
             (call-next-method)
-            (wad-with-children 'expression-wad (stream* client) source words
-                               :expression result)))
+            (wad-with-children
+             'atom-wad-with-extra-children (stream* client) source words :raw result)))
       (call-next-method)))
 
+(defun adjust-result-class (cst new-class stream source &rest extra-initargs)
+  (declare (dynamic-extent extra-initargs))
+  (destructure-source (start-line start-column end-line end-column) source
+    (let* ((line-number    (line-number stream))
+           (max-line-width (compute-max-line-width
+                            stream start-line line-number '())))
+      (apply #'change-class cst new-class
+             :source              nil   ; obsolete; free memory
+             :cache               *cache*
+             :relative-p          nil
+             :start-line          start-line
+             :height              (- end-line start-line)
+             :start-column        start-column
+             :end-column          end-column
+             :max-line-width      max-line-width
+             :absolute-start-line start-line
+             extra-initargs))))
+
+(defun adjust-result (cst new-class stream source &rest extra-initargs)
+  (declare (dynamic-extent extra-initargs))
+  (assert (not (null source)))
+  (let ((result (if extra-initargs
+                    (apply #'adjust-result-class cst new-class stream source
+                           extra-initargs)
+                    (adjust-result-class cst new-class stream source))))
+    ;; After the optional `add-extra-children', the sequence of
+    ;; children of RESULT is final. Perform two adjustments on this
+    ;; child sequence: 1. make the children relative (they are
+    ;; guaranteed to be absolute) 2. set up the parent-child and
+    ;; sibling relations.
+    (make-children-relative-and-set-family-relations result)))
+
+;;; Return a list of elements of CHILDREN that are of type `cst:cst'
+;;; with the following properties:
+;;; 1. The returned list is always `equal' to
+;;;    (remove-if-not (a:of-type 'cst:cst) children)
+;;; 2. If all elements of CHILDREN are of type `cst:cst' then the
+;;;    returned list is `eq' to CHILDREN.
+;;; The second property avoids consing and also informs subsequent
+;;; processing steps about whether there are any non-CST children.
+(defun collect-cst-children (children)
+  (loop :with any-extra-p = nil
+        :for i :from 0
+        :for child :in children
+        :for cstp = (typep child 'cst:cst)
+        :if (and (not cstp) (not any-extra-p))
+          :append (subseq children 0 i) :into cst-children
+          :and :do (setf any-extra-p t)
+        :else :if (and cstp any-extra-p)
+          :collect child :into cst-children
+        :finally (return (if any-extra-p cst-children children))))
+
+;;; Note: CHILDREN are already ordered according to their location in
+;;; input text.
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result t) (children t) (source t))
-  (wad-with-children 'expression-wad (stream* client) source children
-                     :expression result))
+  ;; In case we call `cst:reconstruct', we may "consume" a child wad
+  ;; that is still on the residue or suffix without performing the
+  ;; corresponding recursive `read-maybe-nothing' call. As a
+  ;; workaround, consume any such wads here.
+  (cached-wad (stream* client))
+  ;; Separate CHILDREN into children of type `cst:cst' and "extra"
+  ;; children. Extra children arise mainly due to comments and other
+  ;; skipped input which are represented as `wad's which are not of
+  ;; type `cst:cst'
+  (let* ((cst-children (if (null children)
+                           '()
+                           (collect-cst-children children)))
+         (cst          (if (eq cst-children children)
+                           (call-next-method) ; possibly faster
+                           (call-next-method client result cst-children source)))
+         (consp        (typep cst 'cst:cons-cst))
+         ;; Check whether the list of wad children obtained based on
+         ;; the CST structure already matches the list of children
+         (simplep      (or (null children)
+                           (and consp
+                                (eq cst-children children)
+                                (block nil
+                                  (let ((remaining children))
+                                    (map-children
+                                     (lambda (child)
+                                       (when (not (eq child (pop remaining)))
+                                         (return nil)))
+                                     cst)
+                                    (null remaining))))))
+         (new-class    (cond ((and (not consp) simplep)
+                              'atom-wad)
+                             ((not consp)
+                              'atom-wad-with-extra-children)
+                             (simplep
+                              'cons-wad)
+                             (t
+                              'cons-wad-with-extra-children))))
+    ;; Call the next method to obtain a result, CST, of type `cst:cst'
+    ;; which contains RESULT in its raw slot.
+    ;;
+    ;; Two properties of CST will be adjusted:
+    ;; 1. Depending on whether the result is a `cst:cons-cst' or a
+    ;;    `cst:atom-cst', select either `cons-wad' or `atom-wad' as
+    ;;    the new class for CST.
+    ;; 2. In case there are "extra" children or "orphan" CST children,
+    ;;    add those to the result.
+    (if simplep
+        (adjust-result cst new-class (stream* client) source)
+        (adjust-result cst new-class (stream* client) source :children children))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
      (result   eclector.parse-result:definition)
      (children t)
      (source   t))
-  (let ((stream (stream* client))
-        (labeled-object (eclector.parse-result:labeled-object result)))
-    (multiple-value-bind (state object parse-result)
-        (reader:labeled-object-state client labeled-object)
-      (declare (ignore state))
-      (assert (member parse-result children))
-      (wad-with-children 'labeled-object-definition-wad stream source children
-                         :expression object))))
+  (let ((cst (call-next-method)))
+    (adjust-result cst 'labeled-object-definition-wad (stream* client) source
+                   :children children)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
      (result   eclector.parse-result:reference)
      (children t)
      (source   t))
-  (let* ((stream (stream* client))
-         (labeled-object (eclector.parse-result:labeled-object result))
-         (object (nth-value
-                  1 (reader:labeled-object-state client labeled-object))))
-    (basic-wad 'labeled-object-reference-wad stream source
-               :expression object)))
+  (let ((cst (call-next-method)))
+    (adjust-result cst 'labeled-object-reference-wad (stream* client) source)))
+
 ;;; S-expression generation
 
 (flet ((make-form (symbol-name package-name &rest rest)

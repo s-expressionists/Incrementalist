@@ -356,24 +356,16 @@
   (flx:element* (lines cache) line-number))
 
 ;;; This :BEFORE method on the slot accessor ABSOLUTE-START-LINE makes
-;;; sure WAD is on the prefix before the primary method is called, so
-;;; that the absolute start line numbers are guaranteed to be
-;;; computed.
+;;; sure WAD is absolute before the primary method is called, so that
+;;; the absolute start line numbers are hopefully up-to-date.
 (defmethod absolute-start-line :before ((wad wad))
   ;; First, we find the top-level wad that this wad either is or that
   ;; this wad is a descendant of.
   (let ((top-level-wad wad))
     (loop until (null (parent top-level-wad))
           do (setf top-level-wad (parent top-level-wad)))
-    ;; Then make sure WAD is on prefix.
-    (let ((cache (cache top-level-wad)))
-      (unless (and ;; If WAD is relative, then it is definitely not on
-                   ;; the prefix.
-                   (not (relative-p top-level-wad))
-                   ;; But it can also be the first wad on the suffix,
-                   ;; because then it is absolute and not on the prefix.
-                   (not (eq (first (suffix cache)) top-level-wad)))
-        (break)))))
+    ;; Then make sure the TOP-LEVEL-WAD is absolute.
+    (assert (not (relative-p top-level-wad)))))
 
 (defun map-empty-area
     (cache first-line start-column last-line end-column space-function)

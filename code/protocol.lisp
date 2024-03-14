@@ -12,7 +12,16 @@
 
 ;;; Children protocol
 
+(defgeneric map-children (function wad))
+
 (defgeneric children (wad))
+
+;;; Default behavior
+
+(defmethod children ((wad t))
+  (let ((result '()))
+    (map-children (lambda (child) (push child result)) wad)
+    (nreverse result)))
 
 ;;; Family relations protocol
 

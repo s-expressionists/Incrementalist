@@ -29,7 +29,8 @@
 
   ;; Wads
   (:export
-   #:children ; children protocol
+   #:map-children ; children protocol
+   #:children
 
    #:parent ; family relations protocol
    #:left-sibling
@@ -47,21 +48,20 @@
 
    #:wad ; class
 
-   #:expression-wad
+   #:cst-wad
+   #:atom-wad
+   #:cons-wad
 
    #:labeled-object-definition-wad
    #:labeled-object-reference-wad
 
-   #:no-expression-wad
+   #:non-cst-wad
    #:skipped-wad
    #:comment-wad
    #:block-comment-wad
 
    #:semicolon-comment-wad
    #:semicolon-count ; reader
-
-   #:word-wad
-   #:misspelled ; reader
 
    #:ignored-wad
    #:sharpsign-wad
@@ -70,6 +70,9 @@
    #:sharpsign-minus-wad
    #:read-suppress-wad
    #:reader-macro-wad
+
+   #:word-wad
+   #:misspelled ; reader
 
    #:error-wad
    #:condition) ; reader

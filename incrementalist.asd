@@ -9,7 +9,9 @@
   :depends-on  ("trivial-gray-streams"
                 "cluffer"
                 "flexichain"
+                "concrete-syntax-tree"
                 "eclector"
+                "eclector-concrete-syntax-tree"
                 "spell")
 
   :components  ((:module "code"

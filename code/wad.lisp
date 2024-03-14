@@ -1,5 +1,43 @@
 (cl:in-package #:incrementalist)
 
+;;;                     wad
+;;;  ┌───────────────────┴────────┬───────┐
+;;;  │             cst            │       │
+;;;  │              │             │       │
+;;;  │      ┌───────┴───────┐     │       │
+;;;  │  cons-cst        atom-cst  │       │
+;;;  │    │                  │    │       │
+;;; cons-wad                atom-wad  skipped-wad
+
+;;; `no-children-mixin'
+;;;
+;;; This class is intended to be mixed into wad classes the instances
+;;; of which never have children.
+
+(defclass no-children-mixin () ())
+
+(defmethod children ((wad no-children-mixin))
+  '())
+
+(defmethod map-children ((function t) (object no-children-mixin)))
+
+;;; `maybe-extra-children-mixin' and `extra-children-mixin'
+
+(defclass maybe-extra-children-mixin ()
+  ((%children :initarg  :children
+              :type     list
+              :reader   children))
+  (:default-initargs
+   :children (alexandria:required-argument :children)))
+
+(defmethod map-children ((function t) (object maybe-extra-children-mixin))
+  (mapc function (children object)))
+
+(defclass extra-children-mixin (maybe-extra-children-mixin)
+  ((%children :type     cons))) ; must not be used if child list would be empty
+
+;;; `family-relations-mixin'
+
 (defclass family-relations-mixin ()
   (;; This slot contains the parent wad of this wad, or NIL if this
    ;; wad is a top-level wad.
@@ -94,11 +132,8 @@
 (defclass wad (family-relations-mixin basic-wad)
   (;; This slot contains the maximum line width of any line that is
    ;; part of the wad.
-   (%max-line-width :initarg  :max-line-width
-                    :reader   max-line-width)
-   (%children       :initarg  :children
-                    :reader   children
-                    :initform '())
+   (%max-line-width :initarg :max-line-width
+                    :reader  max-line-width)
    ;; This slot stores different kind of errors which are represented
    ;; as `error-wad's. Character syntax errors as reported by Eclector
    ;; are stored in the "closest surrounding" wad. S-expression syntax
@@ -145,7 +180,7 @@
                (link-siblings previous child)
                (setf previous child))))
       (declare (dynamic-extent #'adjust-child))
-      (mapc #'adjust-child (children wad))
+      (map-children #'adjust-child wad)
       (link-siblings previous nil)))
   wad)
 
@@ -206,7 +241,7 @@
                           (process-wad child absolute-start-line)
                           (setf base absolute-start-line))))
                  (declare (dynamic-extent #'process-child))
-                 (mapc #'process-child (children parent)))))
+                 (map-children #'process-child parent))))
            (process-wad (wad wad-start-line)
              (process-children wad wad-start-line)
              (loop for base = wad-start-line then absolute-start-line
@@ -296,31 +331,123 @@
   (and (wad-starts-before-wad-p wad1 wad2)
        (wad-ends-after-wad-p wad1 wad2)))
 
-(defclass expression-wad (wad)
-  ((%expression :initarg :expression :accessor expression)))
+;;; CST wads
+;;;
+;;; CST wads contain a "raw" expression. Note that wads based on
+;;; `cst:atom-cst' and `cst:cons-cst' are not the only CST wads. One
+;;; other example are labeled object definitions and references which
+;;; are based `eclector.concrete-syntax-tree:wrapper-cst'.
 
-(defmethod print-object ((object expression-wad) stream)
+(defclass cst-wad (wad cst:cst) ; TODO we inherit the `%source' slot which we do not use
+  ())
+
+;;; Atom
+
+;;; "Plain" `atom-cst' instances do not have any children.
+(defmethod map-children ((function t) (wad cst:atom-cst)))
+
+(defmethod children ((wad cst:atom-cst))
+  '())
+
+(defclass atom-wad (cst-wad cst:atom-cst)
+  ())
+
+(defmethod print-object ((object atom-wad) stream)
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)
-    (format stream " expression: ~S" (expression object))))
+    (format stream " raw: ~S" (cst:raw object))))
 
-(defclass labeled-object-definition-wad (expression-wad)
+(defmethod cst:null ((cst atom-wad))
+  (let ((raw (cst:raw cst)))
+    (and (typep raw 'symbol-token)
+         (eq (name         raw) **nil-symbol-name**)
+         (eq (package-name raw) **common-lisp-package-name**))))
+
+(defclass atom-wad-with-extra-children (extra-children-mixin atom-wad)
   ())
 
-(defclass labeled-object-reference-wad (expression-wad)
+;;; Cons
+
+;;; Children of "plain" `cons-cst' instances are defined by the CST
+;;; structure.
+(defmethod map-children ((function t) (wad cst:cons-cst))
+  (let ((function (alexandria:ensure-function function)))
+    (labels ((visit-wad-child (child expected-parent)
+               (when (let ((parent (parent child)))
+                       (or (null parent) (eq parent expected-parent)))
+                 (funcall function child)))
+             (visit-maybe-wad-child (child parent)
+               ;; It is possible that CHILD is a CST child (that is
+               ;; `cst:first' or `cst:rest') of PARENT but not a WAD
+               ;; child. This can happen due to `cst:reconstruct' in
+               ;; cases like the invalid expression ,(a b) since the
+               ;; whole expression is represented as a `cons-wad' with
+               ;; one `atom-wad' child for symbol a and a `cons-cst'
+               ;; child for (b). However, on the WAD level, the top
+               ;; `cons-wad' contains an intermediate `cons-wad' which
+               ;; represents (a b).
+               (when (typep child 'wad)
+                 (visit-wad-child child parent)))
+             (visit-cons (node wad-parent dotted?)
+               (visit-maybe-wad-child (cst:first node) wad-parent)
+               (when dotted?
+                 (visit-maybe-wad-child (cst:rest node) wad-parent)))
+             (visit-atom (node)
+               ;; NODE is a wad iff WAD represents a dotted list since
+               ;; otherwise NODE represents an implicit `nil' as a
+               ;; `atom-cst' instance which is not a wad.
+               (when (typep node 'wad)
+                 (funcall function node))))
+      (declare (inline visit-wad-child visit-maybe-wad-child))
+      ;; Walk along the list structure of which WAD is the head. Call
+      ;; FUNCTION for each list element that is of type `wad'. The
+      ;; list structure may be proper or dotted. In the latter case,
+      ;; call FUNCTION for the wad that is the tail as well.
+      (loop for node = wad then (cst:rest node)
+            if (cst:consp node)
+              do (let* ((rest       (cst:rest node))
+                        (dotted?    (not (or (cst:consp rest) (cst:null rest))))
+                        (wad-child? (and (not (eq node wad)) (typep node 'wad))))
+                   (if wad-child?
+                       (funcall function node)
+                       (visit-cons node wad dotted?))
+                   (when (or dotted? wad-child?)
+                     (loop-finish)))
+            else ; must be `atom-cst'
+              do (visit-atom node)
+                 (loop-finish)))))
+
+(defclass cons-wad (cst-wad cst:cons-cst)
   ())
 
-;;; Non-expression wads
-
-(defclass no-expression-wad (basic-wad)
+(defclass cons-wad-with-extra-children (extra-children-mixin cons-wad)
   ())
 
-(defclass skipped-wad (no-expression-wad
-                       wad)
+;;; Definition and reference wads
+
+(defclass labeled-object-wad (cst-wad)
+  ())
+
+(defclass labeled-object-definition-wad (extra-children-mixin
+                                         labeled-object-wad
+                                         eclector.concrete-syntax-tree:definition-cst)
+  ())
+
+(defclass labeled-object-reference-wad (no-children-mixin
+                                        labeled-object-wad
+                                        eclector.concrete-syntax-tree:reference-cst)
+  ())
+
+;;; Non-CST wads
+
+(defclass non-cst-wad (basic-wad)
+  ())
+
+(defclass skipped-wad (non-cst-wad wad)
   ())
 
 ;;; This class is the base class of all comment wads.
-(defclass comment-wad (skipped-wad)
+(defclass comment-wad (maybe-extra-children-mixin skipped-wad)
   ())
 
 ;;; This class is used for a block comment introduced by #|.
@@ -335,7 +462,7 @@
    (%semicolon-count :initarg :semicolon-count
                      :reader  semicolon-count)))
 
-(defclass ignored-wad (skipped-wad)
+(defclass ignored-wad (no-children-mixin skipped-wad)
   ())
 
 (defclass sharpsign-wad (ignored-wad)
@@ -361,7 +488,9 @@
 ;;; comment or a block comment).  A `word-wad' does not have any
 ;;; children.
 
-(defclass word-wad (no-expression-wad wad) ; TODO should not inherit indentation; should use errors slot for misspelled information
+(defclass word-wad (no-children-mixin
+                    non-cst-wad
+                    wad) ; TODO should not inherit indentation; should use errors slot for misspelled information
   ((%misspelled :initarg :misspelled
                 :reader  misspelled)))
 

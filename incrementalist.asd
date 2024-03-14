@@ -22,7 +22,6 @@
                               ;; Model
                               (:file "token")
                               (:file "wad")
-                              (:file "check-wad-graph")
                               ;; Cache
                               (:file "cache")
                               (:file "buffer-stream")
@@ -34,7 +33,10 @@
                               ;; Queries
                               (:file "find-wad-beginning-line")
                               (:file "find-wad-containing-position")
-                              (:file "mapwad"))))
+                              (:file "mapwad")
+                              ;; Debugging
+                              (:file "extra-assertions"
+                               :if-feature :incrementalist-debug))))
 
   :in-order-to ((test-op (test-op "incrementalist/test"))))
 

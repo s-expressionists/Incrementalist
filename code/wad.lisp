@@ -80,7 +80,8 @@
    ;; reader to detect some of those situations and prevent the value
    ;; from being read in those cases.
    (%absolute-start-line :initarg  :absolute-start-line
-                         :type     (integer 0)
+                         :type     #+incrementalist-debug (or (eql :invalid) (integer 0))
+                                   #-incrementalist-debug (integer 0)
                          :accessor absolute-start-line)
    ;; This slot contains information about the start line of the wad.
    ;; Simple applications might always store the absolute line number
@@ -166,19 +167,15 @@
     (setf (left-sibling right) left)))
 
 (defun make-children-relative-and-set-family-relations (wad)
-  (assert (not (relative-p wad)))
   (let ((previous nil)
         (base     (start-line wad)))
     (flet ((adjust-child (child)
              ;; Make relative
              (setf base (absolute-to-relative child base))
              ;; Set relations
-             (let ((parent (parent child)))
-               (if (null parent)
-                   (setf (parent child) wad)
-                   (assert (eq parent wad)))
-               (link-siblings previous child)
-               (setf previous child))))
+             (setf (parent child) wad)
+             (link-siblings previous child)
+             (setf previous child)))
       (declare (dynamic-extent #'adjust-child))
       (map-children #'adjust-child wad)
       (link-siblings previous nil)))
@@ -231,7 +228,6 @@
   (labels ((process-children (parent offset)
              (let ((base offset))
                (flet ((process-child (child)
-                        (assert (relative-p child))
                         (let* ((start-line          (start-line child))
                                (absolute-start-line (+ base start-line)))
                           (declare (type alexandria:array-index

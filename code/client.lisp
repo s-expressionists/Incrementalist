@@ -88,6 +88,7 @@
            (max-line-width (compute-max-line-width
                             stream start-line line-number '())))
       (apply #'make-wad class :start-line     start-line
+                              :absolute-start-line start-line
                               :height         (- end-line start-line)
                               :start-column   start-column
                               :end-column     end-column

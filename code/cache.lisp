@@ -152,12 +152,12 @@
       (setf (prefix-width cache) (list* new-width old-prefix-width)
             (prefix       cache) new-prefix)
       (link-siblings old-prefix-top wad)
-      (link-siblings wad            (first (suffix cache)))
-      (compute-absolute-line-numbers wad))))
+      (link-siblings wad            (first (suffix cache))))))
 
 (defgeneric suffix-to-prefix (cache)
   (:method ((cache cache))
-    (push-to-prefix cache (pop-from-suffix cache))))
+    (let ((wad (compute-absolute-line-numbers (pop-from-suffix cache))))
+      (push-to-prefix cache wad))))
 
 (defgeneric prefix-to-suffix (cache)
   (:method ((cache cache))
@@ -239,10 +239,15 @@
 ;;; Add INCREMENT to the absolute line number of every wad on the
 ;;; worklist, and of the first wad of the suffix, if any.
 (defun adjust-worklist-and-suffix (cache increment)
-  (loop for wad in (worklist cache)
-        do (incf (start-line wad) increment))
-  (alexandria:when-let ((suffix (suffix cache)))
-    (incf (start-line (first suffix)) increment)))
+  (flet ((adjust-wad (wad amount)
+           (let ((new-start-line (+ (start-line wad) amount)))
+             (setf (start-line wad)          new-start-line
+                   (absolute-start-line wad) new-start-line))
+           wad))
+    (loop for wad in (worklist cache)
+          do (adjust-wad wad increment))
+    (alexandria:when-let ((suffix (suffix cache)))
+      (adjust-wad (first suffix) increment))))
 
 ;;; If the worklist is empty then move a wad from the suffix to the
 ;;; worklist (in that case, it is known that the suffix is not empty).

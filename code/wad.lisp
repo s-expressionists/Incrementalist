@@ -204,17 +204,9 @@
       (mapc #'adjust-child (children wad))
       (link-siblings previous nil))))
 
-(defmethod shared-initialize :after ((wad wad) (slot-names t) &key)
-  (set-family-relations-of-children wad))
-
 ;;; During parsing, this variable holds the cache to which all created
 ;;; wads belong.
 (defvar *cache*)
-
-;;; Define an indirection for MAKE-INSTANCE for creating wads.  The
-;;; main purpose is so that the creation of wads can be traced.
-(defun make-wad (class &rest initargs)
-  (apply #'make-instance class :cache *cache* initargs))
 
 ;;; Return true if and only if the position indicated by
 ;;; RELATIVE-LINE-NUMBER and COLUMN-NUMBER is entirely before WAD.  If

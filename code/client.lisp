@@ -80,28 +80,49 @@
 
 ;;; Result construction
 
-(defun make-result-wad (class stream source children
-                        &rest extra-initargs &key &allow-other-keys)
-  (destructuring-bind ((start-line . start-column) . (end-line . end-column))
-      source
-    (let* ((line-number    (line-number stream))
-           (max-line-width (compute-max-line-width
-                            stream start-line line-number '())))
-      (apply #'make-wad class :start-line     start-line
-                              :absolute-start-line start-line
-                              :height         (- end-line start-line)
-                              :start-column   start-column
-                              :end-column     end-column
-                              :relative-p     nil
-                              :max-line-width max-line-width
-                              :children       children
-                              extra-initargs))))
+(defmacro destructure-source ((start-line-var start-column-var
+                               end-line-var   end-column-var)
+                              source &body body)
+  `(destructuring-bind ((,start-line-var . ,start-column-var)
+                        . (,end-line-var . ,end-column-var))
+       ,source
+     (declare (type alexandria:array-index
+                    ,start-line-var ,start-column-var
+                    ,end-line-var   ,end-column-var))
+     ,@body ))
+
+(defmacro basic-wad (class stream source &rest extra-initargs)
+  (alexandria:once-only (stream)
+    (alexandria:with-unique-names (start-line start-column end-line end-column
+                                   line-number max-line-width)
+      `(destructure-source (,start-line ,start-column ,end-line ,end-column)
+           ,source
+         (let* ((,line-number    (line-number ,stream))
+                (,max-line-width (compute-max-line-width
+                                  ,stream ,start-line ,line-number '())))
+           (make-instance ,class :cache               *cache*
+                                 :relative-p          nil
+                                 :absolute-start-line ,start-line
+                                 :start-line          ,start-line
+                                 :height              (- ,end-line ,start-line)
+                                 :start-column        ,start-column
+                                 :end-column          ,end-column
+                                 :max-line-width      ,max-line-width
+                                 ,@extra-initargs))))))
+
+(defmacro wad-with-children (class stream source children &rest extra-initargs)
+  (alexandria:once-only (children)
+    `(let ((result (basic-wad ,class ,stream ,source
+                              :children ,children
+                              ,@extra-initargs)))
+       (set-family-relations-of-children result)
+       (make-relative ,children (start-line result))
+       result)))
 
 (defun make-word-wads (stream source
                        &key (start-column-offset 0)
                             (end-column-offset   0 end-column-offset-p))
-  (destructuring-bind ((start-line . start-column) . (end-line . end-column*))
-      source
+  (destructure-source (start-line start-column end-line end-column*) source
     (let* ((cache             (cache stream))
            (word              (make-array 0 :element-type 'character
                                             :adjustable   t
@@ -120,15 +141,15 @@
                                           (cons line column)))
                        (misspelledp (and checkp
                                          (null (spell:english-lookup word)))))
-                   (push (make-result-wad 'word-wad stream source '()
-                                          :misspelled misspelledp)
+                   (push (basic-wad 'word-wad stream source
+                                    :misspelled misspelledp)
                          words)))
                (setf (fill-pointer word) 0
                      word-start-column   column)))
-        (loop for line     from start-line to (if (zerop end-column*)
-                                                  (1- end-line)
-                                                  end-line)
-              for contents =    (line-contents cache line)
+        (loop for line from start-line to (if (zerop end-column*)
+                                              (1- end-line)
+                                              end-line)
+              for contents of-type simple-string = (line-contents cache line)
               do (loop with end-column = (if (= line end-line)
                                              (+ end-column*
                                                 (if end-column-offset-p
@@ -154,52 +175,54 @@
 
 (defmethod eclector.parse-result:make-skipped-input-result
     ((client client) (stream t) (reason t) (source t))
-  (flet ((make-it (class &rest extra-initargs)
-           (apply #'make-result-wad class stream source '() extra-initargs)))
-    (etypecase reason
-      ((cons (eql :line-comment))
-       ;; Eclector returns the beginning of the following line as the
-       ;; end of the comment.  But we want it to be the end of the
-       ;; same line.  But I don't know how to do it correctly (yet).
-       (let* ((semicolon-count (cdr reason))
-              (words           (make-word-wads
-                                stream source
-                                :start-column-offset semicolon-count)))
-         (make-result-wad 'semicolon-comment-wad stream source words
+  (etypecase reason
+    ((cons (eql :line-comment))
+     ;; Eclector returns the beginning of the following line as the
+     ;; end of the comment.  But we want it to be the end of the
+     ;; same line.  But I don't know how to do it correctly (yet).
+     (let* ((semicolon-count (cdr reason))
+            (words           (make-word-wads
+                              stream source
+                              :start-column-offset semicolon-count)))
+       (wad-with-children 'semicolon-comment-wad stream source words
                           :semicolon-count semicolon-count)))
-      ((eql :block-comment)
-       (let ((words (make-word-wads stream source :start-column-offset 2
-                                                  :end-column-offset   -2)))
-         (make-result-wad 'block-comment-wad stream source words)))
-      ((eql :reader-macro)
-       (make-it 'reader-macro-wad))
-      ((eql *read-suppress*)
-       (make-it 'read-suppress-wad))
-      ((cons (eql :sharpsign-plus))
-       (make-it 'sharpsign-plus-wad  :expression (cdr reason)))
-      ((cons (eql :sharpsign-minus))
-       (make-it 'sharpsign-minus-wad :expression (cdr reason))))))
+    ((eql :block-comment)
+     (let ((words (make-word-wads stream source :start-column-offset 2
+                                                :end-column-offset   -2)))
+       (wad-with-children 'block-comment-wad stream source words)))
+    ((eql :reader-macro)
+     (basic-wad 'reader-macro-wad stream source))
+    ((eql *read-suppress*)
+     (basic-wad 'read-suppress-wad stream source))
+    ((cons (eql :sharpsign-plus))
+     (basic-wad 'sharpsign-plus-wad stream source :expression (cdr reason)))
+    ((cons (eql :sharpsign-minus))
+     (basic-wad 'sharpsign-minus-wad stream source :expression (cdr reason)))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result symbol-token) (children t) (source t))
   (if (and (null children) (not (string= (package-name result) "COMMON-LISP")))
       (let ((words (make-word-wads (stream* client) source)))
-        (make-result-wad 'expression-wad (stream* client) source words
-                         :expression result))
+        (if (null words)
+            (call-next-method)
+            (wad-with-children 'expression-wad (stream* client) source words
+                               :expression result)))
       (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result string) (children t) (source t))
   (if (null children)
       (let ((words (make-word-wads (stream* client) source)))
-        (make-result-wad 'expression-wad (stream* client) source words
-                         :expression result))
+        (if (null words)
+            (call-next-method)
+            (wad-with-children 'expression-wad (stream* client) source words
+                               :expression result)))
       (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result t) (children t) (source t))
-  (make-result-wad 'expression-wad (stream* client) source children
-                   :expression result))
+  (wad-with-children 'expression-wad (stream* client) source children
+                     :expression result))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
@@ -212,8 +235,8 @@
         (reader:labeled-object-state client labeled-object)
       (declare (ignore state))
       (assert (member parse-result children))
-      (make-result-wad 'labeled-object-definition-wad stream source children
-                       :expression object))))
+      (wad-with-children 'labeled-object-definition-wad stream source children
+                         :expression object))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
@@ -224,8 +247,8 @@
          (labeled-object (eclector.parse-result:labeled-object result))
          (object (nth-value
                   1 (reader:labeled-object-state client labeled-object))))
-    (make-result-wad 'labeled-object-reference-wad stream source '()
-                     :expression object)))
+    (basic-wad 'labeled-object-reference-wad stream source
+               :expression object)))
 ;;; S-expression generation
 
 (flet ((make-form (symbol-name package-name &rest rest)

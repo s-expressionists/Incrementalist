@@ -22,6 +22,20 @@
 
 ;;; Token interpretation
 
+(defmethod reader:call-reader-macro :around ((client       client)
+                                             (input-stream t)
+                                             (char         t)
+                                             (readtable    t))
+  (let ((values (multiple-value-list (call-next-method))))
+    (typecase values
+      (null
+       (values))
+      ((cons null null)
+       (make-instance 'existing-symbol-token :name         "NIL"
+                                             :package-name "COMMON-LISP"))
+      (t
+       (values-list values)))))
+
 (defmethod reader:interpret-symbol-token
     ((client client) input-stream token position-package-marker-1 position-package-marker-2)
   (multiple-value-bind (package-designator symbol-name)

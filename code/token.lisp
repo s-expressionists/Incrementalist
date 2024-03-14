@@ -2,6 +2,29 @@
 
 (defclass token () ())
 
+(#+sbcl sb-ext:defglobal #-sbcl defvar **keyword-package-name**
+  "KEYWORD")
+
+(#+sbcl sb-ext:defglobal #-sbcl defvar **common-lisp-package-name**
+  "COMMON-LISP")
+
+(defun intern-package-name (package-name)
+  (cond ((string= package-name **common-lisp-package-name**)
+         **common-lisp-package-name**)
+        ((string= package-name **keyword-package-name**)
+         **keyword-package-name**)
+        (t
+         package-name)))
+
+(#+sbcl sb-ext:defglobal #-sbcl defvar **nil-symbol-name**
+  "NIL")
+
+(defun intern-symbol-name (symbol-name)
+  (cond ((string= symbol-name **nil-symbol-name**)
+         **nil-symbol-name**)
+        (t
+         symbol-name)))
+
 (defclass symbol-token (token)
   ((%package-marker-1 :initarg  :package-marker-1
                       :type     (or null integer)

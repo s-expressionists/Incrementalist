@@ -31,8 +31,9 @@
       (null
        (values))
       ((cons null null)
-       (make-instance 'existing-symbol-token :name         "NIL"
-                                             :package-name "COMMON-LISP"))
+       (make-instance 'existing-symbol-token
+                      :name         **nil-symbol-name**
+                      :package-name **common-lisp-package-name**))
       (t
        (values-list values)))))
 
@@ -40,35 +41,41 @@
     ((client client) input-stream token position-package-marker-1 position-package-marker-2)
   (multiple-value-bind (package-designator symbol-name)
       (cond ((null position-package-marker-1)
-             (values *package* token))
+             (values *package* (intern-symbol-name token)))
             ((null position-package-marker-2)
              (values (if (= position-package-marker-1 0)
-                         "KEYWORD"
-                         (subseq token 0 position-package-marker-1))
-                     (subseq token (1+ position-package-marker-1))))
+                         **keyword-package-name**
+                         (intern-package-name
+                          (subseq token 0 position-package-marker-1)))
+                     (intern-symbol-name
+                      (subseq token (1+ position-package-marker-1)))))
             (t
-             (values (subseq token 0 position-package-marker-1)
-                     (subseq token (1+ position-package-marker-2)))))
+             (values (intern-package-name
+                      (subseq token 0 position-package-marker-1))
+                     (intern-symbol-name
+                      (subseq token (1+ position-package-marker-2))))))
     (let ((package (find-package package-designator)))
-      (if (null package)
-          (make-instance 'non-existing-package-symbol-token
-                         :package-name package-designator
-                         :package-marker-1 position-package-marker-1
-                         :package-marker-2 position-package-marker-2
-                         :name symbol-name)
-          (multiple-value-bind (symbol status)
-              (find-symbol symbol-name package)
-            (if (null status)
-                (make-instance 'non-existing-symbol-token
-                               :package-name (cl:package-name package)
+      (macrolet ((make-token (class package-name symbol-name)
+                   `(let ((package-name (intern-package-name ,package-name))
+                          (symbol-name  (intern-symbol-name ,symbol-name)))
+                      (make-instance
+                       ',class :package-name     package-name
                                :package-marker-1 position-package-marker-1
                                :package-marker-2 position-package-marker-2
-                               :name symbol-name)
-                (make-instance 'existing-symbol-token
-                               :package-name (cl:package-name (symbol-package symbol))
-                               :package-marker-1 position-package-marker-1
-                               :package-marker-2 position-package-marker-2
-                               :name (cl:symbol-name symbol))))))))
+                               :name             symbol-name))))
+        (if (null package)
+            (make-token non-existing-package-symbol-token
+                        package-designator
+                        symbol-name)
+            (multiple-value-bind (symbol status)
+                (find-symbol symbol-name package)
+              (if (null status)
+                  (make-token non-existing-symbol-token
+                              (cl:package-name package)
+                              symbol-name)
+                  (make-token existing-symbol-token
+                              (cl:package-name (symbol-package symbol))
+                              (cl:symbol-name symbol)))))))))
 
 ;;; Source position
 
@@ -199,7 +206,8 @@
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result symbol-token) (children t) (source t))
-  (if (and (null children) (not (string= (package-name result) "COMMON-LISP")))
+  (if (and (null children)
+           (not (eq (package-name result) **common-lisp-package-name**)))
       (let ((words (make-word-wads (stream* client) source)))
         (if (null words)
             (call-next-method)
@@ -256,7 +264,7 @@
            (list* head rest))))
 
   (defmethod eclector.reader:wrap-in-quote ((client client) (material t))
-    (make-form "QUOTE" "COMMON-LISP" material))
+    (make-form "QUOTE" **common-lisp-package-name** material))
 
   (defmethod eclector.reader:wrap-in-quasiquote ((client client) (form t))
     (make-form "QUASIQUOTE" "KEYWORD" form))
@@ -268,4 +276,4 @@
     (make-form "UNQUOTE-SPLICING" "KEYWORD" form))
 
   (defmethod eclector.reader:wrap-in-function ((client client) (name t))
-    (make-form "FUNCTION" "COMMON-LISP" name)))
+    (make-form "FUNCTION" **common-lisp-package-name** name)))

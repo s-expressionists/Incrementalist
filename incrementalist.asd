@@ -57,10 +57,12 @@
                  :components ((:file "package")
                               ;; Test utilities
                               (:file "utilities")
+                              (:file "code-reading-utilities")
                               ;; Model
                               (:file "wad")
                               ;; Tests
-                              (:file "test"))))
+                              (:file "test")
+                              (:file "read-code"))))
 
   :perform     (test-op (operation component)
                  (uiop:symbol-call '#:incrementalist.test '#:run-tests)))

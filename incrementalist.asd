@@ -45,8 +45,11 @@
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
 
   :version     (:read-file-form "data/version-string.sexp")
-  :depends-on  ("fiveam"
-
+  :depends-on  (;; Utilities
+                "utilities.print-tree"
+                ;; Test framework
+                "fiveam"
+                ;; Code under test
                 "incrementalist")
 
   :components  ((:module     "test"

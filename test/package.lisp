@@ -3,6 +3,8 @@
    #:cl)
 
   (:local-nicknames
+   (#:a   #:alexandria)
+
    (#:inc #:incrementalist))
 
   (:import-from #:fiveam
@@ -11,6 +13,8 @@
    #:in-suite
    #:test
    #:is
+   #:is-true
+   #:is-false
    #:signals
    #:finishes)
 

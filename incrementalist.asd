@@ -62,6 +62,7 @@
                               (:file "wad")
                               ;; Tests
                               (:file "test")
+                              (:file "random")
                               (:file "read-code")
                               (:file "regressions"))))
 

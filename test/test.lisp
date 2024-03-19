@@ -14,11 +14,14 @@
      '((inc:atom-wad ((0 0) (0 5)) (:raw "foo")
         (inc:word-wad ((0 1) (0 4))))))
     ("\".\""
-     '((inc:atom-wad ((0 0) (0 3)) (:raw "."))))
+     '((inc:atom-wad ((0 0) (0 3)) (:raw ".")
+        (inc:text-wad ((0 1) (0 2))))))
     ("foo::bar"
      '((inc:atom-wad ((0 0) (0 8))
         (:raw (inc:symbol-token :symbol ("FOO" "BAR")))
         (inc:word-wad ((0 0) (0 3)))
+        (inc:punctuation-wad ((0 3) (0 4)))
+        (inc:punctuation-wad ((0 4) (0 5)))
         (inc:word-wad ((0 5) (0 8))))))
     ("#'foo"
      `((inc:cons-wad ((0 0) (0 5)) ()

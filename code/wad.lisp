@@ -477,16 +477,22 @@
 (defclass reader-macro-wad (ignored-wad)
   ())
 
-;;; `word-wad'
+;;; `text-wad'
 ;;;
-;;; A wad that represents a word within some atom (for example a
-;;; symbol or a string) or skipped material (for example a semicolon
-;;; comment or a block comment).  A `word-wad' does not have any
-;;; children.
+;;; A wad that represents a piece of text such as word or punctuation
+;;; within some atom (for example a symbol or a string) or skipped
+;;; material (for example a semicolon comment or a block comment).  A
+;;; `text-wad' does not have any children.
 
-(defclass word-wad (no-children-mixin
+(defclass text-wad (no-children-mixin
                     non-cst-wad
-                    wad) ; TODO should not inherit indentation; should use errors slot for misspelled information
+                    wad) ; TODO should not inherit indentation
+  ())
+
+(defclass punctuation-wad (text-wad)
+  ())
+
+(defclass word-wad (text-wad) ; TODO should use errors slot for misspelled information
   ((%misspelled :initarg :misspelled
                 :reader  misspelled)))
 

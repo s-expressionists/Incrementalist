@@ -228,9 +228,12 @@
     (location symbol-name
      &key (package-name "INCREMENTALIST.TEST.TEST-PACKAGE")
           (token-class  'inc:non-existing-symbol-token)
-          (words        (if (equal package-name "COMMON-LISP")
-                            '()
-                            `((inc:word-wad ,location)))))
+          (words        (cond ((equal package-name "COMMON-LISP")
+                               '())
+                              ((> (length symbol-name) 1)
+                               `((inc:word-wad ,location)))
+                              (t
+                               `((inc:text-wad ,location))))))
   `(inc:atom-wad ,location
     (:raw (,token-class :symbol (,package-name ,symbol-name)))
     ,@words))

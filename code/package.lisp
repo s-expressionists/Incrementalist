@@ -71,6 +71,8 @@
    #:read-suppress-wad
    #:reader-macro-wad
 
+   #:text-wad
+   #:punctuation-wad
    #:word-wad
    #:misspelled ; reader
 

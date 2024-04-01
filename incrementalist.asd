@@ -28,8 +28,7 @@
                               (:file "analyzer")
                               (:file "text")
                               (:file "client")
-                              (:file "parse")
-                              (:file "read-forms")
+                              (:file "read")
                               (:file "update-cache")
                               ;; Queries
                               (:file "find-wad-beginning-line")

@@ -1,14 +1,6 @@
 (cl:in-package #:incrementalist)
 
-(defun whitespacep (character) ; TODO move to spell-checking
-  (member character '(#\Space #\Tab #\Newline #\Page)))
-
-(defun punctuationp (character)
-  (member character '(#\. #\? #\! #\: #\, #\;
-                      #\( #\) #\< #\> #\[ #\] #\{ #\}
-                      #\" #\' #\` #\/ #\_ #\- #\+ #\* #\% #\= #\#)))
-
-;;; Positions
+;;; Position utilities
 
 (defmacro %position< (line-number1 item-number1 line-number2 item-number2)
   (let ((n-line-number1 (gensym "LINE-NUMBER1"))
@@ -48,3 +40,43 @@
                    interval-start-line-number interval-start-column-number)
        (%position< position-line-number position-column-number
                    interval-end-line-number interval-end-column-number)))
+
+;;; Source utilities
+
+(defmacro destructure-source ((start-line-var start-column-var
+                               end-line-var   end-column-var)
+                              source &body body)
+  `(destructuring-bind ((,start-line-var . ,start-column-var)
+                        . (,end-line-var . ,end-column-var))
+       ,source
+     (declare (type alexandria:array-index
+                    ,start-line-var ,start-column-var
+                    ,end-line-var   ,end-column-var))
+     ,@body))
+
+;;; Result utilities
+
+(defmacro basic-wad (class stream source &rest extra-initargs)
+  (alexandria:once-only (stream)
+    (alexandria:with-unique-names (start-line start-column end-line end-column
+                                              line-number max-line-width)
+      `(destructure-source (,start-line ,start-column ,end-line ,end-column)
+                           ,source
+         (let* ((,line-number    (line-number ,stream))
+                (,max-line-width (compute-max-line-width
+                                  ,stream ,start-line ,line-number '())))
+           (make-instance ,class :cache               *cache*
+                                 :relative-p          nil
+                                 :absolute-start-line ,start-line
+                                 :start-line          ,start-line
+                                 :height              (- ,end-line ,start-line)
+                                 :start-column        ,start-column
+                                 :end-column          ,end-column
+                                 :max-line-width      ,max-line-width
+                                 ,@extra-initargs))))))
+
+(defmacro wad-with-children (class stream source children &rest extra-initargs)
+  (alexandria:once-only (children)
+    `(let ((result (basic-wad ,class ,stream ,source :children ,children
+                              ,@extra-initargs)))
+       (make-children-relative-and-set-family-relations result))))

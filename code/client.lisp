@@ -89,117 +89,15 @@
 
 ;;; Result construction
 
-(defmacro destructure-source ((start-line-var start-column-var
-                               end-line-var   end-column-var)
-                              source &body body)
-  `(destructuring-bind ((,start-line-var . ,start-column-var)
-                        . (,end-line-var . ,end-column-var))
-       ,source
-     (declare (type alexandria:array-index
-                    ,start-line-var ,start-column-var
-                    ,end-line-var   ,end-column-var))
-     ,@body ))
-
-(defmacro basic-wad (class stream source &rest extra-initargs)
-  (alexandria:once-only (stream)
-    (alexandria:with-unique-names (start-line start-column end-line end-column
-                                   line-number max-line-width)
-      `(destructure-source (,start-line ,start-column ,end-line ,end-column)
-           ,source
-         (let* ((,line-number    (line-number ,stream))
-                (,max-line-width (compute-max-line-width
-                                  ,stream ,start-line ,line-number '())))
-           (make-instance ,class :cache               *cache*
-                                 :relative-p          nil
-                                 :absolute-start-line ,start-line
-                                 :start-line          ,start-line
-                                 :height              (- ,end-line ,start-line)
-                                 :start-column        ,start-column
-                                 :end-column          ,end-column
-                                 :max-line-width      ,max-line-width
-                                 ,@extra-initargs))))))
-
-(defmacro wad-with-children (class stream source children &rest extra-initargs)
-  (alexandria:once-only (children)
-    `(let ((result (basic-wad ,class ,stream ,source
-                              :children ,children
-                              ,@extra-initargs)))
-       (make-children-relative-and-set-family-relations result))))
-
-(defun make-text-wads (stream source
-                       &key (start-column-offset 0)
-                            (end-column-offset   0 end-column-offset-p)
-                            (min-length          1))
-  (destructure-source (start-line start-column end-line end-column*) source
-    (let* ((cache             (cache stream))
-           (text              (make-array 0 :element-type 'character
-                                            :adjustable   t
-                                            :fill-pointer 0))
-           (text-start-column (+ start-column start-column-offset))
-           (wads              '()))
-      (flet ((terminatingp (character)
-               (let ((spacep       (whitespacep character))
-                     (punctuationp (punctuationp character)))
-                 (values (or spacep punctuationp) punctuationp)))
-             (commit (line column checkp)
-               (let ((length (length text))
-                     (source (cons (cons line text-start-column)
-                                   (cons line column))))
-                 (cond ((zerop length)) ; do not collect empty wads
-                       ((every #'punctuationp text)
-                        (push (basic-wad 'punctuation-wad stream source)
-                              wads))
-                       ((and (>= length min-length)
-                             (notany #'digit-char-p text))
-                        (let ((misspelledp (and checkp
-                                                (null (spell:english-lookup text)))))
-                          (push (basic-wad 'word-wad stream source
-                                           :misspelled misspelledp)
-                                wads)))
-                       (t
-                        (push (basic-wad 'text-wad stream source)
-                              wads))))
-               (setf (fill-pointer text) 0
-                     text-start-column   column)))
-        (loop for line from start-line to (if (zerop end-column*)
-                                              (1- end-line)
-                                              end-line)
-              for contents of-type simple-string = (line-contents cache line)
-              do (loop with end-column = (if (= line end-line)
-                                             (+ end-column*
-                                                (if end-column-offset-p
-                                                    end-column-offset
-                                                    0))
-                                             (length contents))
-                       for column from text-start-column below end-column
-                       for character = (aref contents column)
-                       for (terminatingp punctuationp)
-                          = (multiple-value-list (terminatingp character))
-                       do (cond ((not terminatingp)
-                                 (vector-push-extend character text))
-                                (punctuationp
-                                 (commit line column t)
-                                 (vector-push-extend character text)
-                                 (commit line (1+ column) nil))
-                                (t
-                                 (commit line column t)
-                                 (incf text-start-column)))
-                       finally (commit line column t))
-                 (setf text-start-column 0))
-        (nreverse wads)))))
-
 (defmethod eclector.parse-result:make-skipped-input-result
     ((client client) (stream t) (reason t) (source t))
   (etypecase reason
     ((cons (eql :line-comment))
-     ;; Eclector returns the beginning of the following line as the
-     ;; end of the comment.  But we want it to be the end of the
-     ;; same line.  But I don't know how to do it correctly (yet).
      (let* ((semicolon-count (cdr reason))
-            (words           (make-text-wads
+            (text-wads       (make-text-wads
                               stream source
                               :start-column-offset semicolon-count)))
-       (wad-with-children 'semicolon-comment-wad stream source words
+       (wad-with-children 'semicolon-comment-wad stream source text-wads
                           :semicolon-count semicolon-count)))
     ((eql :block-comment)
      (let ((words (make-text-wads stream source :start-column-offset 2

@@ -26,6 +26,7 @@
                               (:file "cache")
                               (:file "buffer-stream")
                               (:file "analyzer")
+                              (:file "text")
                               (:file "client")
                               (:file "parse")
                               (:file "read-forms")

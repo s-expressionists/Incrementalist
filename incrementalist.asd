@@ -60,7 +60,9 @@
                               (:file "code-reading-utilities")
                               ;; Model
                               (:file "wad")
-                              ;; Tests
+                              ;; Queries
+                              (:file "find-wad-containing-position")
+                              ;; Other tests
                               (:file "test")
                               (:file "random")
                               (:file "read-code")

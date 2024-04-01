@@ -93,6 +93,9 @@
 ;;; if the position is inside no wad.
 (defgeneric find-wads-containing-position (cache line-number column-number))
 
+(defgeneric map-wads-containing-position (function line-number column-number cache
+                                          &key start-relation end-relation))
+
 ;;; Analyzer protocol
 ;;; Extends associated buffer protocol
 

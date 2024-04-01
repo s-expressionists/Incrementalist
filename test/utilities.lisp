@@ -196,8 +196,10 @@
                  (is-raw expected-expression expression result-info
                          :input input)))
              ;; Recursively check children
-             (is-sequence #'rec expected-children (inc:children result)
-                          result-info "~:*child~[ren~;~:;ren~]" :input input)))))
+             (unless (equal expected-children '(:ignore-children))
+               (is-sequence #'rec expected-children (inc:children result)
+                            result-info "~:*child~[ren~;~:;ren~]"
+                            :input input))))))
     (rec expected root-result)))
 
 (defun are-results (expected-results actual-results &key input)

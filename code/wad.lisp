@@ -311,9 +311,21 @@
 ;;; line number of the position, and the start line of the wad to
 ;;; which WAD is relative.  The position is inside WAD if it is
 ;;; neither before WAD nor after WAD.
-(defun position-is-inside-wad-p (wad relative-line-number column-number)
-  (not (or (position-is-before-wad-p wad relative-line-number column-number)
-           (position-is-after-wad-p wad relative-line-number column-number))))
+(declaim (inline position-is-inside-wad-p))
+(defun position-is-inside-wad-p (wad relative-line-number column-number
+                                 &key (start-relation '<)
+                                      (end-relation   '<))
+  (let ((start-line (start-line wad)))
+    (macrolet ((one-boundary (relation &rest arguments)
+                 `(ecase ,relation
+                    (<  (%position< ,@arguments))
+                    (<= (%position<= ,@arguments)))))
+      (and (one-boundary start-relation
+                         start-line                  (start-column wad)
+                         relative-line-number        column-number)
+           (one-boundary end-relation
+                         relative-line-number        column-number
+                         (+ start-line (height wad)) (end-column wad))))))
 
 (defun wad-starts-before-wad-p (wad1 wad2)
   (%position< (start-line wad1) (start-column wad1)

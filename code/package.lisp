@@ -96,7 +96,8 @@
 
    #:map-wads-and-spaces ; query functions
    #:find-wad-beginning-line
-   #:find-wads-containing-position)
+   #:find-wads-containing-position
+   #:map-wads-containing-position)
 
   ;; Analyzer protocol
   ;; Extends associated buffer protocol

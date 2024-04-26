@@ -16,6 +16,12 @@
     ("\".\""
      '((inc:atom-wad ((0 0) (0 3)) (:raw ".")
         (inc:text-wad ((0 1) (0 2))))))
+    ("#:foo"
+     `((inc:atom-wad ((0 0) (0 5))
+        (:raw (inc:uninterned-symbol-token :symbol (nil "FOO")))
+        (inc:punctuation-wad ((0 0) (0 1)))
+        (inc:punctuation-wad ((0 1) (0 2)))
+        (inc:word-wad ((0 2) (0 5))))))
     ("foo::bar"
      '((inc:atom-wad ((0 0) (0 8))
         (:raw (inc:symbol-token :symbol ("FOO" "BAR")))

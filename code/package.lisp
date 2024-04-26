@@ -23,7 +23,9 @@
    #:package-name
    #:name
 
-   #:non-existing-package-symbol-token ; classes
+   #:uninterned-symbol-token ; classes
+   #:interned-symbol-token
+   #:non-existing-package-symbol-token
    #:non-existing-symbol-token
    #:existing-symbol-token)
 

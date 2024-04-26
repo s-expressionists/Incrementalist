@@ -26,21 +26,9 @@
          symbol-name)))
 
 (defclass symbol-token (token)
-  ((%package-marker-1 :initarg  :package-marker-1
-                      :type     (or null integer)
-                      :reader   package-marker-1
-                      :initform nil)
-   (%package-marker-2 :initarg  :package-marker-2
-                      :type     (or null integer)
-                      :reader   package-marker-2
-                      :initform nil)
-   (%package-name     :initarg  :package-name
-                      :type     (or null string)
-                      :reader   package-name
-                      :initform nil)
-   (%name             :initarg  :name
-                      :type     string
-                      :reader   name)))
+  ((%name :initarg  :name
+          :type     string
+          :reader   name)))
 
 (defun maybe-truncate-string (thing &key (limit 32))
   (cond ((not (stringp thing))
@@ -52,17 +40,43 @@
 
 (defmethod print-object ((object symbol-token) stream)
   (print-unreadable-object (object stream :type t :identity t)
-    (format stream "[~A]~:[~;:~]~:[~;:~]~A"
+    (format stream "~@[[~A]~]~:[~;:~]~:[~;:~]~A"
             (maybe-truncate-string (package-name object))
             (package-marker-1 object)
             (package-marker-2 object)
             (maybe-truncate-string (name object)))))
 
-(defclass non-existing-package-symbol-token (symbol-token)
+(defclass uninterned-symbol-token (symbol-token)
   ())
 
-(defclass non-existing-symbol-token (symbol-token)
+(defmethod package-marker-1 ((symbol-token uninterned-symbol-token))
+  nil)
+
+(defmethod package-marker-2 ((symbol-token uninterned-symbol-token))
+  nil)
+
+(defmethod package-name ((symbol-token uninterned-symbol-token))
+  nil)
+
+(defclass interned-symbol-token (symbol-token)
+  ((%package-marker-1 :initarg  :package-marker-1
+                      :type     (or null integer)
+                      :reader   package-marker-1
+                      :initform nil)
+   (%package-marker-2 :initarg  :package-marker-2
+                      :type     (or null integer)
+                      :reader   package-marker-2
+                      :initform nil)
+   (%package-name     :initarg  :package-name
+                      :type     (or null string)
+                      :reader   package-name
+                      :initform nil)))
+
+(defclass non-existing-package-symbol-token (interned-symbol-token)
   ())
 
-(defclass existing-symbol-token (symbol-token)
+(defclass non-existing-symbol-token (interned-symbol-token)
+  ())
+
+(defclass existing-symbol-token (interned-symbol-token)
   ())

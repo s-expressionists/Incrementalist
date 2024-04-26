@@ -79,6 +79,13 @@
                               (cl:package-name (symbol-package symbol))
                               (cl:symbol-name symbol)))))))))
 
+(defmethod reader:interpret-symbol ((client            client)
+                                    (input-stream      t)
+                                    (package-indicator null)
+                                    (symbol-name       t)
+                                    (internp           t))
+  (make-instance 'uninterned-symbol-token :name symbol-name))
+
 ;;; Source position
 
 (defmethod eclector.base:source-position ((client client) (stream buffer-stream))

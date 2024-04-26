@@ -40,9 +40,11 @@
                                              (readtable    t))
   (let ((values (multiple-value-list (call-next-method))))
     (typecase values
-      (null
+      (null ; reader macro did not return an object
        (values))
-      ((cons null null)
+      ((cons null null) ; reader macro returned `nil', typically from reading ()
+       ;; Eclector should probably go through the symbol construction protocol
+       ;; for this case.
        (make-instance 'existing-symbol-token
                       :name         **nil-symbol-name**
                       :package-name **common-lisp-package-name**))

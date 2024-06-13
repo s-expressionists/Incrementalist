@@ -10,8 +10,8 @@
   The purpose of the Incrementalist library is incremental parsing of
   Common Lisp code that is contained in a [[https://github.com/robert-strandh/cluffer][Cluffer]] buffer into a syntax
   tree. The parsing is incremental in the sense that after a small
-  change in the buffer text, the syntax tree can be updated with a
-  small amount of parsing work.
+  change in the buffer text, the syntax tree can usually be updated
+  with a small amount of parsing work.
 
   *This library is under active development. Its ASDF system
   structure, package structure, exported symbols and protocols may
@@ -21,3 +21,96 @@
   This document only gives a very brief overview and highlights some
   features. Proper documentation can be found in the
   file:documentation directory.
+
+* Usage Overview
+
+  A central concept of the Incrementalist library is the "analyzer"
+  which, given a Cluffer buffer, creates and maintains a concrete
+  syntax tree that represents the content of the buffer. We therefore
+  start by creating and populating a buffer:
+
+  #+BEGIN_SRC lisp :exports both :results value
+    (defun example-buffer (&key (content "(((1)))"))
+      (let* ((line (make-instance 'cluffer-standard-line:open-line))
+             (buffer (make-instance 'cluffer-standard-buffer:buffer :initial-line line))
+             (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
+        (cluffer:attach-cursor cursor line 0)
+        (loop for c across content
+              do (case c
+                   (#\Newline (cluffer:split-line cursor))
+                   (t         (cluffer:insert-item cursor c))))
+        (values buffer cursor)))
+
+    (example-buffer)
+  #+END_SRC
+
+  #+RESULTS:
+  : #<CLUFFER-STANDARD-BUFFER:BUFFER 1 line 7 items {10055953A3}>
+  : #<CLUFFER-STANDARD-LINE:RIGHT-STICKY-CURSOR 0:7 {1005595453}>
+
+  We can now attach an analyzer to a buffer:
+
+  #+BEGIN_SRC lisp :exports both :results value
+    (defun example-analyzer (buffer)
+      (make-instance 'incrementalist:analyzer :buffer buffer))
+
+    (example-analyzer (example-buffer))
+  #+END_SRC
+
+  #+RESULTS:
+  : #<INCREMENTALIST:ANALYZER N/A,N/A {1005642B73}>
+
+  To obtain the concrete syntax tree, we must update the analyzer
+  after attaching it to the buffer and after changes to the contents
+  of the buffer:
+
+  #+BEGIN_SRC lisp :exports both :results output
+    (multiple-value-bind (buffer cursor) (example-buffer :content "(((11)))")
+      (let ((analyzer (example-analyzer buffer)))
+        (let ((cache (incrementalist:cache analyzer)))
+          (format t "Initial")
+          (incrementalist:update analyzer)
+          (mapc #'print (incrementalist:find-wads-containing-position
+                         cache 0 4))
+          ;; Delete first and last buffer item and update analyzer
+          (cluffer:erase-item cursor)
+          (setf (cluffer:cursor-position cursor) 0)
+          (cluffer:delete-item cursor)
+          (incrementalist:update analyzer)
+          (format t "~&After change")
+          (mapc #'print (incrementalist:find-wads-containing-position
+                         cache 0 3)))))
+  #+END_SRC
+
+  #+RESULTS:
+  : Initial
+  : (0 . #<INCREMENTALIST:ATOM-WAD rel:0[0],3 -> 0,5 raw: 11>)
+  : (0 . #<INCREMENTALIST:CONS-WAD rel:0[0],2 -> 0,6>)
+  : (0 . #<INCREMENTALIST:CONS-WAD rel:0[0],1 -> 0,7>)
+  : (0 . #<INCREMENTALIST:CONS-WAD abs:0[0],0 -> 0,8>)
+  : After change
+  : (0 . #<INCREMENTALIST:ATOM-WAD rel:0[0],2 -> 0,4 raw: 11>)
+  : (0 . #<INCREMENTALIST:CONS-WAD rel:0[0],1 -> 0,5>)
+  : (0 . #<INCREMENTALIST:CONS-WAD abs:0[0],0 -> 0,6>)
+
+  Incrementalist handles syntax errors by adding special nodes to the
+  concrete syntax tree:
+
+  #+BEGIN_SRC lisp :exports both :results output
+    (let* ((analyzer (example-analyzer (example-buffer :content "(#\\Foo")))
+           (cache (incrementalist:cache analyzer)))
+      (incrementalist:update analyzer)
+      (let* ((wads (incrementalist:find-wads-containing-position
+                    cache 0 2))
+             (wad1 (cdr (first wads)))
+             (wad2 (cdr (second wads))))
+        (format t "wad    ~A~%errors ~:A~2%" wad1 (incrementalist:errors wad1))
+        (format t "wad    ~A~%errors ~:A~%" wad2 (incrementalist:errors wad2))))
+  #+END_SRC
+
+  #+RESULTS:
+  : wad    #<ATOM-WAD rel:0[0],1 -> 0,6 raw: #\?>
+  : errors (#<ERROR-WAD rel:0[0],3 -> 0,6 condition: UNKNOWN-CHARACTER-NAME>)
+  :
+  : wad    #<CONS-WAD abs:0[0],0 -> 0,6>
+  : errors (#<ERROR-WAD rel:0[0],6 -> 0,6 condition: UNTERMINATED-LIST>)

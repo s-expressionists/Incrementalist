@@ -363,7 +363,11 @@
 (defmethod print-object ((object atom-wad) stream)
   (print-unreadable-object (object stream :type t)
     (print-wad-position object stream)
-    (format stream " raw: ~S" (cst:raw object))))
+    (let* ((raw        (cst:raw object))
+           (raw-string (typecase raw
+                         (string (substitute #\Paragraph_Sign #\Newline raw))
+                         (t      raw))))
+     (format stream " raw: ~S" raw-string))))
 
 (defmethod cst:null ((cst atom-wad))
   (let ((raw (cst:raw cst)))

@@ -11,10 +11,12 @@
 
 ;;; Feature expressions
 
-(defmethod reader:check-feature-expression ((client client) (feature-expression t))
+(defmethod reader:check-feature-expression ((client             client)
+                                            (feature-expression t))
   t)
 
-(defmethod reader:evaluate-feature-expression ((client client) (feature-expression t))
+(defmethod reader:evaluate-feature-expression ((client             client)
+                                               (feature-expression t))
   nil)
 
 ;;; Read-time evaluation
@@ -39,8 +41,11 @@
       (t
        (values-list values)))))
 
-(defmethod reader:interpret-symbol-token
-    ((client client) input-stream token position-package-marker-1 position-package-marker-2)
+(defmethod reader:interpret-symbol-token ((client                    client)
+                                          (input-stream              t)
+                                          (token                     string)
+                                          (position-package-marker-1 t)
+                                          (position-package-marker-2 t))
   (multiple-value-bind (package-designator symbol-name)
       (cond ((null position-package-marker-1)
              (values *package* (intern-symbol-name token)))
@@ -123,23 +128,25 @@
     ((client client) (result symbol-token) (children t) (source t))
   (if (and (null children)
            (not (eq (package-name result) **common-lisp-package-name**)))
-      (let ((words (make-text-wads (stream* client) source :min-length 2)))
+      (let* ((stream (stream* client))
+             (words  (make-text-wads stream source :min-length 2)))
         (if (null words)
             (call-next-method)
             (wad-with-children
-             'atom-wad-with-extra-children (stream* client) source words :raw result)))
+             'atom-wad-with-extra-children stream source words :raw result)))
       (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result string) (children t) (source t))
   (if (null children)
-      (let ((words (make-text-wads (stream* client) source
-                                   :start-column-offset 1
-                                   :end-column-offset   -1)))
+      (let* ((stream (stream* client))
+             (words  (make-text-wads stream source
+                                     :start-column-offset 1
+                                     :end-column-offset   -1)))
         (if (null words)
             (call-next-method)
             (wad-with-children
-             'atom-wad-with-extra-children (stream* client) source words :raw result)))
+             'atom-wad-with-extra-children stream source words :raw result)))
       (call-next-method)))
 
 (defun adjust-result-class (cst new-class stream source &rest extra-initargs)
@@ -198,63 +205,66 @@
 ;;; input text.
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result t) (children t) (source t))
-  ;; In case we call `cst:reconstruct', we may "consume" a child wad
-  ;; that is still on the residue or suffix without performing the
-  ;; corresponding recursive `read-maybe-nothing' call. As a
-  ;; workaround, consume any such wads here.
-  (cached-wad (stream* client))
-  ;; Separate CHILDREN into children of type `cst:cst' and "extra"
-  ;; children. Extra children arise mainly due to comments and other
-  ;; skipped input which are represented as `wad's which are not of
-  ;; type `cst:cst'
-  (let* ((cst-children (if (null children)
-                           '()
-                           (collect-cst-children children)))
-         (cst          (if (eq cst-children children)
-                           (call-next-method) ; possibly faster
-                           (call-next-method client result cst-children source)))
-         (consp        (typep cst 'cst:cons-cst))
-         ;; Check whether the list of wad children obtained based on
-         ;; the CST structure already matches the list of children
-         (simplep      (or (null children)
-                           (and consp
-                                (eq cst-children children)
-                                (block nil
-                                  (let ((remaining children))
-                                    (map-children
-                                     (lambda (child)
-                                       (when (not (eq child (pop remaining)))
-                                         (return nil)))
-                                     cst)
-                                    (null remaining))))))
-         (new-class    (cond ((and (not consp) simplep)
-                              'atom-wad)
-                             ((not consp)
-                              'atom-wad-with-extra-children)
-                             (simplep
-                              'cons-wad)
-                             (t
-                              'cons-wad-with-extra-children))))
-    ;; Call the next method to obtain a result, CST, of type `cst:cst'
-    ;; which contains RESULT in its raw slot.
-    ;;
-    ;; Two properties of CST will be adjusted:
-    ;; 1. Depending on whether the result is a `cst:cons-cst' or a
-    ;;    `cst:atom-cst', select either `cons-wad' or `atom-wad' as
-    ;;    the new class for CST.
-    ;; 2. In case there are "extra" children or "orphan" CST children,
-    ;;    add those to the result.
-    (if simplep
-        (adjust-result cst new-class (stream* client) source)
-        (adjust-result cst new-class (stream* client) source :children children))))
+  (let ((stream (stream* client)))
+    ;; In case we call `cst:reconstruct', we may "consume" a child wad
+    ;; that is still on the residue or suffix without performing the
+    ;; corresponding recursive `read-maybe-nothing' call. As a
+    ;; workaround, consume any such wads here.
+    (cached-wad stream)
+    ;; Separate CHILDREN into children of type `cst:cst' and "extra"
+    ;; children. Extra children arise mainly due to comments and other
+    ;; skipped input which are represented as `wad's which are not of
+    ;; type `cst:cst'.
+    (let* ((cst-children (if (null children)
+                             '()
+                             (collect-cst-children children)))
+           (cst          (if (eq cst-children children)
+                             (call-next-method) ; possibly faster
+                             (call-next-method
+                              client result cst-children source)))
+           (consp        (typep cst 'cst:cons-cst))
+           ;; Check whether the list of wad children obtained based on
+           ;; the CST structure already matches the list of children.
+           (simplep      (or (null children)
+                             (and consp
+                                  (eq cst-children children)
+                                  (block nil
+                                    (let ((remaining children))
+                                      (map-children
+                                       (lambda (child)
+                                         (when (not (eq child (pop remaining)))
+                                           (return nil)))
+                                       cst)
+                                      (null remaining))))))
+           (new-class    (cond ((and (not consp) simplep)
+                                'atom-wad)
+                               ((not consp)
+                                'atom-wad-with-extra-children)
+                               (simplep
+                                'cons-wad)
+                               (t
+                                'cons-wad-with-extra-children))))
+      ;; Call the next method to obtain a result, CST, of type `cst:cst'
+      ;; which contains RESULT in its raw slot.
+      ;;
+      ;; Two properties of CST will be adjusted:
+      ;; 1. Depending on whether the result is a `cst:cons-cst' or a
+      ;;    `cst:atom-cst', select either `cons-wad' or `atom-wad' as
+      ;;    the new class for CST.
+      ;; 2. In case there are "extra" children or "orphan" CST children,
+      ;;    add those to the result.
+      (if simplep
+          (adjust-result cst new-class stream source)
+          (adjust-result cst new-class stream source :children children)))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
      (result   eclector.parse-result:definition)
      (children t)
      (source   t))
-  (let ((cst (call-next-method)))
-    (adjust-result cst 'labeled-object-definition-wad (stream* client) source
+  (let ((cst    (call-next-method))
+        (stream (stream* client)))
+    (adjust-result cst 'labeled-object-definition-wad stream source
                    :children children)))
 
 (defmethod eclector.parse-result:make-expression-result
@@ -262,8 +272,9 @@
      (result   eclector.parse-result:reference)
      (children t)
      (source   t))
-  (let ((cst (call-next-method)))
-    (adjust-result cst 'labeled-object-reference-wad (stream* client) source)))
+  (let ((cst    (call-next-method))
+        (stream (stream* client)))
+    (adjust-result cst 'labeled-object-reference-wad stream source)))
 
 ;;; S-expression generation
 

@@ -29,6 +29,7 @@
    ;; last wad in the prefix is the first wad in the buffer.  Every
    ;; top-level wad in the prefix has an absolute line number.
    (%prefix        :accessor prefix
+                   :type     list
                    :initform '())
    (%prefix-width  :accessor prefix-width
                    :initform '())
@@ -36,6 +37,7 @@
    ;; first top-level wad on the suffix has an absolute line number.
    ;; All the others have relative line numbers.
    (%suffix        :accessor suffix
+                   :type     list
                    :initform '())
    ;; This slot contains a list that parallels the suffix and it
    ;; contains the width of the suffix starting with the first element
@@ -47,8 +49,10 @@
    ;; the READ-FORMS phase to avoid reading characters when the result
    ;; is known.
    (%residue       :accessor residue
+                   :type     list
                    :initform '())
    (%worklist      :accessor worklist
+                   :type     list
                    :initform '())))
 
 (defmethod print-object ((object cache) stream)
@@ -232,9 +236,8 @@
 ;;; Return true if and only if LINE-NUMBER is one of the lines of WAD.
 ;;; The START-LINE of WAD is an absolute line number.
 (defun line-is-inside-wad-p (wad line-number)
-  (<= (start-line wad)
-      line-number
-      (+ (start-line wad) (height wad))))
+  (let ((start-line (start-line wad)))
+    (<= start-line line-number (+ start-line (height wad)))))
 
 ;;; Add INCREMENT to the absolute line number of every wad on the
 ;;; worklist, and of the first wad of the suffix, if any.

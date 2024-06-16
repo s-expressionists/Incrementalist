@@ -165,10 +165,10 @@
                                ((:raw expected-raw)
                                 nil
                                 expected-raw-supplied?)
-                               ;; expression is for sharpsign-{plus,minus}-wad
-                               ((:expression expected-expression)
+                               ;; feature-expression is for `conditional-wad's
+                               ((:feature-expression expected-feature-expression)
                                 nil
-                                expected-expression-supplied?))
+                                expected-feature-expression-supplied?))
                          '())
               &rest     expected-children)
              expected
@@ -190,11 +190,10 @@
                      (is-true (cst:null result))
                      (is-false (cst:null result)))
                  (is-raw expected-raw raw result-info :input input)))
-             ;; Assertions for expression of `sharpsign-plus-wad' and
-             ;; `sharpsign-minus-wad'.
-             (when expected-expression-supplied?
-               (let ((expression (inc:expression result)))
-                 (is-raw expected-expression expression result-info
+             ;; Assertions for feature expression of `conditional-wad's.
+             (when expected-feature-expression-supplied?
+               (let ((feature-expression (inc:feature-expression result)))
+                 (is-raw expected-feature-expression feature-expression result-info
                          :input input)))
              ;; Recursively check children
              (unless (equal expected-children '(:ignore-children))

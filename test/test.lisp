@@ -60,16 +60,26 @@
          (inc:word-wad ((0 5) (0 6))))
         (inc:atom-wad ((0 8) (0 9)) (:raw 1)))))
     ("#+a b"
-     `((inc:sharpsign-plus-wad ((0 0) (0 5))
-       (:expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
-       #+TODO ,(expected-symbol-wad '((0 2) (0 3)) "A" :token-class  'inc:existing-symbol-token
-                                                       :package-name "KEYWORD"))))
+     `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
+       (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
+       ,(expected-symbol-wad '((0 2) (0 3)) "A"
+                             :token-class  'inc:existing-symbol-token
+                             :package-name "KEYWORD")
+       (inc:read-suppress-wad ((0 4) (0 5)) ()))))
     ("#-a b"
-     `((inc:atom-wad ((0 0) (0 5)) ; TODO should be sharpsign-minus-wad and represent the expression
-        (:raw (inc:non-existing-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
-        ,(expected-symbol-wad '((0 2) (0 3)) "A" :token-class  'inc:existing-symbol-token
-                                                 :package-name "KEYWORD")
-        ,(expected-symbol-wad '((0 4) (0 5)) "B"))))))
+     `((inc:read-negative-conditional-wad ((0 0) (0 5))
+          (:raw (inc:non-existing-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
+        ,(expected-symbol-wad '((0 2) (0 3)) "A"
+                              :token-class  'inc:existing-symbol-token
+                              :package-name "KEYWORD")
+        ,(expected-symbol-wad '((0 4) (0 5)) "B"))))
+    ("#-
+a b"
+     `((inc:read-negative-conditional-wad ((0 0) (1 3)) ()
+        ,(expected-symbol-wad '((1 0) (1 1)) "A"
+                              :token-class  'inc:existing-symbol-token
+                              :package-name "KEYWORD")
+        ,(expected-symbol-wad '((1 2) (1 3)) "B"))))))
 
 (test nil-spellings
   "Test for reading various spellings of `nil'."

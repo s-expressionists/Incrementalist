@@ -474,23 +474,56 @@
    (%semicolon-count :initarg :semicolon-count
                      :reader  semicolon-count)))
 
-(defclass ignored-wad (no-children-mixin skipped-wad)
+(defclass ignored-wad (skipped-wad)
   ())
 
-(defclass sharpsign-wad (ignored-wad)
-  ((%expression :initarg :expression
-                :reader  expression)))
+;;; This class is used as a superclass for wad classes that represent reader
+;;; conditionals, ones that skipped the guarded expression and ones that read
+;;; the guarded expression.  What those have in common is the presence of a
+;;; feature expression (unless the reader had to recover from invalid syntax in
+;;; which case there may not be a feature expression).
+(defclass conditional-wad ()
+  (;; The raw feature expression, not the cst/wad.
+   (%feature-expression :initarg :feature-expression
+                        :reader  feature-expression)))
 
-(defclass sharpsign-plus-wad (sharpsign-wad)
+;;; Subclasses of this class are used to represent reader conditional for which
+;;; the guarded expression was skipped.  Instances are not of type `cst:cst'.
+;;; Usually there is a wad children for the feature expression (this child is
+;;; usually of type `cst:cst') and a wad child for the skipped guarded
+;;; expression (this child is usually of type `read-suppress-wad').  There may
+;;; be other children in case material was skipped after reading the feature
+;;; expression but before reading the guarded expression.
+(defclass skipped-conditional-wad (maybe-extra-children-mixin
+                                   conditional-wad
+                                   ignored-wad)
   ())
 
-(defclass sharpsign-minus-wad (sharpsign-wad)
+(defclass skipped-positive-conditional-wad (skipped-conditional-wad) ())
+
+(defclass skipped-negative-conditional-wad (skipped-conditional-wad) ())
+
+;;; Subclasses of this class are used for reader conditionals for which the
+;;; guarded expression was read.  Instances are of type `cst:cst'.  The target
+;;; of the wrapper is the read guarded expression which is also of type
+;;; `cst:cst'.  There is also a wad child which corresponds to the feature
+;;; expression (this child is usually of type `cst:cst' as well).  There may be
+;;; other children in case material was skipped after reading the feature
+;;; expression but before reading the guarded expression.
+(defclass read-conditional-wad (maybe-extra-children-mixin
+                                conditional-wad
+                                cst-wad
+                                eclector.concrete-syntax-tree:wrapper-cst)
   ())
 
-(defclass read-suppress-wad (ignored-wad)
+(defclass read-positive-conditional-wad (read-conditional-wad) ())
+
+(defclass read-negative-conditional-wad (read-conditional-wad) ())
+
+(defclass read-suppress-wad (maybe-extra-children-mixin ignored-wad)
   ())
 
-(defclass reader-macro-wad (ignored-wad)
+(defclass reader-macro-wad (no-children-mixin ignored-wad)
   ())
 
 ;;; `text-wad'

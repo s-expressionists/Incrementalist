@@ -102,8 +102,20 @@
 
 ;;; Result construction
 
+;;; TODO Remove this and depend on the correct Eclector version once that is
+;;; released.
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let* ((generic-function #'eclector.parse-result:make-skipped-input-result)
+         (lambda-list      (c2mop:generic-function-lambda-list
+                            generic-function)))
+    (when (= (length lambda-list) 5)
+      (pushnew 'skipped-input-children *features*))))
 (defmethod eclector.parse-result:make-skipped-input-result
-    ((client client) (stream t) (reason t) (source t))
+    ((client client)
+     (stream t)
+     (reason t)
+     #+incrementalist::skipped-input-children (children t)
+     (source t))
   (etypecase reason
     ((cons (eql :line-comment))
      (let* ((semicolon-count (cdr reason))
@@ -119,11 +131,31 @@
     ((eql :reader-macro)
      (basic-wad 'reader-macro-wad stream source))
     ((eql *read-suppress*)
-     (basic-wad 'read-suppress-wad stream source))
-    ((cons (eql :sharpsign-plus))
-     (basic-wad 'sharpsign-plus-wad stream source :expression (cdr reason)))
-    ((cons (eql :sharpsign-minus))
-     (basic-wad 'sharpsign-minus-wad stream source :expression (cdr reason)))))
+     #-incrementalist::skipped-input-children
+     (basic-wad 'read-suppress-wad stream source)
+     #+incrementalist::skipped-input-children
+     (wad-with-children 'read-suppress-wad stream source children))
+    ((cons (member :sharpsign-plus :sharpsign-minus))
+     (destructuring-bind (which . feature-expression) reason
+       #-incrementalist::skipped-input-children
+       (ecase which
+         (:sharpsign-plus
+          (basic-wad 'skipped-positive-conditional-wad stream source
+                     :feature-expression feature-expression))
+         (:sharpsign-minus
+          (basic-wad 'skipped-negative-conditional-wad stream source
+                     :feature-expression feature-expression)))
+       #+incrementalist::skipped-input-children
+       (let ((result (ecase which
+                       (:sharpsign-plus
+                        (basic-wad 'skipped-positive-conditional-wad stream source
+                                   :feature-expression feature-expression
+                                   :children           children))
+                       (:sharpsign-minus
+                        (basic-wad 'skipped-negative-conditional-wad stream source
+                                   :feature-expression feature-expression
+                                   :children           children)))))
+         (make-children-relative-and-set-family-relations result))))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result symbol-token) (children t) (source t))
@@ -202,6 +234,28 @@
           :collect child :into cst-children
         :finally (return (if any-extra-p cst-children children))))
 
+(defun make-read-conditional-wad (cst stream source children cst-children)
+  (destructuring-bind (&optional feature-expression-child target-child)
+      cst-children
+    (destructure-source (start-line start-column) source
+      ;; After we decided to call this function based on a heuristic, stay on
+      ;; course by applying another heuristic to compute the wad class: if the
+      ;; second item after the start of the wad is #\- select
+      ;; `read-negative-conditional-wad', otherwise
+      ;; `read-positive-conditional-wad'.
+      (let* ((cache              (cache stream))
+             (line               (line-contents cache start-line))
+             (character          (aref line (1+ start-column)))
+             (class              (case character
+                                   (#\- 'read-negative-conditional-wad)
+                                   (t   'read-positive-conditional-wad)))
+             (feature-expression (when feature-expression-child
+                                   (cst:raw feature-expression-child))))
+        (adjust-result cst class stream source
+                       :feature-expression feature-expression
+                       :target             target-child
+                       :children           children)))))
+
 ;;; Note: CHILDREN are already ordered according to their location in
 ;;; input text.
 (defmethod eclector.parse-result:make-expression-result
@@ -237,7 +291,21 @@
                                            (return nil)))
                                        cst)
                                       (null remaining))))))
-           (new-class    (cond ((and (not consp) simplep)
+           (new-class    (cond ;; Heuristically detect feature
+                               ;; conditionals for which the guarded
+                               ;; expression was read.
+                               ;; TODO Eclector should provide
+                               ;; something to the
+                               ;; `make-expression-result' call which
+                               ;; allows to detect this.
+                               ((and (not simplep)
+                                     (not (null (cdr cst-children)))
+                                     (eq (cst:raw cst)
+                                         (cst:raw (second cst-children))))
+                                (return-from eclector.parse-result:make-expression-result
+                                  (make-read-conditional-wad
+                                   cst stream source children cst-children)))
+                               ((and (not consp) simplep)
                                 'atom-wad)
                                ((not consp)
                                 'atom-wad-with-extra-children)

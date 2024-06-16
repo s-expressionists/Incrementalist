@@ -43,15 +43,19 @@
 
 ;;; Source utilities
 
-(defmacro destructure-source ((start-line-var start-column-var
-                               end-line-var   end-column-var)
-                              source &body body)
+(defmacro destructure-source
+    ((start-line-var start-column-var
+      &optional (end-line-var   (gensym "END-LINE")   end-line-supplied-p)
+                (end-column-var (gensym "END-COLUMN") end-column-supplied-p))
+     source &body body)
   `(destructuring-bind ((,start-line-var . ,start-column-var)
                         . (,end-line-var . ,end-column-var))
        ,source
      (declare (type alexandria:array-index
                     ,start-line-var ,start-column-var
-                    ,end-line-var   ,end-column-var))
+                    ,end-line-var   ,end-column-var)
+              ,@(unless end-line-supplied-p `((ignore ,end-line-var)))
+              ,@(unless end-column-supplied-p `((ignore ,end-column-var))))
      ,@body))
 
 ;;; Result utilities

@@ -65,10 +65,14 @@
    #:semicolon-count ; reader
 
    #:ignored-wad
-   #:sharpsign-wad
-   #:expression ; reader
-   #:sharpsign-plus-wad
-   #:sharpsign-minus-wad
+   #:conditional-wad
+   #:feature-expression ; reader
+   #:skipped-conditional-wad
+   #:skipped-positive-conditional-wad
+   #:skipped-negative-conditional-wad
+   #:read-conditional-wad
+   #:read-positive-conditional-wad
+   #:read-negative-conditional-wad
    #:read-suppress-wad
    #:reader-macro-wad
 

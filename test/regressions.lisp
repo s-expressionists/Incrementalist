@@ -1,8 +1,9 @@
 (cl:in-package #:incrementalist.test)
 
-(in-suite :incrementalist)
+(def-suite* :incrementalist.regressions
+  :in :incrementalist)
 
-(test regressions
+(test various-regressions
   "Ensure that inputs which previously caused errors are processed
 correctly."
   (let ((fiveam:*test-dribble* nil))
@@ -91,3 +92,37 @@ correctly."
       ;; one of the FIRST and REST if they refer to the same object.
       (test-case "(; (0 . 0) . ())")
       (test-case "(0 . 0) . ())"))))
+
+(test kind-of-restored-read-suppressed-wad
+  "Ensure that `read-maybe-nothing' returns the correct kind for a
+`read-suppress-wad' that has been restored from the cache."
+  (edits-cases ()
+    (;; A `read-suppress-wad' for `b' is added to the cache.
+     "(
+  #+a
+  b
+  c
+)"
+     `((inc:cons-wad ((0 0) (4 1)) ()
+        (inc:skipped-positive-conditional-wad ((1 2) (2 3))
+           (:feature-expression (inc:existing-symbol-token
+                                 :symbol ("KEYWORD" "A")))
+         ,(expected-symbol-wad '((1 4) (1 5)) "A"
+                               :token-class  'inc:existing-symbol-token
+                               :package-name "KEYWORD")
+         (inc:read-suppress-wad ((2 2) (2 3))))
+        ,(expected-symbol-wad '((3 2) (3 3)) "C")))
+     ;; Remove the wad for the whole reader conditional from the cache. The
+     ;; `read-suppress-wad' can be restored from the cache. The following wad is
+     ;; processed correctly only if the `read-maybe-nothing' call for the
+     ;; `read-suppress-wad' returns the correct kind.
+     '(progn (:move 1 0) " ")
+     `((inc:cons-wad ((0 0) (4 1)) ()
+        (inc:skipped-positive-conditional-wad ((1 3) (2 3))
+           (:feature-expression (inc:existing-symbol-token
+                                 :symbol ("KEYWORD" "A")))
+         ,(expected-symbol-wad '((1 5) (1 6)) "A"
+                               :token-class  'inc:existing-symbol-token
+                               :package-name "KEYWORD")
+         (inc:read-suppress-wad ((2 2) (2 3))))
+        ,(expected-symbol-wad '((3 2) (3 3)) "C"))))))

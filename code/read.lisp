@@ -61,8 +61,9 @@
         ;; Eclector's result stack and advance STREAM.
         (multiple-value-prog1
             (etypecase cached
-              (non-cst-wad (values nil              :skip   cached t))
-              (cst-wad     (values (cst:raw cached) :object cached t)))
+              (read-suppress-wad (values nil              :suppress cached t))
+              (non-cst-wad       (values nil              :skip     cached t))
+              (cst-wad           (values (cst:raw cached) :object   cached t)))
           (push cached (first eclector.parse-result::*stack*)) ; HACK
           (advance-stream-to-beyond-wad stream cached)))))
 

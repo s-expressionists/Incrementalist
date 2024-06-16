@@ -4,6 +4,12 @@
 
 (defpackage incrementalist.test.test-package (:use))
 
+(defun insert-string (cursor string)
+  (loop :for c :across string
+        :do (case c
+              (#\Newline (cluffer:split-line cursor))
+              (t         (cluffer:insert-item cursor c)))))
+
 (defun buffer-string (buffer)
   (with-output-to-string (stream)
     (loop :for line-number :below (cluffer:line-count buffer)
@@ -15,13 +21,11 @@
 
 (defun prepared-buffer (content)
   (let* ((line   (make-instance 'cluffer-standard-line:open-line))
-         (buffer (make-instance 'cluffer-standard-buffer:buffer :initial-line line))
+         (buffer (make-instance 'cluffer-standard-buffer:buffer
+                                :initial-line line))
          (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
     (cluffer:attach-cursor cursor line 0)
-    (loop :for c :across content
-          :do (case c
-                (#\Newline (cluffer:split-line cursor))
-                (t         (cluffer:insert-item cursor c))))
+    (insert-string cursor content)
     (values buffer cursor)))
 
 (defun prepared-analyzer (&optional (buffer-content ""))
@@ -128,31 +132,28 @@
                   (actual-name         (inc:name raw)))
               (is (string= expected-package-name
                            actual-package-name)
-                  "~@<For ~@[input~@:_~@:_~
+                  "~@<For~@[ input~@:_~@:_~
                    ~S~
                    ~@:_~@:_, and~] result~@:_~@:_~
                    ~/incrementalist.test::format-node/~
-
                    ~@:_~@:_expected symbol token of the node to have ~
                    package name ~S but the package name is ~S.~@:>"
-                  input result-info
-                  expected-package-name actual-package-name)
+                  input result-info expected-package-name actual-package-name)
               (is (string= expected-name actual-name)
-                  "~@<For ~@[input~@:_~@:_~
+                  "~@<For~@[ input~@:_~@:_~
                    ~S~
                    ~@:_~@:_, and~] result~@:_~@:_~
                    ~/incrementalist.test::format-node/~
                    ~@:_~@:_expected symbol token of the node to have ~
                    package name ~S but the package name is ~S.~@:>"
-                  input result-info
-                  expected-name actual-name)))))
+                  input result-info expected-name actual-name)))))
       (is (equal expected-raw raw)
-          "~@<For ~@[input~@:_~@:_~
+          "~@<For~@[ input~@:_~@:_~
            ~S~
            ~@:_~@:_, and~] result~@:_~@:_~
            ~/incrementalist.test::format-node/~
-           ~@:_~@:_raw value of the node to be ~S but the raw value is ~
-           ~S.~@:>"
+           ~@:_~@:_expected raw value of the node to be ~S but the raw value ~
+           is ~S.~@:>"
           input result-info expected-raw raw)))
 
 (defun is-result (expected root-result &key input)
@@ -206,7 +207,8 @@
   (is (= (length expected-results) (length actual-results))
       "~@<~@[For input~@:_~@:_~
        ~S~
-       ~@:_~@:_,~] expected ~D result~:P there are ~D result~:P.~@:>"
+       ~@:_~@:_,~] ~
+       expected ~D result~:P but there ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
       input (length expected-results) (length actual-results))
   (mapc (lambda (expected-result actual-result)
           (is-result expected-result actual-result :input input))

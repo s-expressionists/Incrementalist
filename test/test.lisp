@@ -92,7 +92,6 @@
     ("common-lisp::nil"
      '((inc:atom-wad ((0 0) (0 16)) (:raw (inc:existing-symbol-token
                                            :symbol ("COMMON-LISP" "NIL"))))))))
-(expected-semicolon-comment-wad '((0 11) (0 16)))
 
 (test incomplete
   "Tests for incomplete expressions."

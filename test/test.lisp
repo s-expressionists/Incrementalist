@@ -6,8 +6,9 @@
   "Initial smoke test for the incrementalist system."
   (analysis-cases ()
     ("()"
-     `(,(expected-symbol-wad '((0 0) (0 2)) "NIL" :token-class  'inc:existing-symbol-token
-                                                  :package-name "COMMON-LISP")))
+     `(,(expected-symbol-wad '((0 0) (0 2)) "NIL"
+                             :token-class  'inc:existing-symbol-token
+                             :package-name "COMMON-LISP")))
     ("#\\Return"
      '((inc:atom-wad ((0 0) (0 8)) (:raw #\Return))))
     ("\"foo\""
@@ -16,22 +17,29 @@
     ("\".\""
      '((inc:atom-wad ((0 0) (0 3)) (:raw ".")
         (inc:text-wad ((0 1) (0 2))))))
+    ("||"
+     '((inc:atom-wad ((0 0) (0 2))
+          (:raw (inc:non-existing-symbol-token
+                 :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "")))
+        (inc:punctuation-wad ((0 0) (0 1)))
+        (inc:punctuation-wad ((0 1) (0 2))))))
     ("#:foo"
      `((inc:atom-wad ((0 0) (0 5))
-        (:raw (inc:uninterned-symbol-token :symbol (nil "FOO")))
+          (:raw (inc:uninterned-symbol-token :symbol (nil "FOO")))
         (inc:punctuation-wad ((0 0) (0 1)))
         (inc:punctuation-wad ((0 1) (0 2)))
         (inc:word-wad ((0 2) (0 5))))))
     ("foo::bar"
      '((inc:atom-wad ((0 0) (0 8))
-        (:raw (inc:symbol-token :symbol ("FOO" "BAR")))
+          (:raw (inc:symbol-token :symbol ("FOO" "BAR")))
         (inc:word-wad ((0 0) (0 3)))
         (inc:punctuation-wad ((0 3) (0 4)))
         (inc:punctuation-wad ((0 4) (0 5)))
         (inc:word-wad ((0 5) (0 8))))))
     ("#'foo"
      `((inc:cons-wad ((0 0) (0 5)) ()
-        ,(expected-symbol-wad '((0 2) (0 5)) "FOO" :token-class 'inc:non-existing-symbol-token))))
+        ,(expected-symbol-wad '((0 2) (0 5)) "FOO"
+                              :token-class 'inc:non-existing-symbol-token))))
     ("'(1 2 3)"
      '((inc:cons-wad ((0 0) (0 8)) ()
         (inc:cons-wad ((0 1) (0 8)) ()
@@ -61,7 +69,7 @@
         (inc:atom-wad ((0 8) (0 9)) (:raw 1)))))
     ("#+a b"
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
-       (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
+         (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
        ,(expected-symbol-wad '((0 2) (0 3)) "A"
                              :token-class  'inc:existing-symbol-token
                              :package-name "KEYWORD")

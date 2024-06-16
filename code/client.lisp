@@ -82,7 +82,7 @@
                               symbol-name)
                   (make-token existing-symbol-token
                               (cl:package-name (symbol-package symbol))
-                              (cl:symbol-name symbol)))))))))
+                              (symbol-name symbol)))))))))
 
 (defmethod reader:interpret-symbol ((client            client)
                                     (input-stream      t)

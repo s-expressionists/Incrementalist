@@ -10,8 +10,7 @@
 
   (:shadow
    #:condition ; reader of `error-wad'
-   #:package-name
-   #:symbol-name)
+   #:package-name)
 
   ;; Tokens
   (:export

@@ -48,7 +48,8 @@
                                           (position-package-marker-2 t))
   (multiple-value-bind (package-designator symbol-name)
       (cond ((null position-package-marker-1)
-             (values *package* (intern-symbol-name token)))
+             (values (reader:state-value client '*package*)
+                     (intern-symbol-name token)))
             ((null position-package-marker-2)
              (values (if (= position-package-marker-1 0)
                          **keyword-package-name**

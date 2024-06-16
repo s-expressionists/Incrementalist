@@ -251,3 +251,66 @@
                  (destructuring-bind (input expected-result) case
                    `(analysis-test-case ,input ,expected-result)))
                cases)))
+
+;;; Utilities for editing test cases
+
+;;; Apply EDIT using CURSOR. EDIT is of the form
+;;;
+;;;   EDIT ::= | (progn EDIT*)
+;;;            | (:move line-number column-number)
+;;;            | (:delete number-of-items)
+;;;            | string
+;;;
+;;; AFTER-STEP, if supplied, is a function of no arguments that is called after
+;;; each buffer modification (not after each edit).
+(defun apply-edit (cursor edit &key after-step)
+  (labels ((maybe-notify ()
+             (when after-step
+               (funcall after-step)))
+           (apply-one (edit)
+             (etypecase edit
+               ((cons (eql progn))
+                (mapcar #'apply-one (rest edit)))
+               ((cons (eql :move))
+                (destructuring-bind (line-number column-number) (rest edit)
+                  (let* ((buffer (cluffer:buffer cursor))
+                         (line   (cluffer:find-line buffer line-number)))
+                    (cluffer:detach-cursor cursor)
+                    (cluffer:attach-cursor cursor line column-number)
+                    (maybe-notify))))
+               ((cons (eql :delete))
+                (let ((amount (second edit)))
+                  (loop :repeat amount :do (cluffer:delete-item cursor)
+                                           (maybe-notify))))
+               (string
+                (loop :for c :across edit
+                      :do (case c
+                            (#\Newline (cluffer:split-line cursor))
+                            (t         (cluffer:insert-item cursor c)))
+                          (maybe-notify))))))
+    (apply-one edit)))
+
+(defun edits-test-case (&rest edits-and-results)
+  (flet ((do-it (mode)
+           ;; Sequentially apply all edits updating the cache and checking the
+           ;; result after each edit.
+           (loop :with (analyzer cache buffer cursor) = (multiple-value-list
+                                                         (prepared-analyzer ""))
+                 :for i :from 0
+                 :for (edit expected-results) :on edits-and-results :by #'cddr
+                 :do (apply-edit cursor edit
+                                 :after-step (lambda ()
+                                               (when (eq mode :small-step)
+                                                 (update-cache analyzer cache))))
+                     (when (eq mode :big-step)
+                       (update-cache analyzer cache))
+                     (let ((input   (cons (buffer-string buffer)
+                                          (format nil "~A mode, after edit ~D"
+                                                  mode (1+ i))))
+                           (results (update-cache analyzer cache)))
+                       (are-results expected-results results :input input)))))
+    (do-it :small-step) ; update cache after each item change
+    (do-it :big-step))) ; update cache after each edit
+
+(defmacro edits-cases (() &body cases)
+  `(progn ,@(mapcar (lambda (case) `(edits-test-case ,@case)) cases)))

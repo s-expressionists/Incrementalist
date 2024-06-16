@@ -452,10 +452,10 @@
 
 ;;; Non-CST wads
 
-(defclass non-cst-wad (basic-wad)
+(defclass non-cst-wad (wad)
   ())
 
-(defclass skipped-wad (non-cst-wad wad)
+(defclass skipped-wad (non-cst-wad)
   ())
 
 ;;; This class is the base class of all comment wads.
@@ -534,8 +534,7 @@
 ;;; `text-wad' does not have any children.
 
 (defclass text-wad (no-children-mixin
-                    non-cst-wad
-                    wad) ; TODO should not inherit indentation
+                    non-cst-wad) ; TODO should not inherit indentation
   ())
 
 (defclass punctuation-wad (text-wad)

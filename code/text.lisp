@@ -6,7 +6,7 @@
 (defun punctuationp (character)
   (member character '(#\. #\? #\! #\: #\, #\;
                       #\( #\) #\< #\> #\[ #\] #\{ #\}
-                      #\" #\' #\` #\/ #\_ #\- #\+ #\* #\% #\= #\#)))
+                      #\" #\' #\` #\| #\/ #\_ #\- #\+ #\* #\% #\= #\#)))
 
 (defun make-text-wads (stream source
                        &key (start-column-offset 0)

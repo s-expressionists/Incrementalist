@@ -3,7 +3,7 @@
 ;;; Helper function.
 (defun traverse-relative-wads
     (wads line-number column-number reference-line-number
-     &key (start-relation '<) (end-relation '<))
+     &key (start-relation '<=) (end-relation '<))
   (loop for wad in wads
         for relative-line-number
            = (- line-number reference-line-number)
@@ -20,7 +20,7 @@
 ;;; the prefix contains the position, then return NIL.
 (defun find-wad-containing-position-in-prefix
     (cache line-number column-number
-     &key (start-relation '<) (end-relation '<))
+     &key (start-relation '<=) (end-relation '<))
   (loop for wad in (prefix cache)
         until (%position> line-number column-number
                           (+ (start-line wad) (height wad)) (end-column wad))
@@ -35,7 +35,8 @@
 ;;; the wad that was found.  If no wad in the prefix contains the
 ;;; position, then return NIL.
 (defun find-wad-containing-position-in-suffix (cache line-number column-number
-                                               &key start-relation end-relation)
+                                               &key (start-relation '<=)
+                                                    (end-relation   '<))
   (let ((suffix (suffix cache)))
     (cond ((null suffix)
            nil)

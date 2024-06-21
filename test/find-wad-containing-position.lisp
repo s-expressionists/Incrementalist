@@ -23,10 +23,9 @@
              ;; * start/end relation variant
              ;; and check the result. Outermost wad is first in
              ;; RESULT.
-             (catch 'skip
-               (let ((result (funcall query-function cache line column
-                                      start-relation end-relation)))
-                 (is-query-result expected-result result))))
+             (let ((result (funcall query-function cache line column
+                                    start-relation end-relation)))
+               (is-query-result expected-result result)))
            (query-variant (cache line column relation-variants)
              ;; Go through the provided start/end relation variants
              ;; with their respective expected results.
@@ -93,6 +92,6 @@
   "Smoke test for the `find-wads-containing-position' function."
   (query-test-cases
    (lambda (cache line column start-relation end-relation)
-     (if (and (eq start-relation '<=) (eq end-relation '<))
-         (inc:find-wads-containing-position cache line column)
-         (throw 'skip nil)))))
+     (inc:find-wads-containing-position
+      cache line column :start-relation start-relation
+                        :end-relation   end-relation))))

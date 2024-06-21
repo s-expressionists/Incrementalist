@@ -91,7 +91,8 @@
 ;;; ordered from the innermost wad containing the position to the
 ;;; top-level wad containing the position.  The empty list is returned
 ;;; if the position is inside no wad.
-(defgeneric find-wads-containing-position (cache line-number column-number))
+(defgeneric find-wads-containing-position (cache line-number column-number
+                                           &key start-relation end-relation))
 
 (defgeneric map-wads-containing-position
     (function cache line-number column-number &key start-relation end-relation))

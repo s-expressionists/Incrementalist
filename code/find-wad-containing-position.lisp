@@ -53,23 +53,30 @@
 
 (defmethod find-wads-containing-position ((cache         cache)
                                           (line-number   integer)
-                                          (column-number integer))
+                                          (column-number integer)
+                                          &key (start-relation '<=)
+                                               (end-relation   '<))
   (let ((result '()))
     (labels ((traverse-children (children reference-line-number)
                (multiple-value-bind (wad absolute-start-line)
                    (traverse-relative-wads
-                    children line-number column-number reference-line-number)
+                    children line-number column-number reference-line-number
+                    :start-relation start-relation :end-relation end-relation)
                  (if (null wad)
                      (return-from find-wads-containing-position result)
                      (progn (push (cons absolute-start-line wad) result)
                             (traverse-children
                              (children wad) absolute-start-line))))))
       (let ((wad (find-wad-containing-position-in-prefix
-                  cache line-number column-number)))
+                  cache line-number column-number
+                  :start-relation start-relation
+                  :end-relation   end-relation)))
         (if (null wad)
             (multiple-value-bind (wad absolute-line-number)
                 (find-wad-containing-position-in-suffix
-                 cache line-number column-number)
+                 cache line-number column-number
+                 :start-relation start-relation
+                 :end-relation   end-relation)
               (if (null wad)
                   nil
                   (progn

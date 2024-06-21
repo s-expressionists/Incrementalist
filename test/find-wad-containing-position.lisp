@@ -28,8 +28,8 @@
                (inc:map-wads-containing-position
                 (lambda (absolute-line-number wad)
                   (push (cons absolute-line-number wad) result))
-                line column cache :start-relation start-relation
-                :end-relation   end-relation)
+                cache line column :start-relation start-relation
+                                  :end-relation   end-relation)
                (is-query-result expected-result result)))
            (query-variant (cache line column relation-variants)
              ;; Go through the provided start/end relation variants

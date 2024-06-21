@@ -78,29 +78,30 @@
               (push (cons (start-line wad) wad) result)
               (traverse-children (children wad) (start-line wad))))))))
 
-(defmethod map-wads-containing-position ((function t)
-                                         (line     t)
-                                         (column   t)
-                                         (cache    cache)
+(defmethod map-wads-containing-position ((function      t)
+                                         (cache         cache)
+                                         (line-number   integer)
+                                         (column-number integer)
                                          &key (start-relation '<=)
                                               (end-relation   '<))
   (let ((function (alexandria:ensure-function function)))
     (labels ((traverse-children (reference-line-number parent)
                (multiple-value-bind (wad absolute-start-line)
                    (traverse-relative-wads
-                    (children parent) line column reference-line-number
+                    (children parent)
+                    line-number column-number reference-line-number
                     :start-relation start-relation :end-relation end-relation)
                  (when (not (null wad))
                    (traverse-children absolute-start-line wad)
                    (funcall function absolute-start-line wad)))))
       (let ((wad (find-wad-containing-position-in-prefix
-                  cache line column :start-relation start-relation
-                                    :end-relation   end-relation)))
+                  cache line-number column-number :start-relation start-relation
+                                                  :end-relation   end-relation)))
         (if (null wad)
             (multiple-value-bind (wad absolute-line-number)
                 (find-wad-containing-position-in-suffix
-                 cache line column :start-relation start-relation
-                                   :end-relation   end-relation)
+                 cache line-number column-number :start-relation start-relation
+                                                 :end-relation   end-relation)
               (unless (null wad)
                 (traverse-children absolute-line-number wad)
                 (funcall function absolute-line-number wad)))

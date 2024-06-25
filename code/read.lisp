@@ -36,10 +36,10 @@
   (let ((cached (cached-wad stream)))
     (if (or (null cached)
             ;; Can't use zero length cached wad (can happen for
-            ;; error-wad) since the ADVANCE-STREAM-TO-BEYOND-WAD would
-            ;; not advance in that case and the read loop would not
-            ;; make any progress.
-            (and (= (start-line cached) (end-line cached))
+            ;; `error-wad') since the `advance-stream-to-beyond-wad'
+            ;; would not advance in that case and the read loop would
+            ;; not make any progress.
+            (and (zerop (height cached))
                  (= (start-column cached) (end-column cached))))
         ;; Nothing has been cached, so call
         ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and

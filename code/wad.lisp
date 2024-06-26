@@ -135,21 +135,14 @@
    ;; part of the wad.
    (%max-line-width :initarg :max-line-width
                     :reader  max-line-width)
-   ;; This slot stores different kind of errors which are represented
+   ;; This slot stores different kinds of errors which are represented
    ;; as `error-wad's. Character syntax errors as reported by Eclector
    ;; are stored in the "closest surrounding" wad. S-expression syntax
-   ;; errors are stored in the containing top-level wad.
-   ;;
-   ;; Invariants for errors:
-   ;; The error wad are relative iff containing wad is relative. The
-   ;; start-line of relative error wads is relative to the parent of
-   ;; the containing wad, not relative to preceding wads. So when
-   ;; turning the containing wad from relative to absolute, each error
-   ;; wad must be processed with the same offset as the containing
-   ;; wad.
-   (%errors         :initarg  :errors
-                    :type     list
-                    :accessor errors
+   ;; errors are stored in the containing top-level wad. Error wads
+   ;; are always relative. A single error is stored without the
+   ;; surrounding list.
+   (%errors         :type     (or basic-wad list)
+                    :accessor %errors
                     :initform '())
    ;; This slot contains the absolute column that the first character
    ;; of this wad should be positioned in, as computed by the rules of
@@ -158,6 +151,23 @@
    (%indentation    :initarg  :indentation
                     :accessor indentation
                     :initform nil)))
+
+(defmethod errors ((wad wad))
+  (let ((errors (%errors wad)))
+    (typecase errors
+      (list errors)
+      (t    (list errors)))))
+
+(declaim (inline add-errors))
+(defun add-errors (wad reversed-errors)
+  (unless (null reversed-errors)
+    (let ((errors (nreverse reversed-errors)))
+      (loop :for base = (start-line wad) :then start-line
+            :for error-wad :in errors
+            :for start-line = (absolute-to-relative error-wad base))
+      (setf (%errors wad) (if (null (cdr errors))
+                              (first errors)
+                              errors)))))
 
 (declaim (inline link-siblings))
 (defun link-siblings (left right)

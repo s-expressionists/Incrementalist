@@ -42,19 +42,14 @@
             (and (zerop (height cached))
                  (= (start-column cached) (end-column cached))))
         ;; Nothing has been cached, so call
-        ;; READ-MAYBE-NOTHING. Collect errors in *ERRORS* and
-        ;; integrate them into the wad tree.
+        ;; `read-maybe-nothing'. Collect errors in *ERRORS* and
+        ;; integrate them into RESULT.
         (let ((*errors* '()))
           (multiple-value-bind (object kind result)
               (call-next-method)
             (when (and (not (null result)) ; RESULT can be `null' for `:skip'
                        (member kind '(:object :skip)))
-              (alexandria:when-let ((reversed-errors *errors*))
-                (loop for base = (start-line result) then start-line
-                      for error-wad in (nreverse reversed-errors)
-                      for start-line = (absolute-to-relative error-wad base)
-                      collect error-wad into errors
-                      finally (setf (errors result) errors))))
+              (add-errors result *errors*))
             (values object kind result)))
         ;; There is a cached wad for the current input position. Turn
         ;; the wad into appropriate return values, inject it into

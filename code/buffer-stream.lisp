@@ -134,15 +134,15 @@
              (setf (item-number stream) (%item-count stream)))))))
 
 (defun compute-max-line-width (buffer-stream start-line end-line children)
-  (let ((lines (lines buffer-stream)))
-    (loop with rest = children
-          for line-number of-type stream-line-number from start-line
-          while (<= line-number end-line)
-          if (and (not (null rest)) (= line-number
-                                       (the stream-line-number
-                                            (start-line (first rest)))))
-            maximize (the alexandria:array-index (max-line-width (first rest)))
-            and do (setf line-number (end-line (first rest)))
+  (loop :with lines = (lines buffer-stream)
+        :with rest  = children
+        :for line-number :of-type stream-line-number :from start-line
+        :while (<= line-number end-line)
+        :if (and (not (null rest))
+                 (= line-number
+                    (the stream-line-number (start-line (first rest)))))
+          :maximize (the alexandria:array-index (max-line-width (first rest)))
+          :and :do (setf line-number (end-line (first rest)))
                    (pop rest)
-          else
-            maximize (length (the stream-line (flx:element* lines line-number))))))
+        :else
+          :maximize (length (the stream-line (flx:element* lines line-number)))))

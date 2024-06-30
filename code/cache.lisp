@@ -237,7 +237,8 @@
 ;;; The START-LINE of WAD is an absolute line number.
 (defun line-is-inside-wad-p (wad line-number)
   (let ((start-line (start-line wad)))
-    (<= start-line line-number (+ start-line (height wad)))))
+    (and (<= start-line line-number)
+         (<= line-number (+ start-line (height wad))))))
 
 ;;; Add INCREMENT to the absolute line number of every wad on the
 ;;; worklist, and of the first wad of the suffix, if any.

@@ -357,13 +357,13 @@
     (make-form "QUOTE" **common-lisp-package-name** material))
 
   (defmethod eclector.reader:wrap-in-quasiquote ((client client) (form t))
-    (make-form "QUASIQUOTE" "KEYWORD" form))
+    (make-form "QUASIQUOTE" "ECLECTOR.READER" form))
 
   (defmethod eclector.reader:wrap-in-unquote ((client client) (form t))
-    (make-form "UNQUOTE" "KEYWORD" form))
+    (make-form "UNQUOTE" "ECLECTOR.READER" form))
 
   (defmethod eclector.reader:wrap-in-unquote-splicing ((client client) (form t))
-    (make-form "UNQUOTE-SPLICING" "KEYWORD" form))
+    (make-form "UNQUOTE-SPLICING" "ECLECTOR.READER" form))
 
   (defmethod eclector.reader:wrap-in-function ((client client) (name t))
     (make-form "FUNCTION" **common-lisp-package-name** name)))

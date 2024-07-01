@@ -285,10 +285,11 @@
         do (process-next-wad cache line-number))
   (adjust-worklist-and-suffix cache 1))
 
-(defun handle-deleted-line (cache line-number)
-  (loop until (next-wad-is-beyond-line-p cache line-number)
-        do (process-next-wad cache line-number))
-  (adjust-worklist-and-suffix cache -1))
+(defun handle-deleted-lines (cache line-number line-count)
+  (loop :for line :from (- line-number line-count 1) :to line-number
+        :do (loop :until (next-wad-is-beyond-line-p cache line)
+                  :do (process-next-wad cache line)))
+  (adjust-worklist-and-suffix cache (- line-count)))
 
 ;;; Take into account modifications to the buffer by destroying the
 ;;; parts of the cache that are no longer valid, while keeping parse
@@ -304,20 +305,25 @@
                  (setf cache-initialized-p t)
                  (ensure-update-initialized cache line-counter)))
              ;; Line deletion
-             (delete-cache-line ()
-               (flx:delete* lines line-counter)
-               (flx:delete* cluffer-lines line-counter)
-               (handle-deleted-line cache line-counter))
+             (delete-cache-lines (start-line-number end-line-number)
+               (let ((count (- end-line-number start-line-number)))
+                 (loop :repeat count
+                       :do (flx:delete* lines start-line-number)
+                           (flx:delete* cluffer-lines start-line-number))
+                 (handle-deleted-lines cache (1- end-line-number) count)))
              (remove-deleted-lines (line)
                ;; Look at cache lines starting at LINE-COUNTER. Delete
                ;; all cache lines that do not have LINE as their
                ;; associated cluffer line. Those lines correspond to
                ;; deleted lines between the previously processed line
                ;; and LINE.
-               (loop for cluffer-line
-                        = (flx:element* cluffer-lines line-counter)
-                     until (eq line cluffer-line)
-                     do (delete-cache-line)))
+               (loop :for end-line-number :from line-counter
+                     :for cluffer-line
+                        = (flx:element* cluffer-lines end-line-number)
+                     :until (eq line cluffer-line)
+                     :finally (when (< line-counter end-line-number)
+                                (delete-cache-lines
+                                 line-counter end-line-number))))
              ;; Handlers for Cluffer's update protocol events.
              (skip (count)
                (incf line-counter count))
@@ -344,10 +350,11 @@
                             (time-stamp cache)
                             #'sync #'skip #'modify #'create))
       ;; Remove trailing cache lines after the last
-      ;; skipped/modified/... cache line, that no longer correspond
-      ;; to existing lines in the cluffer buffer.
-      (loop while (< line-counter (flx:nb-elements lines))
-            do (delete-cache-line))))
+      ;; skipped/modified/... cache line, that no longer correspond to
+      ;; existing lines in the cluffer buffer.
+      (let ((cache-line-count (flx:nb-elements lines)))
+        (when (< line-counter cache-line-count)
+          (delete-cache-lines line-counter cache-line-count)))))
   (finish-scavenge cache))
 
 (defmethod line-count ((cache cache))

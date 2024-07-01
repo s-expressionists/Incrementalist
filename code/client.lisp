@@ -120,14 +120,15 @@
     ((cons (eql :line-comment))
      (let* ((semicolon-count (cdr reason))
             (text-wads       (make-text-wads
-                              stream source
+                              (cache stream) source
                               :start-column-offset semicolon-count)))
        (wad-with-children 'semicolon-comment-wad stream source text-wads
                           :semicolon-count semicolon-count)))
     ((eql :block-comment)
-     (let ((words (make-text-wads stream source :start-column-offset 2
-                                                :end-column-offset   -2)))
-       (wad-with-children 'block-comment-wad stream source words)))
+     (let ((text-wads (make-text-wads (cache stream) source
+                                      :start-column-offset 2
+                                      :end-column-offset   -2)))
+       (wad-with-children 'block-comment-wad stream source text-wads)))
     ((eql :reader-macro)
      (basic-wad 'reader-macro-wad stream source))
     ((eql *read-suppress*)
@@ -161,25 +162,27 @@
     ((client client) (result symbol-token) (children t) (source t))
   (if (and (null children)
            (not (eq (package-name result) **common-lisp-package-name**)))
-      (let* ((stream (stream* client))
-             (words  (make-text-wads stream source :min-length 2)))
-        (if (null words)
+      (let* ((stream     (stream* client))
+             (text-wads  (make-text-wads (cache stream) source :min-length 2)))
+        (if (null text-wads)
             (call-next-method)
             (wad-with-children
-             'atom-wad-with-extra-children stream source words :raw result)))
+             'atom-wad-with-extra-children stream source text-wads
+             :raw result)))
       (call-next-method)))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result string) (children t) (source t))
   (if (null children)
-      (let* ((stream (stream* client))
-             (words  (make-text-wads stream source
-                                     :start-column-offset 1
-                                     :end-column-offset   -1)))
-        (if (null words)
+      (let* ((stream    (stream* client))
+             (text-wads (make-text-wads (cache stream) source
+                                        :start-column-offset 1
+                                        :end-column-offset   -1)))
+        (if (null text-wads)
             (call-next-method)
             (wad-with-children
-             'atom-wad-with-extra-children stream source words :raw result)))
+             'atom-wad-with-extra-children stream source text-wads
+             :raw result)))
       (call-next-method)))
 
 (defun adjust-result-class (cst new-class stream source &rest extra-initargs)

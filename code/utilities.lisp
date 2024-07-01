@@ -60,24 +60,37 @@
 
 ;;; Result utilities
 
-(defmacro basic-wad (class stream source &rest extra-initargs)
+(defmacro %basic-wad* (class start-line start-column end-line end-column
+                       max-line-width
+                       &rest extra-initargs)
+  `(make-instance ,class :cache               *cache*
+                         :relative-p          nil
+                         :absolute-start-line ,start-line
+                         :start-line          ,start-line
+                         :height              (- ,end-line ,start-line)
+                         :start-column        ,start-column
+                         :end-column          ,end-column
+                         :max-line-width      ,max-line-width
+                         ,@extra-initargs))
+
+(defmacro basic-wad* (class stream start-line start-column end-line end-column
+                      &rest extra-initargs)
   (alexandria:once-only (stream)
-    (alexandria:with-unique-names (start-line start-column end-line end-column
-                                              line-number max-line-width)
-      `(destructure-source (,start-line ,start-column ,end-line ,end-column)
-                           ,source
-         (let* ((,line-number    (line-number ,stream))
-                (,max-line-width (compute-max-line-width
-                                  ,stream ,start-line ,line-number '())))
-           (make-instance ,class :cache               *cache*
-                                 :relative-p          nil
-                                 :absolute-start-line ,start-line
-                                 :start-line          ,start-line
-                                 :height              (- ,end-line ,start-line)
-                                 :start-column        ,start-column
-                                 :end-column          ,end-column
-                                 :max-line-width      ,max-line-width
-                                 ,@extra-initargs))))))
+    (alexandria:with-unique-names (line-number max-line-width)
+      `(let* ((,line-number    (line-number ,stream))
+              (,max-line-width (compute-max-line-width
+                                ,stream ,start-line ,line-number '())))
+         (%basic-wad* ,class ,start-line ,start-column ,end-line ,end-column
+                      ,max-line-width
+                      ,@extra-initargs)))))
+
+(defmacro basic-wad (class stream source &rest extra-initargs)
+  (alexandria:with-unique-names (start-line start-column end-line end-column)
+    `(destructure-source (,start-line ,start-column ,end-line ,end-column)
+                         ,source
+       (basic-wad* ,class ,stream
+                   ,start-line ,start-column ,end-line ,end-column
+                   ,@extra-initargs))))
 
 (defmacro wad-with-children (class stream source children &rest extra-initargs)
   (alexandria:once-only (children)

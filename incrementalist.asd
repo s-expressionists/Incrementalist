@@ -66,7 +66,8 @@
                               (:file "test")
                               (:file "random")
                               (:file "read-code")
-                              (:file "regressions"))))
+                              (:file "regressions")
+                              (:file "performance"))))
 
   :perform     (test-op (operation component)
                  (uiop:symbol-call '#:incrementalist.test '#:run-tests)))

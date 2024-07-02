@@ -20,11 +20,11 @@
                           line-length))
             ((and (>= length min-length)
                   (notany #'digit-char-p text))
-             (let ((misspelledp (and checkp
-                                     (null (spell:english-lookup text)))))
-               (%basic-wad* 'word-wad line start-column line end-column
-                            line-length
-                            :misspelled misspelledp)))
+             (let ((wad (%basic-wad* 'word-wad line start-column line end-column
+                                     line-length)))
+               (when (and checkp (null (spell:english-lookup text)))
+                 (setf (%errors wad) t))
+               wad))
             (t
              (%basic-wad* 'text-wad line start-column line end-column
                           line-length))))))

@@ -140,8 +140,8 @@
    ;; are stored in the "closest surrounding" wad. S-expression syntax
    ;; errors are stored in the containing top-level wad. Error wads
    ;; are always relative. A single error is stored without the
-   ;; surrounding list.
-   (%errors         :type     (or basic-wad list)
+   ;; surrounding list. A value of `t' is used for misspelled words.
+   (%errors         :type     (or (eql t) basic-wad list)
                     :accessor %errors
                     :initform '())
    ;; This slot contains the absolute column that the first character
@@ -550,9 +550,14 @@
 (defclass punctuation-wad (text-wad)
   ())
 
-(defclass word-wad (text-wad) ; TODO should use errors slot for misspelled information
-  ((%misspelled :initarg :misspelled
-                :reader  misspelled)))
+(defclass word-wad (text-wad)
+  ())
+
+(defmethod errors ((wad word-wad))
+  '())
+
+(defmethod misspelled ((word-wad word-wad))
+  (not (null (%errors word-wad))))
 
 ;;; `error-wad'
 ;;;

@@ -64,6 +64,15 @@
 
 ;;; Predicates
 
+(defmacro is-with-node ((predicate expected actual) label result-info input)
+  `(is (,predicate ,expected ,actual)
+       "~@<For~@[ input~@:_~@:_~
+        ~S~
+        ~@:_~@:_and~] result~@:_~@:_~
+        ~/incrementalist.test::format-node/~
+        ~@:_~@:_expected ~A to be ~S but ~A is ~S.~@:>"
+       ,input ,result-info ,label ,expected ,label ,actual))
+
 (defun is-sequence (child-predicate expected-sequence actual-sequence result-info label
                     &key input)
   (let ((label-control (concatenate 'string "~1:*" label "~*")))
@@ -91,14 +100,8 @@
          (end-line        (+ start-line (inc:height wad)))
          (actual-location (list (list start-line (inc:start-column wad))
                                 (list end-line   (inc:end-column wad)))))
-    (is (equal expected-location actual-location)
-        "~@<For~@[ input~@:_~@:_~
-         ~S~
-         ~@:_~@:_ and~] result~@:_~@:_~
-         ~/incrementalist.test::format-node/~
-         ~@:_~@:_expected location of the wad to be ~S but its location is ~
-         ~S.~@:>"
-        input result-info expected-location actual-location)))
+    (is-with-node (equal expected-location actual-location)
+                  "location of the wad" result-info input)))
 
 (defun is-error (expected-error wad result-info &key input)
   (let ((result-info (cons (car result-info) wad)))
@@ -130,31 +133,14 @@
               expected-symbol
             (let ((actual-package-name (inc:package-name raw))
                   (actual-name         (inc:name raw)))
-              (is (string= expected-package-name
-                           actual-package-name)
-                  "~@<For~@[ input~@:_~@:_~
-                   ~S~
-                   ~@:_~@:_, and~] result~@:_~@:_~
-                   ~/incrementalist.test::format-node/~
-                   ~@:_~@:_expected symbol token of the node to have ~
-                   package name ~S but the package name is ~S.~@:>"
-                  input result-info expected-package-name actual-package-name)
-              (is (string= expected-name actual-name)
-                  "~@<For~@[ input~@:_~@:_~
-                   ~S~
-                   ~@:_~@:_, and~] result~@:_~@:_~
-                   ~/incrementalist.test::format-node/~
-                   ~@:_~@:_expected symbol token of the node to have ~
-                   package name ~S but the package name is ~S.~@:>"
-                  input result-info expected-name actual-name)))))
-      (is (equal expected-raw raw)
-          "~@<For~@[ input~@:_~@:_~
-           ~S~
-           ~@:_~@:_, and~] result~@:_~@:_~
-           ~/incrementalist.test::format-node/~
-           ~@:_~@:_expected raw value of the node to be ~S but the raw value ~
-           is ~S.~@:>"
-          input result-info expected-raw raw)))
+              (is-with-node (string= expected-package-name actual-package-name)
+                            "package name of the symbol token of the node"
+                            result-info input)
+              (is-with-node (string= expected-name actual-name)
+                            "name of the symbol token of the node"
+                            result-info input)))))
+      (is-with-node (equal expected-raw raw)
+                    "raw value of the node" result-info input)))
 
 (defun is-result (expected root-result &key input)
   (labels

@@ -154,7 +154,10 @@
                                ;; feature-expression is for `conditional-wad's
                                ((:feature-expression expected-feature-expression)
                                 nil
-                                expected-feature-expression-supplied?))
+                                expected-feature-expression-supplied?)
+                               ((:misspelled expected-misspelled)
+                                nil
+                                expected-misspelled-supplied?))
                          '())
               &rest     expected-children)
              expected
@@ -181,6 +184,9 @@
                (let ((feature-expression (inc:feature-expression result)))
                  (is-raw expected-feature-expression feature-expression result-info
                          :input input)))
+             (when expected-misspelled-supplied?
+               (is-with-node (eq expected-misspelled (inc:misspelled result))
+                             "misspelled status" result-info input))
              ;; Recursively check children
              (unless (equal expected-children '(:ignore-children))
                (is-sequence #'rec expected-children (inc:children result)

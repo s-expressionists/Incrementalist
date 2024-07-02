@@ -216,3 +216,35 @@ a b"
     ("#{"
      '((inc:reader-macro-wad ((0 0) (0 2))
         (:errors ((((0 1) (0 2)) eclector.reader:unknown-macro-sub-character))))))))
+
+(test spell-checking.smoke
+  "Test for spell-checking in symbols, strings and comments."
+  (analysis-cases ()
+    (";foo"
+     '((inc:semicolon-comment-wad ((0 0) (0 4)) ()
+        (inc:word-wad ((0 1) (0 4)) (:misspelled t)))))
+    (";bar"
+     '((inc:semicolon-comment-wad ((0 0) (0 4)) ()
+        (inc:word-wad ((0 1) (0 4)) (:misspelled nil)))))
+    ("#|foo|#"
+     '((inc:block-comment-wad ((0 0) (0 7)) ()
+        (inc:word-wad ((0 2) (0 5)) (:misspelled t)))))
+    ("#|bar|#"
+     '((inc:block-comment-wad ((0 0) (0 7)) ()
+        (inc:word-wad ((0 2) (0 5)) (:misspelled nil)))))
+    ("\"foo\""
+     '((inc:atom-wad ((0 0) (0 5)) (:raw "foo")
+        (inc:word-wad ((0 1) (0 4)) (:misspelled t)))))
+    ("\"bar\""
+     '((inc:atom-wad ((0 0) (0 5)) (:raw "bar")
+        (inc:word-wad ((0 1) (0 4)) (:misspelled nil)))))
+    ("foo"
+     '((inc:atom-wad ((0 0) (0 3))
+          (:raw (inc:non-existing-symbol-token
+                 :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "FOO")))
+        (inc:word-wad ((0 0) (0 3)) (:misspelled t)))))
+    ("bar"
+     '((inc:atom-wad ((0 0) (0 3))
+        (:raw (inc:non-existing-symbol-token
+               :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "BAR")))
+        (inc:word-wad ((0 0) (0 3)) (:misspelled nil)))))))

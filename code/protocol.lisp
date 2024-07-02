@@ -56,7 +56,7 @@
 
 (defgeneric semicolon-count (semicolon-comment-wad))
 
-(defgeneric expression (sharpsign-wad))
+(defgeneric feature-expression (conditional-wad))
 
 (defgeneric misspelled (word-wad))
 

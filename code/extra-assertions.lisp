@@ -125,9 +125,9 @@
     (assert (stringp (items wad)))))
 
 (defun check-wad-graph (cache)
-  (with-accessors ((prefix prefix) (suffix suffix)) cache
+  (let ((prefix (prefix cache))
+        (suffix (suffix cache)))
     (assert (null (intersection prefix suffix)))
-
     (unless (null prefix)
       (unless (null (left-sibling (first (last prefix))))
         (report "b: Left sibling of last (~s) is ~s rather than NIL.~s"

@@ -375,8 +375,11 @@
     (print-wad-position object stream)
     (let* ((raw        (cst:raw object))
            (raw-string (typecase raw
-                         (string (substitute #\Paragraph_Sign #\Newline raw))
-                         (t      raw))))
+                         #+(or sbcl ccl)
+                         (string
+                          (substitute #\Pilcrow_Sign #\Newline raw))
+                         (t
+                          raw))))
      (format stream " raw: ~S" raw-string))))
 
 (defmethod cst:null ((cst atom-wad))

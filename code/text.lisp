@@ -11,7 +11,7 @@
 
 (defun make-text-wad (text line start-column end-column line-length
                       min-length checkp)
-  (declare (type (and string (not (or simple-array base-string))) text)
+  (declare (type (and string #+sbcl (not (or simple-array base-string))) text)
            (type alexandria:array-length min-length))
   (let ((length (length text)))
     (unless (zerop length) ; do not collect empty wads

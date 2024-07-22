@@ -1,7 +1,7 @@
 (cl:in-package #:incrementalist)
 
-(defun make-error-wad (condition start-line start-column height width)
-  (let ((end-column (+ start-column width)))
+(defun make-error-wad (condition start-line start-column end-line end-column)
+  (let ((height (- end-line start-line)))
     (make-instance 'error-wad :cache               *cache*
                               :relative-p          nil
                               :absolute-start-line start-line
@@ -15,7 +15,7 @@
 ;;; parsing.
 (defvar *errors*)
 
-;;; Establish a handler which collects READER-ERRORs into *ERRORS* and
+;;; Establish a handler which collects `reader-error's into `*errors*' and
 ;;; recovers around BODY.
 (defmacro with-error-recording (() &body body)
   `(handler-bind
@@ -23,10 +23,13 @@
           (lambda (condition)
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
-              (let* ((start-column (max 0 (+ column (eclector.base:position-offset condition))))
-                     (width        (eclector.base:range-length condition))
+              (let* ((offset       (eclector.base:position-offset condition))
+                     (length       (eclector.base:range-length condition))
+                     (start-column (max 0 (+ column offset)))
+                     (end-column   (+ start-column length))
                      (error-wad    (make-error-wad
-                                    condition line start-column 0 width)))
+                                    condition
+                                    line start-column line end-column)))
                 (push error-wad *errors*)))
             (eclector.reader:recover))))
      ,@body))

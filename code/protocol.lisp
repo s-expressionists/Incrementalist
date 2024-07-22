@@ -101,5 +101,3 @@
 ;;; Extends associated buffer protocol
 
 (defgeneric cache (analyzer))
-
-(defgeneric buffer (analyzer))

@@ -180,11 +180,11 @@
   (let ((previous nil)
         (base     (start-line wad)))
     (flet ((adjust-child (child)
-             ;; Make relative
-             (setf base (absolute-to-relative child base))
              ;; Set relations
              (setf (parent child) wad)
              (link-siblings previous child)
+             ;; Make relative
+             (setf base (absolute-to-relative child base))
              (setf previous child)))
       (declare (dynamic-extent #'adjust-child))
       (map-children #'adjust-child wad)

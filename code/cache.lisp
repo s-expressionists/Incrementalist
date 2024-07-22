@@ -16,8 +16,9 @@
                    :reader   buffer)
    ;; The time stamp passed to and returned by the Cluffer update
    ;; protocol.
-   (%time-stamp    :initform nil
-                   :accessor time-stamp)
+   (%time-stamp    :accessor time-stamp
+                   :type     (or null alexandria:non-negative-integer)
+                   :initform nil)
    ;; This slot contains a list that parallels the prefix and it
    ;; contains the width of the prefix starting with the first element
    ;; of the prefix.
@@ -44,16 +45,18 @@
    ;; of the suffix.
    (%suffix-width  :accessor suffix-width
                    :initform '())
-   ;; The residue is normally empty.  The SCAVENGE phase puts orphan
+   ;; The residue is normally empty.  The `scavenge' phase puts orphan
    ;; wads that are still valid on the residue, and these are used by
-   ;; the READ-FORMS phase to avoid reading characters when the result
-   ;; is known.
+   ;; the `read-forms' phase to avoid reading characters when the
+   ;; result is known.
    (%residue       :accessor residue
                    :type     list
                    :initform '())
    (%worklist      :accessor worklist
                    :type     list
-                   :initform '())))
+                   :initform '()))
+  (:default-initargs
+   :buffer (alexandria:required-argument :buffer)))
 
 (defmethod print-object ((object cache) stream)
   (print-unreadable-object (object stream :type t :identity t)

@@ -116,7 +116,7 @@ correctly."
      ;; `read-suppress-wad' can be restored from the cache. The following wad is
      ;; processed correctly only if the `read-maybe-nothing' call for the
      ;; `read-suppress-wad' returns the correct kind.
-     '(progn (:move 1 0) " ")
+     '(:insert (1 0) " ")
      `((inc:cons-wad ((0 0) (4 1)) ()
         (inc:skipped-positive-conditional-wad ((1 3) (2 3))
            (:feature-expression (inc:existing-symbol-token

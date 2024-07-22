@@ -248,9 +248,13 @@
 ;;; Apply EDIT using CURSOR. EDIT is of the form
 ;;;
 ;;;   EDIT ::= | (progn EDIT*)
-;;;            | (:move line-number column-number)
+;;;            | (:move (line-number column-number))
 ;;;            | (:delete number-of-items)
 ;;;            | string
+;;;            | (:insert (line-number column-number) string)
+;;;            | (:erase (line-number column-number) number-of-items)
+;;;            | (:poke (line-number column-number))
+;;;            | (:replace (line-number column-number) string)
 ;;;
 ;;; AFTER-STEP, if supplied, is a function of no arguments that is called after
 ;;; each buffer modification (not after each edit).
@@ -263,14 +267,14 @@
                ((cons (eql progn))
                 (mapcar #'apply-one (rest edit)))
                ((cons (eql :move))
-                (destructuring-bind (line-number column-number) (rest edit)
+                (destructuring-bind ((line-number column-number)) (rest edit)
                   (let* ((buffer (cluffer:buffer cursor))
                          (line   (cluffer:find-line buffer line-number)))
                     (cluffer:detach-cursor cursor)
                     (cluffer:attach-cursor cursor line column-number)
                     (maybe-notify))))
                ((cons (eql :delete))
-                (let ((amount (second edit)))
+                (destructuring-bind (amount) (rest edit)
                   (loop :repeat amount :do (cluffer:delete-item cursor)
                                            (maybe-notify))))
                (string
@@ -278,7 +282,26 @@
                       :do (case c
                             (#\Newline (cluffer:split-line cursor))
                             (t         (cluffer:insert-item cursor c)))
-                          (maybe-notify))))))
+                          (maybe-notify)))
+               ((cons (eql :insert))
+                (destructuring-bind (location string) (rest edit)
+                  (apply-one `(progn (:move ,location) ,string))))
+               ((cons (eql :erase))
+                (destructuring-bind (location number-of-items) (rest edit)
+                  (apply-one `(progn
+                                (:move ,location)
+                                (:delete ,number-of-items)))))
+               ((cons (eql :poke))
+                (destructuring-bind (location) (rest edit)
+                  (apply-one `(progn
+                                (:insert ,location " ")
+                                (:erase ,location 1)))))
+               ((cons (eql :replace))
+                (destructuring-bind (location string) (rest edit)
+                  (apply-one `(progn
+                                (:move ,location)
+                                (:delete ,(length string))
+                                ,string)))))))
     (apply-one edit)))
 
 (defun edits-test-case (&rest edits-and-results)

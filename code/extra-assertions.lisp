@@ -179,18 +179,11 @@
 
 ;;; Model invariants
 
-;;; This :BEFORE method on the slot accessor ABSOLUTE-START-LINE makes
-;;; sure WAD is absolute before the primary method is called, so that
-;;; the absolute start line numbers are hopefully up-to-date.
 (defmethod absolute-start-line :before ((wad wad))
-  ;; First, we find the top-level wad that this wad either is or that
-  ;; this wad is a descendant of.
-  (let ((top-level-wad wad))
-    (loop until (null (parent top-level-wad))
-          do (setf top-level-wad (parent top-level-wad)))
-    ;; Then make sure the TOP-LEVEL-WAD is absolute.
-    (assert (not (relative-p top-level-wad)))
-    (assert (not (eql :invalid (slot-value wad '%absolute-start-line))))))
+  ;; This used to assert that the top-level wad which contains WAD is
+  ;; absolute but we use the cached absolute line number more
+  ;; aggressively than that now.
+  (assert (not (eql :invalid (slot-value wad '%absolute-start-line)))))
 
 (defvar *duplicate-children-allowed-p* nil)
 (defmethod map-children :around ((function t) (node t))
@@ -305,7 +298,7 @@
           (unless (null result)
             (check-absolute-wad-with-relative-descendants result))))
 
-(define-invariant parse-and-cache
+(define-invariant read-and-cache
   :after (((result 1))
           (unless (null result)
             (assert (typep result 'wad))
@@ -348,13 +341,13 @@
 
 (define-invariant adjust-worklist-and-suffix
   :before (((cache 0))
-          (labels ((invalidate-children (wad)
-                     (when (relative-p wad)
-                       (setf (slot-value wad '%absolute-start-line) :invalid))
-                     (map-children #'invalidate-children wad)))
-            (mapc #'invalidate-children (worklist cache))
-            (alexandria:when-let ((suffix (suffix cache)))
-              (invalidate-children (first suffix))))))
+           (labels ((invalidate-children (wad)
+                      (when (relative-p wad)
+                        (setf (slot-value wad '%absolute-start-line) :invalid))
+                      (map-children #'invalidate-children wad)))
+             (mapc #'invalidate-children (worklist cache))
+             (alexandria:when-let ((suffix (suffix cache)))
+               (invalidate-children (first suffix))))))
 
 (define-invariant cached-wad
   :after (((result 0))
@@ -362,10 +355,9 @@
             (check-absolute-line-numbers result)
             (assert (null (parent result))))))
 
-(defvar *trace-cache* nil)
-(define-invariant update
-  :before (((analyzer 0))
-           (setf *trace-cache* (cache analyzer)))
-  :after  (()
-           (check-wad-graph *trace-cache*)
-           (setf *trace-cache* nil)))
+(let (cache)
+  (define-invariant update
+    :before (((analyzer 0))
+             (setf cache (cache analyzer)))
+    :after  (()
+             (check-wad-graph cache))))

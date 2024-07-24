@@ -132,30 +132,22 @@
     ((eql :reader-macro)
      (basic-wad 'reader-macro-wad stream source))
     ((eql *read-suppress*)
-     #-incrementalist::skipped-input-children
-     (basic-wad 'read-suppress-wad stream source)
-     #+incrementalist::skipped-input-children
-     (wad-with-children 'read-suppress-wad stream source children))
+     (wad-with-children 'read-suppress-wad stream source
+                        #+incrementalist::skipped-input-children children
+                        #-incrementalist::skipped-input-children '()))
     ((cons (member :sharpsign-plus :sharpsign-minus))
      (destructuring-bind (which . feature-expression) reason
-       #-incrementalist::skipped-input-children
-       (ecase which
-         (:sharpsign-plus
-          (basic-wad 'skipped-positive-conditional-wad stream source
-                     :feature-expression feature-expression))
-         (:sharpsign-minus
-          (basic-wad 'skipped-negative-conditional-wad stream source
-                     :feature-expression feature-expression)))
-       #+incrementalist::skipped-input-children
        (let ((result (ecase which
                        (:sharpsign-plus
                         (basic-wad 'skipped-positive-conditional-wad stream source
                                    :feature-expression feature-expression
-                                   :children           children))
+                                   :children           #+incrementalist::skipped-input-children children
+                                                       #-incrementalist::skipped-input-children '()))
                        (:sharpsign-minus
                         (basic-wad 'skipped-negative-conditional-wad stream source
                                    :feature-expression feature-expression
-                                   :children           children)))))
+                                   :children           #+incrementalist::skipped-input-children children
+                                                       #-incrementalist::skipped-input-children '())))))
          (make-children-relative-and-set-family-relations result))))))
 
 (defmethod eclector.parse-result:make-expression-result

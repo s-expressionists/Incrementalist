@@ -35,5 +35,6 @@ jobs:
           sbcl --noinform --disable-debugger                                                                                                \
             --load "${HOME}/quicklisp/setup.lisp"                                                                                           \
             --eval '(asdf:initialize-source-registry (quote (:source-registry (:directory "'"$(pwd)"'") :ignore-inherited-configuration)))' \
-            --eval '(ql:quickload "incrementalist/test")'                                                                                    \
+            --eval '(ql:quickload "incrementalist/test")'                                                                                   \
+            --eval '(setf fiveam:*on-error* :backtrace)' \
             --eval '(asdf:test-system "incrementalist")'

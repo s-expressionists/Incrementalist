@@ -339,6 +339,9 @@
      (source   t))
   (let ((cst    (call-next-method))
         (stream (stream* client)))
+    ;; TODO: does this adjust twice? next method should be (client t t t)
+    ;;       maybe add a generic compute-wad-class or similar and specialize
+    ;;       that instead
     (adjust-result cst 'labeled-object-definition-wad stream source
                    :children children)))
 

@@ -3,7 +3,7 @@
 (def-suite* :incrementalist.regressions
   :in :incrementalist)
 
-(test various-regressions
+(test regressions.various
   "Ensure that inputs which previously caused errors are processed
 correctly."
   (let ((fiveam:*test-dribble* nil))
@@ -41,28 +41,35 @@ correctly."
                    cursor
                    (cluffer:find-line buffer line-number)
                    column-number)))
-")
-      (test-case
-       "(
+"))))
+
+(test regressions.lists
+  "Ensure that lists work with various bits of valid and invalid syntax."
+  (flet ((test-case (input)
+           (insert-then-delete input :stream nil)))
+    (test-case "(
 (a .
 `b))")
-      (test-case ";,
+    (test-case ";,
 (a () ;
 #-b c)")
-      (test-case "; |#
+    (test-case "; |#
 ; #|
-()")
+()")))
 
-      ;; Problems around extra children in proper and dotted lists.
-      (test-case "(
+(test regressions.non-cst-children-in-lists
+  "Ensure that extra children in proper and dotted lists work."
+  (flet ((test-case (input)
+           (insert-then-delete input :stream nil)))
+    (test-case "(
 ; a
 ; b
 (1 . 2)
 ; c
 ; d
 3")
-      (test-case "((a . b) . (c .")
-      (test-case "(
+    (test-case "((a . b) . (c .")
+    (test-case "(
 ; a
 ; b
 (1 . 2)
@@ -70,30 +77,37 @@ correctly."
 .
 ; d
 3")
-      (test-case "(
+    (test-case "(
 ; a
 (1 . 2)
 #||#
 .
 #||#
-3")
+3")))
 
-      ;; Problems around invalid context for unquote.
-      (test-case ",`bar")
-      (test-case "`foo, `bar")
+(test regressions.quasiquotation
+  "Ensure that invalid contexts for unquote work."
+  (flet ((test-case (input)
+           (insert-then-delete input :stream nil)))
+    (test-case ",`bar")
+    (test-case "`foo, `bar")))
 
-      ;; The problem was that inputs like (0 . 0) lead to a structure
-      ;; in which the atom CST that represents the first 0 was used as
-      ;; both the CST first and CST rest, thus appearing twice in the
-      ;; wad children.
-      ;;
-      ;; A new heuristic in Eclector now prevents this. However, the
-      ;; MAP-CHILDREN method for CONS-CST is also fixed to report only
-      ;; one of the FIRST and REST if they refer to the same object.
-      (test-case "(; (0 . 0) . ())")
-      (test-case "(0 . 0) . ())"))))
+(test regressions.duplicate-cst-atoms
+  "Ensure that certain atoms as CST children are not repeated as WAD children."
+  ;; The problem was that inputs like (0 . 0) lead to a structure in
+  ;; which the atom CST that represents the first 0 was used as both
+  ;; the CST first and CST rest, thus appearing twice in the wad
+  ;; children.
+  ;;
+  ;; A new heuristic in Eclector now prevents this. However, the
+  ;; `map-children' method for `cons-cst' is also fixed to report only
+  ;; one of the first and rest if they refer to the same object.
+  (flet ((test-case (input)
+           (insert-then-delete input :stream nil)))
+    (test-case "(; (0 . 0) . ())")
+    (test-case "(0 . 0) . ())")))
 
-(test kind-of-restored-read-suppressed-wad
+(test regressions.kind-of-restored-read-suppressed-wad
   "Ensure that `read-maybe-nothing' returns the correct kind for a
 `read-suppress-wad' that has been restored from the cache."
   (edits-cases ()
@@ -112,10 +126,11 @@ correctly."
                                :package-name "KEYWORD")
          (inc:read-suppress-wad ((2 2) (2 3))))
         ,(expected-symbol-wad '((3 2) (3 3)) "C")))
-     ;; Remove the wad for the whole reader conditional from the cache. The
-     ;; `read-suppress-wad' can be restored from the cache. The following wad is
-     ;; processed correctly only if the `read-maybe-nothing' call for the
-     ;; `read-suppress-wad' returns the correct kind.
+     ;; Remove the wad for the whole reader conditional from the
+     ;; cache. The `read-suppress-wad' can be restored from the
+     ;; cache. The following wad is processed correctly only if the
+     ;; `read-maybe-nothing' call for the `read-suppress-wad' returns
+     ;; the correct kind.
      '(:insert (1 0) " ")
      `((inc:cons-wad ((0 0) (4 1)) ()
         (inc:skipped-positive-conditional-wad ((1 3) (2 3))

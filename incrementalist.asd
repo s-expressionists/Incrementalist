@@ -14,7 +14,15 @@
                 "eclector-concrete-syntax-tree"
                 "spell")
 
-  :components  ((:module "code"
+  :components  ((:module     "debug"
+                 :pathname   "code/debug"
+                 :components ((:file "package")
+                              (:file "log")
+                              (:file "invariant"
+                               :if-feature :incrementalist-debug)))
+
+                (:module      "code"
+                 :depends-on  ("debug")
                  :serial      t
                  :components ((:file "package")
                               (:file "utilities")

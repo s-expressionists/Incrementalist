@@ -1,58 +1,5 @@
 (cl:in-package #:incrementalist)
 
-;;; Utilities
-;;;
-;;; The `define-invariant' macro expands, for a given function, to one
-;;; or more invariant checking functions and, if supported by the
-;;; implementation, one or more `cl:trace' calls which ensure that the
-;;; checking function(s) is/are called before and/or after calls to
-;;; the function under consideration.
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  #+sbcl
-  (defun emit-trace (function-name &key ((:before before-spec))
-                                        ((:after  after-spec)))
-    (labels  ((emit-argument (position)
-                `(handler-case
-                     (sb-debug:arg ,position)
-                   (sb-kernel:index-too-large-error () nil)))
-              (emit-print (option spec)
-                (destructuring-bind (function argument-positions) spec
-                  `(,option (progn
-                              (,function
-                               ,@(mapcar #'emit-argument argument-positions))
-                              (values))))))
-      `(trace ,function-name :report nil
-              ,@(when before-spec
-                  (emit-print :print before-spec))
-              ,@(when after-spec
-                  (emit-print :print-after after-spec)))))
-
-  #-sbcl
-  (defun emit-trace (function-name &key before after)
-    (declare (ignore before after))
-    (warn "~@<Unable to attach invariant checks to function ~A in implemntation ~
-           ~A ~A.~@:>"
-          function-name
-          (lisp-implementation-type) (lisp-implementation-version))
-    nil))
-
-(defmacro define-invariant (function-name &key before after)
-  (let ((traces '()))
-    (flet ((emit-checking-function (when spec)
-             (destructuring-bind (parameters &body body) spec
-               (let ((name      (alexandria:symbolicate when '#:- function-name))
-                     (names     (mapcar #'first parameters))
-                     (positions (mapcar #'second parameters)))
-                 (alexandria:appendf traces `(,when (,name ,positions)))
-                 `(defun ,name ,names ,@body)))))
-      `(progn
-         ,@(when before
-             `(,(emit-checking-function :before before)))
-         ,@(when after
-             `(,(emit-checking-function :after after)))
-         ,(apply 'emit-trace function-name traces)))))
-
 ;;; Model checks
 
 (defun check-absolute-wad-with-relative-descendants (wad)
@@ -209,7 +156,7 @@
 
 ;;; Reader
 
-(define-invariant make-children-relative-and-set-family-relations
+(dbg:define-invariant make-children-relative-and-set-family-relations
   :before (((wad 0))
            (assert (not (relative-p wad)))
            (map-children (lambda (child)
@@ -218,7 +165,7 @@
                            (check-absolute-wad-with-relative-descendants child))
                          wad)))
 
-(define-invariant adjust-result
+(dbg:define-invariant adjust-result
   :before (((result 0) (keyword 4) (extra-children 5))
            (assert (not (typep result 'wad)))
            (when (and (eq keyword :children) (not (null extra-children)))
@@ -288,17 +235,17 @@
     ; (print-cst result)
     result))
 
-(define-invariant make-error-wad
+(dbg:define-invariant make-error-wad
   :after (((error-wad 0))
           (assert (not (relative-p error-wad)))
           (assert (= (start-line error-wad) (absolute-start-line error-wad)))))
 
-(define-invariant reader:read-maybe-nothing
+(dbg:define-invariant reader:read-maybe-nothing
   :after (((result 2))
           (unless (null result)
             (check-absolute-wad-with-relative-descendants result))))
 
-(define-invariant read-and-cache
+(dbg:define-invariant read-and-cache
   :after (((result 1))
           (unless (null result)
             (assert (typep result 'wad))
@@ -306,18 +253,18 @@
 
 ;;; Cache
 
-(define-invariant pop-from-suffix
+(dbg:define-invariant pop-from-suffix
   :before (((cache 0))
            (let* ((old-suffix     (suffix cache))
                   (old-suffix-top (first old-suffix)))
              (assert (not (relative-p old-suffix-top))))))
 
-(define-invariant push-to-prefix
+(dbg:define-invariant push-to-prefix
   :before (((wad 1))
            (check-absolute-line-numbers wad)))
 
 (defvar *pop-from-prefix-cache*)
-(define-invariant pop-from-prefix
+(dbg:define-invariant pop-from-prefix
   :before (((cache 0))
            (setf *pop-from-prefix-cache* cache))
   :after  (()
@@ -327,19 +274,19 @@
                (assert (not (relative-p new-prefix-top)))))
            (setf *pop-from-prefix-cache* nil)))
 
-(define-invariant push-to-worklist
+(dbg:define-invariant push-to-worklist
   :before (((wad 1))
            (check-absolute-wad-with-relative-descendants wad)))
 
-(define-invariant push-to-residue
+(dbg:define-invariant push-to-residue
   :before (((wad 1))
            (check-absolute-wad-with-relative-descendants wad)))
 
-(define-invariant pop-from-worklist
+(dbg:define-invariant pop-from-worklist
   :after (((result 0))
           (check-absolute-wad-with-relative-descendants result)))
 
-(define-invariant adjust-worklist-and-suffix
+(dbg:define-invariant adjust-worklist-and-suffix
   :before (((cache 0))
            (labels ((invalidate-children (wad)
                       (when (relative-p wad)
@@ -349,14 +296,14 @@
              (alexandria:when-let ((suffix (suffix cache)))
                (invalidate-children (first suffix))))))
 
-(define-invariant cached-wad
+(dbg:define-invariant cached-wad
   :after (((result 0))
           (when result
             (check-absolute-line-numbers result)
             (assert (null (parent result))))))
 
 (let (cache)
-  (define-invariant update
+  (dbg:define-invariant update
     :before (((analyzer 0))
              (setf cache (cache analyzer)))
     :after  (()

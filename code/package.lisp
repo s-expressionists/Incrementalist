@@ -6,7 +6,9 @@
    (#:reader    #:eclector.reader)
    (#:readtable #:eclector.readtable)
    (#:stream    #:trivial-gray-streams)
-   (#:flx       #:flexichain))
+   (#:flx       #:flexichain)
+
+   (#:dbg       #:incrementalist.debug))
 
   (:shadow
    #:condition ; reader of `error-wad'

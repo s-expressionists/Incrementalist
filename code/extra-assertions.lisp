@@ -251,6 +251,22 @@
             (assert (typep result 'wad))
             (check-absolute-wad-with-relative-descendants result))))
 
+(defmethod eclector.reader:call-as-top-level-read :around
+    ((client                client)
+     (thunk                 t)
+     (input-stream          analyzer)
+     (eof-error-p           t)
+     (eof-value             t)
+     (preserve-whitespace-p t))
+  (let* ((cache  (cache input-stream))
+         (values (multiple-value-list (call-next-method)))
+         (kind   (first values)))
+    (when (eq kind :eof)
+      (assert (null (suffix cache)))
+      (assert (null (residue cache)))
+      (assert (null (worklist cache))))
+    (values-list values)))
+
 ;;; Cache
 
 (dbg:define-invariant pop-from-suffix

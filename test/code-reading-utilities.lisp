@@ -11,7 +11,7 @@
              (inc:map-children #'check-wad wad))
            (maybe-check-wad (wad)
              (when (not (or (inc::relative-p wad)
-                            (eq wad (first (inc::suffix (inc::cache wad))))))
+                            (eq wad (first (inc::suffix (inc:cache wad))))))
                (check-wad wad))))
     (mapc #'maybe-check-wad parse-result)))
 
@@ -41,31 +41,33 @@
 
 (defun insert-then-delete (content &key (stream *trace-output*))
   (let (count insert-time delete-time)
-    (multiple-value-bind (analyzer cache buffer cursor) (prepared-analyzer)
+    (multiple-value-bind (analyzer cache buffer cursor) (prepared-analyzer "")
       ;; Insert
-      (loop with reporter = (progress-reporter :indicator #\+ :stream stream)
-            for character across content
-            do (funcall reporter)
-            do (case character
-                 (#\Newline (cluffer:split-line cursor))
-                 (t         (cluffer:insert-item cursor character)))
-               (let ((result (finishes (update-cache analyzer cache))))
-                 (check-parse-result result))
-            finally (setf (values insert-time count) (funcall reporter t)))
+      (loop :with reporter = (progress-reporter :indicator #\+ :stream stream)
+            :for character across content
+            :do (funcall reporter)
+            :do (case character
+                  (#\Newline (cluffer:split-line cursor))
+                  (t         (cluffer:insert-item cursor character)))
+                (let ((result (update-cache analyzer cache)))
+                  (check-parse-result result))
+            :finally (setf (values insert-time count) (funcall reporter t)))
       ;; Delete
       (cluffer:detach-cursor cursor)
       (cluffer:attach-cursor cursor (cluffer:find-line buffer 0))
-      (loop with reporter = (progress-reporter :indicator #\- :stream stream)
-            while (or (> (cluffer:line-count buffer) 1) ; fast check
-                      (plusp (cluffer:item-count buffer)))
-            for i from 0
-            do (funcall reporter)
-            do (if (cluffer:end-of-line-p cursor)
-                   (cluffer:join-line cursor)
-                   (cluffer:delete-item cursor))
-               (let ((result (finishes (update-cache analyzer cache))))
-                 (check-parse-result result))
-            finally (setf delete-time (funcall reporter t))))
+      (loop :with reporter = (progress-reporter :indicator #\- :stream stream)
+            :while (or (> (cluffer:line-count buffer) 1) ; fast check
+                       (plusp (cluffer:item-count buffer)))
+            :for i :from 0
+            :do (funcall reporter)
+            :do (if (cluffer:end-of-line-p cursor)
+                    (cluffer:join-line cursor)
+                    (cluffer:delete-item cursor))
+                (let ((result (update-cache analyzer cache)))
+                  (check-parse-result result))
+            :finally (setf delete-time (funcall reporter t)))
+      ;; Buffer is empty.
+      (is-true (a:emptyp (buffer-string buffer))))
     (values count insert-time delete-time)))
 
 ;;; Reading code from files

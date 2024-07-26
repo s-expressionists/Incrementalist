@@ -28,7 +28,7 @@
     (insert-string cursor content)
     (values buffer cursor)))
 
-(defun prepared-analyzer (&optional (buffer-content ""))
+(defun prepared-analyzer (buffer-content)
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((analyzer (make-instance 'inc:analyzer :buffer buffer))
            (cache    (inc:cache analyzer)))

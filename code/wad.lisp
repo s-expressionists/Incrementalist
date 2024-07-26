@@ -62,7 +62,6 @@
 ;;; A WAD is the result of parsing an expression or some material that
 ;;; is normally skipped, such as a comment or an inactive reader
 ;;; conditional.
-
 (defclass basic-wad ()
   (;; This slot contains the cache that this wad is part of.
    (%cache               :initarg  :cache

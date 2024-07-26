@@ -37,6 +37,10 @@
   (and (= (start-line left)   (line-number right))
        (= (start-column left) (item-number right))))
 
+(defun advance-stream-to-beyond-wad (analyzer wad)
+  (setf (line-number analyzer) (end-line wad)
+        (item-number analyzer) (end-column wad)))
+
 ;;; Check whether there is a cached wad with a start position that
 ;;; corresponds to the current stream position of ANALYZER, and if so,
 ;;; return that wad.  If there is no such parse result, then return
@@ -68,7 +72,3 @@
                (compute-absolute-line-numbers (first residue)))
               (t
                nil))))))
-
-(defun advance-stream-to-beyond-wad (analyzer wad)
-  (setf (line-number analyzer) (end-line wad)
-        (item-number analyzer) (end-column wad)))

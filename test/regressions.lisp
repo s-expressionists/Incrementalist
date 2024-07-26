@@ -110,6 +110,8 @@ correctly."
 (test regressions.kind-of-restored-read-suppressed-wad
   "Ensure that `read-maybe-nothing' returns the correct kind for a
 `read-suppress-wad' that has been restored from the cache."
+  ;; Make sure the keywords used in the test are interned.
+  :a :foo :bar
   (edits-cases ()
     (;; A `read-suppress-wad' for `b' is added to the cache.
      "(
@@ -140,4 +142,25 @@ correctly."
                                :token-class  'inc:existing-symbol-token
                                :package-name "KEYWORD")
          (inc:read-suppress-wad ((2 2) (2 3))))
-        ,(expected-symbol-wad '((3 2) (3 3)) "C"))))))
+        ,(expected-symbol-wad '((3 2) (3 3)) "C"))))
+    (;; A `read-suppress-wad' for the negative conditional is added to
+     ;; the cache.
+     "#+foo
+#-bar defun
+111"
+     #1=`((inc:skipped-positive-conditional-wad ((0 0) (1 11)) ()
+           ,(expected-symbol-wad '((0 2) (0 5)) "FOO"
+                                 :token-class 'inc:existing-symbol-token
+                                 :package-name "KEYWORD")
+           (inc:read-suppress-wad ((1 0) (1 11)) ()
+            ,(expected-symbol-wad '((1 2) (1 5)) "BAR"
+                                  :token-class  'inc:existing-symbol-token
+                                  :package-name "KEYWORD")
+            (inc:read-suppress-wad ((1 6) (1 11)) ())))
+          (inc:atom-wad ((2 0) (2 3)) (:raw 111)))
+     ;; The positive conditional is re-read. If the
+     ;; `read-suppress-wad' for the negative conditional is restored
+     ;; incorrectly, the final atom wad can (incorrectly, of course)
+     ;; become a child of the positive conditional.
+     '(:poke (0 2))
+     #1#)))

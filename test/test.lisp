@@ -67,6 +67,15 @@
         (inc:block-comment-wad ((0 3) (0 8)) ()
          (inc:word-wad ((0 5) (0 6))))
         (inc:atom-wad ((0 8) (0 9)) (:raw 1)))))
+    ("#+common-lisp 1"
+     `((inc:read-positive-conditional-wad ((0 0) (0 15))
+          (:feature-expression (inc:existing-symbol-token
+                                :symbol ("KEYWORD" "COMMON-LISP")))
+        ,(expected-symbol-wad '((0 2) (0 13)) "COMMON-LISP"
+                              :token-class  'inc:existing-symbol-token
+                              :package-name "KEYWORD"
+                              :words        '(:ignore-children))
+        (inc:atom-wad ((0 14) (0 15)) (:raw 1)))))
     ("#+a b"
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
          (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))

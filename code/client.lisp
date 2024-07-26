@@ -17,7 +17,10 @@
 
 (defmethod reader:evaluate-feature-expression ((client             client)
                                                (feature-expression t))
-  nil)
+  (let ((features (eclector.reader:state-value client '*features*)))
+    (and (typep feature-expression 'symbol-token)
+         (find (name feature-expression) features :test #'string=
+                                                  :key  'symbol-name))))
 
 ;;; Read-time evaluation
 

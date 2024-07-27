@@ -84,6 +84,25 @@
            (length prefix) (list prefix)
            (length suffix) (list suffix))))
 
+(defun gap-start (cache)
+  (let ((prefix (prefix cache)))
+    (if (null prefix)
+        0
+        (1+ (end-line (first prefix))))))
+
+(defun gap-end (cache)
+  (let ((suffix (suffix cache)))
+    (1- (if (null suffix)
+            (line-count cache)
+            (start-line (first suffix))))))
+
+(defun total-width (cache)
+  (let ((prefix-width (prefix-width cache))
+        (suffix-width (suffix-width cache)))
+    (max (if (null prefix-width) 0 (first prefix-width))
+         (max-line-length cache (gap-start cache) (gap-end cache))
+         (if (null suffix-width) 0 (first suffix-width)))))
+
 ;;; Given a cache and an interval of lines, return the maxium length
 ;;; of any lines in the interval.
 (defun max-line-length (cache first-line-number last-line-number)
@@ -169,25 +188,6 @@
 (defgeneric prefix-to-suffix (cache)
   (:method ((cache cache))
     (push-to-suffix cache (pop-from-prefix cache))))
-
-(defun gap-start (cache)
-  (let ((prefix (prefix cache)))
-    (if (null prefix)
-        0
-        (1+ (end-line (first prefix))))))
-
-(defun gap-end (cache)
-  (let ((suffix (suffix cache)))
-    (1- (if (null suffix)
-            (line-count cache)
-            (start-line (first suffix))))))
-
-(defun total-width (cache)
-  (let ((prefix-width (prefix-width cache))
-        (suffix-width (suffix-width cache)))
-    (max (if (null prefix-width) 0 (first prefix-width))
-         (max-line-length cache (gap-start cache) (gap-end cache))
-         (if (null suffix-width) 0 (first suffix-width)))))
 
 (defun pop-from-worklist (cache)
   (pop (worklist cache)))

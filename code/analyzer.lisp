@@ -56,10 +56,7 @@
   (let ((cache (cache analyzer)))
     (macrolet ((skip (reader popper)
                  `(progn
-                    (loop for maybe-wad = (,reader cache)
-                          while (and (not (null maybe-wad))
-                                     (position< (first maybe-wad) analyzer))
-                          do (,popper cache))
+                    (drain-result-list analyzer cache ,reader ,popper)
                     (,reader cache))))
       (let ((residue (skip residue pop-from-residue)))
         (cond ((null residue)

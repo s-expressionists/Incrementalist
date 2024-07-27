@@ -201,6 +201,15 @@
 (defun push-to-residue (cache wad)
   (push wad (residue cache)))
 
+(defmacro drain-result-list (analyzer cache reader popper)
+  `(loop :for remaining = (,reader ,cache)
+         :while (and (not (null remaining))
+                     (position< (first remaining) ,analyzer))
+         ;; Detach before popping because detaching may traverse the
+         ;; ancestors of the wad and popping may sever the parent
+         ;; link.
+         :do (,popper ,cache)))
+
 (defun finish-scavenge (cache)
   ;; Move entire worklist to residue
   (loop until (null (worklist cache))

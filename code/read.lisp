@@ -127,12 +127,6 @@
           ;; the cache residue and cache suffix that are now before
           ;; the current stream position.
           unless (eq kind :whitespace)
-            do (macrolet ((clear (reader popper)
-                            `(loop :for remaining = (,reader cache)
-                                   :while (and (not (null remaining))
-                                               (position< (first remaining)
-                                                          analyzer))
-                                   :do (,popper cache))))
-                 (clear residue pop-from-residue)
-                 (when (null (residue cache))
-                   (clear suffix pop-from-suffix))))))
+            do (drain-result-list analyzer cache residue pop-from-residue)
+               (when (null (residue cache))
+                 (drain-result-list analyzer cache suffix pop-from-suffix)))))

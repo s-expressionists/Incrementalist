@@ -64,6 +64,12 @@
 
 ;;; Predicates
 
+(defun wad-location (wad)
+  (let* ((start-line (inc:absolute-start-line wad))
+         (end-line   (+ start-line (inc:height wad))))
+    (list (list start-line (inc:start-column wad))
+          (list end-line   (inc:end-column wad)))))
+
 (defmacro is-with-node ((predicate expected actual) label result-info input)
   `(is (,predicate ,expected ,actual)
        "~@<For~@[ input~@:_~@:_~
@@ -96,12 +102,8 @@
        ~/incrementalist.test::format-node/~
        ~@:_~@:_expected the wad to be of type ~A but it is of type ~A.~@:>"
       input result-info expected-type (class-name (class-of wad)))
-  (let* ((start-line      (inc:absolute-start-line wad))
-         (end-line        (+ start-line (inc:height wad)))
-         (actual-location (list (list start-line (inc:start-column wad))
-                                (list end-line   (inc:end-column wad)))))
-    (is-with-node (equal expected-location actual-location)
-                  "location of the wad" result-info input)))
+  (is-with-node (equal expected-location (wad-location wad))
+                "location of the wad" result-info input))
 
 (defun is-error (expected-error wad result-info &key input)
   (let ((result-info (cons (car result-info) wad)))
@@ -166,8 +168,7 @@
              (is-wad-data expected-type expected-location result result-info
                           :input input)
              ;; Assertions for errors
-             (is-sequence (lambda (expected-error actual-error)
-                            (is-error expected-error actual-error result-info))
+             (is-sequence (a:rcurry #'is-error result-info)
                           expected-errors (inc:errors result)
                           result-info "error~:P" :input input)
              ;; Assertions for raw value
@@ -194,16 +195,17 @@
                             :input input))))))
     (rec expected root-result)))
 
-(defun are-results (expected-results actual-results &key input)
+(defun is-result-count= (expected-results actual-results &key input)
   (is (= (length expected-results) (length actual-results))
       "~@<~@[For input~@:_~@:_~
        ~S~
        ~@:_~@:_,~] ~
        expected ~D result~:P but there ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
-      input (length expected-results) (length actual-results))
-  (mapc (lambda (expected-result actual-result)
-          (is-result expected-result actual-result :input input))
-        expected-results actual-results))
+      input (length expected-results) (length actual-results)))
+
+(defun are-results (expected-results actual-results &key input)
+  (is-result-count= expected-results actual-results :input input)
+  (mapc (a:rcurry #'is-result :input input) expected-results actual-results))
 
 ;;; Utilities for analysis test cases
 

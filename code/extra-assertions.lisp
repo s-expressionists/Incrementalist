@@ -245,7 +245,7 @@
           (unless (null result)
             (check-absolute-wad-with-relative-descendants result))))
 
-(dbg:define-invariant read-and-cache
+(dbg:define-invariant read-and-cache-top-level-expression
   :after (((result 1))
           (unless (null result)
             (assert (typep result 'wad))

@@ -67,7 +67,12 @@
                   (check-parse-result result))
             :finally (setf delete-time (funcall reporter t)))
       ;; Buffer is empty.
-      (is-true (a:emptyp (buffer-string buffer))))
+      (is-true (a:emptyp (buffer-string buffer)))
+      (let ((result (update-cache analyzer cache)))
+        ;; Parse result list is empty.
+        (is (null result))
+        ;; Check initial reader state for dangling user references.
+        (no-dangling-nodes '() analyzer)))
     (values count insert-time delete-time)))
 
 ;;; Reading code from files

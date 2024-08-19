@@ -21,9 +21,22 @@
                               (:file "invariant"
                                :if-feature :incrementalist-debug)))
 
-                (:module      "code"
-                 :depends-on  ("debug")
-                 :serial      t
+                (:module     "dependencies"
+                 :pathname   "code/dependencies"
+                 :depends-on ("debug")
+                 :serial     t
+                 :components ((:file "package")
+                              (:file "protocol")
+                              (:file "debug-types"
+                               :if-feature :incrementalist-debug)
+                              (:file "dependencies")
+                              ;; Debugging
+                              (:file "extra-assertions"
+                               :if-feature :incrementalist-debug)))
+
+                (:module     "code"
+                 :depends-on ("debug" "dependencies")
+                 :serial     t
                  :components ((:file "package")
                               (:file "utilities")
                               (:file "protocol")
@@ -36,7 +49,9 @@
                               (:file "analyzer")
                               (:file "text")
                               (:file "client")
+                              (:file "dependencies")
                               (:file "read")
+                              (:file "process")
                               (:file "update-cache")
                               ;; Queries
                               (:file "find-wad-beginning-line")
@@ -68,11 +83,14 @@
                               (:file "code-reading-utilities")
                               ;; Model
                               (:file "wad")
+                              ;; Cache
+                              (:file "dependencies")
                               ;; Queries
                               (:file "find-wad-containing-position")
                               ;; Other tests
                               (:file "test")
                               (:file "random")
+                              (:file "random-dependencies")
                               (:file "read-code")
                               (:file "regressions")
                               (:file "performance"))))

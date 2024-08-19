@@ -107,6 +107,15 @@ correctly."
     (test-case "(; (0 . 0) . ())")
     (test-case "(0 . 0) . ())")))
 
+(test regressions.nested-labeled-objects
+  "Ensure that nested labeled objects work."
+  ;; Nested labeled object definitions lead to a situation in which an
+  ;; escaping cell and a defined cell exist for the same aspect. The
+  ;; escaping cell must be used when computing the "external" state
+  ;; for the WAD.
+  (insert-then-delete "(
+ #1=(#2=foo #3=bar))" :stream nil))
+
 (test regressions.kind-of-restored-read-suppressed-wad
   "Ensure that `read-maybe-nothing' returns the correct kind for a
 `read-suppress-wad' that has been restored from the cache."

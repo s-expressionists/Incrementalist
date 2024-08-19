@@ -103,13 +103,15 @@ reader macro."
   (5am:for-all ((writer-and-info (gen-sub-expression)))
     (destructuring-bind (writer sub-expressions infos) writer-and-info
       (declare (ignore infos))
-      (let* ((input     (with-output-to-string (stream)
-                          (write-string "#{ " stream)
-                          (funcall writer stream)
-                          (write-string " }" stream)))
-             (readtable (augmented-readtable sub-expressions))
-             (result    (let ((eclector.reader:*readtable* readtable))
-                          (first (parse-result input)))))
+      (let* ((input         (with-output-to-string (stream)
+                              (write-string "#{ " stream)
+                              (funcall writer stream)
+                              (write-string " }" stream)))
+             (readtable     (augmented-readtable sub-expressions))
+             (initial-state `((*readtable* . ,readtable)))
+             (result        (first (parse-result
+                                    input
+                                    :initial-reader-state initial-state))))
         (is-true (typep result 'inc:cons-wad))
         ;; Ensure that the structure, raw value and source information
         ;; of the CST corresponds to that of the input and reader

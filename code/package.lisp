@@ -8,6 +8,8 @@
    (#:stream    #:trivial-gray-streams)
    (#:flx       #:flexichain)
 
+   (#:dep       #:incrementalist.dependencies)
+
    (#:dbg       #:incrementalist.debug))
 
   (:shadow
@@ -45,6 +47,8 @@
    #:start-column
    #:end-column
    #:items
+   #:state-aspect-cell
+   #:state-value
 
    #:errors
    #:indentation ; wad protocol
@@ -109,6 +113,7 @@
   ;; Analyzer protocol
   ;; Extends associated buffer protocol
   (:export
+   #:make-initial-reader-state
    #:analyzer ; class
    #:cache ; readers
 

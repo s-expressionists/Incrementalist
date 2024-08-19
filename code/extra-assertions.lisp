@@ -154,6 +154,10 @@
 (defmethod (setf left-sibling) :before ((new-value t) (object t))
   (assert (not (eq new-value object))))
 
+(dbg:define-invariant invalidate-cell
+  :before (((cell 0))
+           (assert (dep:validp cell))))
+
 ;;; Reader
 
 (dbg:define-invariant make-children-relative-and-set-family-relations
@@ -269,6 +273,11 @@
 
 ;;; Cache
 
+(defmethod suffix-invalid-count :around ((cache cache))
+  (let ((value (call-next-method)))
+    (assert (= value (count-if-not #'dep:validp (suffix cache))))
+    value))
+
 (dbg:define-invariant pop-from-suffix
   :before (((cache 0))
            (let* ((old-suffix     (suffix cache))
@@ -318,9 +327,34 @@
             (check-absolute-line-numbers result)
             (assert (null (parent result))))))
 
-(let (cache)
+(defun no-dangling-nodes (analyzer)
+  (let* ((cache   (cache analyzer))
+         (results (append (prefix cache)
+                          (suffix cache)
+                          (worklist cache)
+                          (residue cache)))
+         (nodes   (make-hash-table :test #'eq)))
+    (labels ((rec (node)
+               (setf (gethash node nodes) t)
+               (map-children #'rec node)))
+      (mapc #'rec results))
+    (loop :for cell :in (initial-reader-state analyzer)
+          :do (loop :for user :in (dep:users cell)
+                    :do (assert (nth-value 1 (gethash user nodes)))))))
+
+(let (analyzer cache)
   (dbg:define-invariant update
-    :before (((analyzer 0))
-             (setf cache (cache analyzer)))
+    :before (((analyzer* 0))
+             (setf analyzer    analyzer*
+                   cache       (cache analyzer*)))
     :after  (()
-             (check-wad-graph cache))))
+             (check-wad-graph cache)
+             (no-dangling-nodes analyzer))))
+
+(let (analyzer)
+  (dbg:define-invariant read-forms
+    :before (((analyzer* 0))
+             (setf analyzer analyzer*)
+             (no-dangling-nodes analyzer))
+    :after  (()
+             (no-dangling-nodes analyzer))))

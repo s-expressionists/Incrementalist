@@ -25,7 +25,12 @@
 ;;; Read-time evaluation
 
 (defmethod reader:evaluate-expression ((client client) (expression t))
-  1)
+  ;; HACK: we support setting `*read-base*' via
+  ;; #.(setf *read-base* ...) for testing
+  (multiple-value-bind (value valuep) (maybe-set-read-base client expression)
+    (if valuep
+        value
+        1)))
 
 ;;; Token interpretation
 
@@ -263,7 +268,8 @@
     ;; that is still on the residue or suffix without performing the
     ;; corresponding recursive `read-maybe-nothing' call. As a
     ;; workaround, consume any such wads here.
-    (cached-wad stream)
+    (alexandria:when-let ((cached (cached-wad stream)))
+      (detach-wad cached))
     ;; Separate CHILDREN into children of type `cst:cst' and "extra"
     ;; children. Extra children arise mainly due to comments and other
     ;; skipped input which are represented as `wad's which are not of

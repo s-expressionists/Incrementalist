@@ -28,19 +28,25 @@
     (insert-string cursor content)
     (values buffer cursor)))
 
-(defun prepared-analyzer (buffer-content)
+(defun prepared-analyzer (buffer-content
+                          &key (initial-reader-state
+                                (inc:make-initial-reader-state
+                                 :package "INCREMENTALIST.TEST.TEST-PACKAGE")))
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
-    (let* ((analyzer (make-instance 'inc:analyzer :buffer buffer))
+    (let* ((analyzer (make-instance 'inc:analyzer
+                                    :buffer               buffer
+                                    :initial-reader-state initial-reader-state))
            (cache    (inc:cache analyzer)))
       (values analyzer cache buffer cursor))))
 
 (defun update-cache (analyzer cache)
-  (let ((*package* (find-package '#:incrementalist.test.test-package)))
-    (inc:update analyzer))
+  (inc:update analyzer)
   (append (reverse (inc::prefix cache)) (inc::suffix cache)))
 
-(defun parse-result (buffer-content)
-  (multiple-value-bind (analyzer cache) (prepared-analyzer buffer-content)
+(defun parse-result (buffer-content &rest args &key initial-reader-state)
+  (declare (ignore initial-reader-state))
+  (multiple-value-bind (analyzer cache)
+      (apply #'prepared-analyzer buffer-content args)
     (update-cache analyzer cache)))
 
 ;;; Reporting utilities
@@ -62,7 +68,24 @@
         (unless (typep wad 'inc:error-wad)
           (append (inc:errors wad) (inc:children wad))))))))
 
-;;; Predicates
+(defun format-results (stream results &optional colon? at?)
+  (declare (ignore colon? at?))
+  (loop :for result :in results
+        :do (fresh-line stream)
+            (format-node stream (cons result nil))))
+
+;;; The following functions (and helpers) check results (trees or
+;;; forests of wads) in a style that matches fiveam assertions with
+;;; `fiveam:is'.  The functions form two groups which perform similar
+;;; checks but on different kinds of arguments:
+;;;
+;;;  Arguments               | "spec" vs result | result vs result |
+;;;  ------------------------+------------------+------------------+
+;;;  Wad location and type   | `is-wad-data'    | `is-wad-data='   |
+;;;  Error location and type | `is-error'       | `is-error='      |
+;;;  Raw value               | `is-raw'         | `is-raw='        |
+;;;  Single result           | `is-result'      | `is-result='     |
+;;;  List of results         | `are-results'    | `are-results='   |
 
 (defun wad-location (wad)
   (let* ((start-line (inc:absolute-start-line wad))
@@ -105,6 +128,12 @@
   (is-with-node (equal expected-location (wad-location wad))
                 "location of the wad" result-info input))
 
+(defun is-wad-data= (expected-wad actual-wad result-info &key input)
+  (is-with-node (a:type= (type-of expected-wad) (type-of actual-wad))
+                "type of" result-info input)
+  (is-with-node (equal (wad-location expected-wad) (wad-location actual-wad))
+                "location of the wad" result-info input))
+
 (defun is-error (expected-error wad result-info &key input)
   (let ((result-info (cons (car result-info) wad)))
     (destructuring-bind (expected-location expected-condition-type) expected-error
@@ -121,6 +150,15 @@
             input result-info
             expected-condition-type
             (class-name (class-of condition)))))))
+
+(defun is-error= (expected-error-wad actual-error-wad result-info &key input)
+  (let ((result-info (cons (car result-info) actual-error-wad)))
+    (is-wad-data= expected-error-wad actual-error-wad result-info :input input)
+    (let ((expected-condition (inc:condition expected-error-wad))
+          (actual-condition   (inc:condition actual-error-wad)))
+      (is-with-node (a:type= (class-of expected-condition)
+                             (class-of actual-condition))
+                    "condition type" result-info input))))
 
 (defun is-raw (expected-raw raw result-info &key input)
   (if (consp expected-raw)
@@ -144,9 +182,34 @@
       (is-with-node (equal expected-raw raw)
                     "raw value of the node" result-info input)))
 
+(defun is-raw= (expected actual result-info &key input)
+  (labels ((rec (expected actual)
+             (is-with-node (a:type= (type-of expected) (type-of actual))
+                           "type of the raw value of the node"
+                           result-info input)
+             (when (a:type= (type-of expected) (type-of actual))
+               (typecase expected
+                 (cons
+                  (rec (car expected) (car actual))
+                  (rec (cdr expected) (cdr actual)))
+                 (inc:symbol-token
+                  (is-with-node (string= (inc:package-name expected)
+                                         (inc:package-name actual))
+                                "package name of the symbol token of the node"
+                                result-info input)
+                  (is-with-node (string= (inc:name expected) (inc:name actual))
+                                "name of the symbol token of the node"
+                                result-info input))
+                 (t
+                  (is-with-node (equal expected actual)
+                                "raw value of the node" result-info input))))))
+    (rec expected actual)))
+
 (defun is-result (expected root-result &key input)
   (labels
       ((rec (expected result)
+         (is-true (dep:validp result))
+         (is (null (dep:invalid result)))
          (destructuring-bind
              (expected-type expected-location
               &optional ((&key ((:errors expected-errors) '())
@@ -195,6 +258,28 @@
                             :input input))))))
     (rec expected root-result)))
 
+(defun is-result= (expected-result actual-result &key input)
+  (is (a:type= (type-of expected-result) (type-of actual-result)))
+  (labels ((rec (expected result)
+             (let ((result-info (cons actual-result result)))
+               (is-true (dep:validp result))
+               (is (null (dep:invalid result)))
+               ;; Compare type and location
+               (is-wad-data= expected result result-info :input input)
+               ;; Compare raw values
+               (when (typep expected 'cst:cst)
+                 (is-raw= (cst:raw expected) (cst:raw result)
+                          result-info :input input))
+               ;; Compare errors
+               (is-sequence (a:rcurry #'is-error= result-info :input input)
+                            (inc:errors expected) (inc:errors result)
+                            result-info "error~:P" :input input)
+               ;; Compare children
+               (is-sequence #'rec (inc:children expected) (inc:children result)
+                            result-info "~:*child~[ren~;~:;ren~]"
+                            :input input))))
+    (rec expected-result actual-result)))
+
 (defun is-result-count= (expected-results actual-results &key input)
   (is (= (length expected-results) (length actual-results))
       "~@<~@[For input~@:_~@:_~
@@ -206,6 +291,26 @@
 (defun are-results (expected-results actual-results &key input)
   (is-result-count= expected-results actual-results :input input)
   (mapc (a:rcurry #'is-result :input input) expected-results actual-results))
+
+(defun are-results= (expected-results actual-results &key input)
+  (is-result-count= expected-results actual-results :input input)
+  (mapc (a:rcurry #'is-result= :input input) expected-results actual-results))
+
+;;; Ensure that the cells in the initial reader state of ANALYZER do
+;;; not have any users that are not contained in the wad forest
+;;; RESULTS.
+(defun no-dangling-nodes (results analyzer)
+  (let ((nodes (make-hash-table :test #'eq)))
+    (labels ((rec (node)
+               (setf (gethash node nodes) t)
+               (inc:map-children #'rec node)))
+      (mapc #'rec results))
+    (loop :for cell :in (inc::initial-reader-state analyzer)
+          :do (dep:map-users (lambda (user)
+                               (when (not (nth-value 1 (gethash user nodes)))
+                                 (fiveam:fail "dangling node ~A in cell ~A"
+                                              user cell)))
+                             cell))))
 
 ;;; Utilities for analysis test cases
 

@@ -129,7 +129,7 @@
   (assert (not (relative-p wad)))
   (+ (start-line wad) (height wad)))
 
-(defclass wad (family-relations-mixin basic-wad)
+(defclass wad (dep:cell-user-mixin family-relations-mixin basic-wad)
   (;; This slot contains the maximum line width of any line that is
    ;; part of the wad.
    (%max-line-width :initarg :max-line-width
@@ -150,6 +150,12 @@
    (%indentation    :initarg  :indentation
                     :accessor indentation
                     :initform nil)))
+
+(defmethod print-object ((object wad) stream)
+  (print-unreadable-object (object stream :type t)
+    (unless (dep:validp object)
+      (write-string "INVALID " stream))
+    (print-wad-position object stream)))
 
 (defmethod errors ((wad wad))
   (let ((errors (%errors wad)))
@@ -348,6 +354,62 @@
   (and (wad-starts-before-wad-p wad1 wad2)
        (wad-ends-after-wad-p wad1 wad2)))
 
+;;; Dependencies and invalidation
+
+(defvar *drop-depth* 0)
+(defmethod detach-wad ((wad basic-wad) &key (recursive t))
+  (if recursive
+      (labels ((rec (wad)
+                 (%detach-wad wad)
+                 (let ((*drop-depth* (+ *drop-depth* 2)))
+                   (map-children #'rec wad))))
+        (rec wad))
+      (%detach-wad wad)))
+
+(defun %detach-wad (wad)
+  (dbg:log :invalidation "~V<~>Dropping wad ~A~%"
+           (* 2 *drop-depth*) wad)
+  (let ((*drop-depth* (1+ *drop-depth*)))
+    (dep:map-defined #'invalidate-cell wad)
+    (loop :for cell :in (dep:used wad)
+          :when (dep:validp cell)
+            :do (dbg:log :invalidation "~V<~>USE ~A~%" (* 2 *drop-depth*) cell)
+                (dep:remove-user wad cell))))
+
+(defun invalidate-cell (cell)
+  (dbg:log :invalidation "~V<~>DEF ~A~%" (* 2 *drop-depth*) cell)
+  (setf (dep:validp cell) nil)
+  (let ((*drop-depth* (1+ *drop-depth*)))
+    (dep:map-users (lambda (wad)
+                     (invalidate-wad wad cell))
+                   cell)))
+
+(defun invalidate-wad (wad cell)
+  (labels ((rec (wad)
+             (dbg:log :invalidation "~V<~>Invalidate ~A~%" (* 2 *drop-depth*) wad)
+             (let ((old-invalid (dep:invalid wad)))
+               (unless (find cell old-invalid :test #'eq)
+                 (setf (dep:invalid wad) (list* cell old-invalid))
+                 (alexandria:when-let ((parent (parent wad)))
+                   (let ((*drop-depth* (1+ *drop-depth*)))
+                     (rec parent)))))))
+    (rec wad)))
+
+(defun state-aspect-cell (wad aspect)
+  (labels ((rec (wad)
+             (or (find aspect (dep:inherited wad) :test #'eq :key #'dep:aspect)
+                 (alexandria:when-let ((parent (parent wad)))
+                   (rec parent)))))
+    ;; TODO: Maybe we should have a parameter to indicate whether we
+    ;; want incoming or outgoing values
+    (or (find aspect (dep:used wad) :test #'eq :key #'dep:aspect)
+        (rec wad))))
+
+(defun state-value (wad aspect)
+  (alexandria:if-let ((cell (state-aspect-cell wad aspect)))
+    (values (dep:value cell) t)
+    (values nil              nil)))
+
 ;;; CST wads
 ;;;
 ;;; CST wads contain a "raw" expression. Note that wads based on
@@ -386,6 +448,14 @@
     (and (typep raw 'symbol-token)
          (eq (name         raw) **nil-symbol-name**)
          (eq (package-name raw) **common-lisp-package-name**))))
+
+(defmethod detach-wad ((wad atom-wad) &key recursive)
+  (declare (ignore recursive))
+  (call-next-method)
+  (when (stringp (cst:raw wad))
+    ;; The children are `text-wad's so they do not define any cells
+    ;; and do not have descendants of their own.
+    (map-children (lambda (child) (setf (dep:invalid child) t)) wad)))
 
 (defclass atom-wad-with-extra-children (extra-children-mixin atom-wad)
   ())
@@ -473,6 +543,13 @@
 ;;; This class is the base class of all comment wads.
 (defclass comment-wad (maybe-extra-children-mixin skipped-wad)
   ())
+
+(defmethod detach-wad ((wad comment-wad) &key recursive)
+  (declare (ignore recursive))
+  (%detach-wad wad)
+  ;; The children are `text-wad's so they do not define any cells and
+  ;; do not have descendants of their own.
+  (map-children (lambda (child) (setf (dep:invalid child) t)) wad))
 
 ;;; This class is used for a block comment introduced by #|.
 (defclass block-comment-wad (comment-wad)

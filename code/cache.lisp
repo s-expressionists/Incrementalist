@@ -12,49 +12,52 @@
 (defclass cache ()
   (;; This slot contains the Cluffer buffer that is being analyzed by
    ;; this cache instance.
-   (%buffer        :initarg  :buffer
-                   :reader   buffer)
+   (%buffer               :initarg  :buffer
+                          :reader   buffer)
    ;; The time stamp passed to and returned by the Cluffer update
    ;; protocol.
-   (%time-stamp    :accessor time-stamp
-                   :type     (or null alexandria:non-negative-integer)
-                   :initform nil)
+   (%time-stamp           :accessor time-stamp
+                          :type     (or null alexandria:non-negative-integer)
+                          :initform nil)
    ;; This slot contains a list that parallels the prefix and it
    ;; contains the width of the prefix starting with the first element
    ;; of the prefix.
-   (%lines         :reader   lines
-                   :initform (make-instance 'flx:standard-flexichain))
-   (%cluffer-lines :reader   cluffer-lines
-                   :initform (make-instance 'flx:standard-flexichain))
+   (%lines                :reader   lines
+                          :initform (make-instance 'flx:standard-flexichain))
+   (%cluffer-lines        :reader   cluffer-lines
+                          :initform (make-instance 'flx:standard-flexichain))
    ;; The prefix contains top-level wads in reverse order, so that the
    ;; last wad in the prefix is the first wad in the buffer.  Every
    ;; top-level wad in the prefix has an absolute line number.
-   (%prefix        :accessor prefix
-                   :type     list
-                   :initform '())
-   (%prefix-width  :accessor prefix-width
-                   :initform '())
+   (%prefix               :accessor prefix
+                          :type     list
+                          :initform '())
+   (%prefix-width         :accessor prefix-width
+                          :initform '())
    ;; The suffix contains top-level wads in the right order.  The
    ;; first top-level wad on the suffix has an absolute line number.
    ;; All the others have relative line numbers.
-   (%suffix        :accessor suffix
-                   :type     list
-                   :initform '())
+   (%suffix               :accessor suffix
+                          :type     list
+                          :initform '())
+   (%suffix-invalid-count :accessor suffix-invalid-count
+                          :type     alexandria:non-negative-integer
+                          :initform 0)
    ;; This slot contains a list that parallels the suffix and it
    ;; contains the width of the suffix starting with the first element
    ;; of the suffix.
-   (%suffix-width  :accessor suffix-width
-                   :initform '())
+   (%suffix-width         :accessor suffix-width
+                          :initform '())
    ;; The residue is normally empty.  The `scavenge' phase puts orphan
    ;; wads that are still valid on the residue, and these are used by
    ;; the `read-forms' phase to avoid reading characters when the
    ;; result is known.
-   (%residue       :accessor residue
-                   :type     list
-                   :initform '())
-   (%worklist      :accessor worklist
-                   :type     list
-                   :initform '()))
+   (%residue              :accessor residue
+                          :type     list
+                          :initform '())
+   (%worklist             :accessor worklist
+                          :type     list
+                          :initform '()))
   (:default-initargs
    :buffer (alexandria:required-argument :buffer)))
 
@@ -109,6 +112,25 @@
   (loop for line-number from first-line-number to last-line-number
         maximize (line-length cache line-number)))
 
+(defmethod (setf dep:invalid) :around ((new-value t) (wad wad))
+  ;; If WAD is top-level (that is, it does not have a parent) and the
+  ;; validity of WAD changes and WAD is on the suffix of the
+  ;; associated cache, adjust the `suffix-invalid-count' of the cache.
+  (if (null (parent wad))
+      (let ((old-value (dep:invalid wad)))
+        (flet ((maybe-adjust (amount)
+                 (let ((cache (cache wad))
+                       suffix)
+                   (when (or (relative-p wad)
+                             (eq wad (first (setf suffix (suffix cache)))))
+                     (incf (suffix-invalid-count cache) amount)))))
+          (cond ((and (null old-value) (not (null new-value)))
+                 (maybe-adjust 1))
+                ((and (not (null old-value)) (null new-value))
+                 (maybe-adjust -1))))
+        (call-next-method))
+      (call-next-method)))
+
 (defgeneric pop-from-suffix (cache)
   (:method ((cache cache))
     (let* ((old-suffix     (suffix cache))
@@ -117,6 +139,8 @@
            (new-suffix-top (first new-suffix)))
       (assert (not (null old-suffix)))
       (pop (suffix-width cache))
+      (unless (null (dep:invalid old-suffix-top))
+        (decf (suffix-invalid-count cache)))
       (setf (suffix cache) new-suffix)
       (unless (null new-suffix-top)
         (relative-to-absolute new-suffix-top (start-line old-suffix-top)))
@@ -142,6 +166,8 @@
              (first old-suffix-width)
              (max-line-length
               cache (1+ (end-line wad)) (1- (start-line old-suffix-top))))))
+      (unless (null (dep:invalid wad))
+        (incf (suffix-invalid-count cache)))
       (setf (suffix-width cache) (list* new-width old-suffix-width)
             (suffix cache)       new-suffix)
       (link-siblings (first (prefix cache)) wad)
@@ -182,12 +208,24 @@
 
 (defgeneric suffix-to-prefix (cache)
   (:method ((cache cache))
-    (let ((wad (compute-absolute-line-numbers (pop-from-suffix cache))))
+    (let ((wad (pop-from-suffix cache)))
+      ;; WAD has been taken from the suffix so
+      ;; 1) the absolute line numbers in WAD itself and its
+      ;;    descendants are potentially invalid.
+      ;; 2) the list of inherited cells in WAD is not populated
+      (compute-absolute-line-numbers wad)
+      (setf (dep:inherited wad) (dep:inheritable (first (prefix cache))))
       (push-to-prefix cache wad))))
 
 (defgeneric prefix-to-suffix (cache)
   (:method ((cache cache))
-    (push-to-suffix cache (pop-from-prefix cache))))
+    (let ((wad (pop-from-prefix cache)))
+      ;; During the time WAD will spend on the suffix, its list of
+      ;; inherited cells would not be kept up-to-date.  So we clear
+      ;; the slot here and recompute a new value when WAD is moved to
+      ;; the prefix.
+      (setf (dep:inherited wad) :invalid)
+      (push-to-suffix cache wad))))
 
 (defun pop-from-worklist (cache)
   (pop (worklist cache)))
@@ -208,7 +246,8 @@
          ;; Detach before popping because detaching may traverse the
          ;; ancestors of the wad and popping may sever the parent
          ;; link.
-         :do (,popper ,cache)))
+         :do (detach-wad (first remaining))
+             (,popper ,cache)))
 
 (defun finish-scavenge (cache)
   ;; Move entire worklist to residue
@@ -281,6 +320,7 @@
   (let ((wad (pop-from-worklist cache)))
     (if (line-is-inside-wad-p wad line-number)
         (let ((children (children wad)))
+          (detach-wad wad :recursive nil)
           (make-absolute children (start-line wad))
           (setf (worklist cache) (append children (worklist cache))))
         (push-to-residue cache wad))))

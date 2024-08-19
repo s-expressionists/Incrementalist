@@ -5,7 +5,8 @@
   (:local-nicknames
    (#:a   #:alexandria)
 
-   (#:inc #:incrementalist))
+   (#:inc #:incrementalist)
+   (#:dep #:incrementalist.dependencies))
 
   (:import-from #:fiveam
    #:def-suite

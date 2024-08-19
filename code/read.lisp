@@ -44,17 +44,25 @@
             ;; not make any progress.
             (and (zerop (height cached))
                  (= (start-column cached) (end-column cached))))
-        ;; Nothing has been cached, so call
-        ;; `read-maybe-nothing'. Collect errors in *ERRORS* and
-        ;; integrate them into RESULT.
-        (let ((*errors* '()))
-          (multiple-value-bind (object kind result)
-              (call-next-method)
-            (when (and (not (null result)) ; RESULT can be `null' for `:skip'
-                       (member kind '(:object :skip)))
+        ;; Nothing has been cached, so call `read-maybe-nothing'.
+        (let (object kind result
+              (*errors* '()))
+          ;; Collect errors into *ERRORS* as well as defined, used and
+          ;; escaping cells into the respective variable. Later,
+          ;; integrate the collected things into the RESULT.
+          (dep:with-cell-dependencies (add-dependencies)
+            (setf (values object kind result) (call-next-method))
+            (when (not (null result))
+              (add-dependencies result)))
+          (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
+            (dbg:log :state "Got fresh wad ~A~%" result)
+            (when (member kind '(:object :skip))
               (add-errors result *errors*))
-            (values object kind result)))
-        ;; There is a cached wad for the current input position. Turn
+            ;; Put defined and escaping cells into escaping cells for
+            ;; surround `read' call (if any).
+            (dep:register-escaping result))
+          (values object kind result))
+        ;; There is a cached wad for the current input position.  Turn
         ;; the wad into appropriate return values, inject it into
         ;; Eclector's result stack and advance STREAM.
         (multiple-value-prog1
@@ -62,8 +70,36 @@
               (read-suppress-wad (values nil              :suppress cached t))
               (non-cst-wad       (values nil              :skip     cached t))
               (cst-wad           (values (cst:raw cached) :object   cached t)))
+          ;; STREAM has to be advanced before the stream line and item
+          ;; number are read below.
+          (advance-stream-to-beyond-wad stream cached)
+          (dbg:log :state "Using restored wad ~A~%" cached)
+          ;; Put defined and escaping cells into escaping cells for
+          ;; parent.
+          (dep:register-escaping cached)
+          ;; Cells that escape from the restored wad CACHED may now
+          ;; appear between some definition and a user, so invalidate
+          ;; users of such definitions.
+          (dep:map-external
+           (lambda (cell)
+             (dbg:log :invalidation "  Invalidating parent users for escaping cell ~A~%" cell)
+             ;; We could process the same aspect twice but according
+             ;; to an instrumented run of the test suite, that issue
+             ;; is rare enough to not matter.
+             (let ((aspect (dep:aspect cell)))
+               (alexandria:when-let ((parent (dep:find-cell aspect)))
+                 (invalidate-following-users parent))))
+           cached)
+          ;; Clear list of inherited cells in case CACHED used to be a
+          ;; top-level wad but will now become a child of some other
+          ;; wad.
+          (setf (dep:inherited cached) '())
+          ;; Install state from cells that are defined, inherited,
+          ;; etc. by CACHED.
+          (dep:install-state-from-user cached nil)
+          ;;
           (push cached (first eclector.parse-result::*stack*)) ; HACK
-          (advance-stream-to-beyond-wad stream cached)))))
+          ))))
 
 (defun read-and-cache-top-level-expression (analyzer client)
   ;; Use `eclector.reader:read-maybe-nothing' to read either a single
@@ -79,57 +115,103 @@
       (with-error-recording ()
         (eclector.reader:read-maybe-nothing client analyzer nil nil))
     (declare (ignore object))
+    ;; After reading a top-level expression, pop state cells that have
+    ;; top-level-expression scope but not global scope.
+    (dep:pop-local-cells)
     (case kind
       (:eof)          ; nothing to do for end of input
       (:whitespace)   ; nothing to do for whitespace
       (t              ; got a top-level, absolute wad
        (if (null wad) ; or possibly nothing, but only if KIND is `:skip'
            (assert (eq kind :skip))
-           (push-to-prefix (cache analyzer) wad))))
+           (let ((cache (cache analyzer)))
+             ;; For the "escaping" cells of WAD, disregard those that
+             ;; have top-level-expression scope since WAD represents a
+             ;; toplevel expression and there is no further escaping
+             ;; beyond WAD for those cells.  For the disregarded
+             ;; cells, invalidate users that follow in the buffer text
+             ;; since there may have been a toplevel expression which
+             ;; contained WAD and also some of the those users.  In
+             ;; that case, cells which previously "escaped" from WAD
+             ;; and could be used in those users are now no longer
+             ;; available and thus the users must be invalidated.
+             (dep:update-escaping-for-toplevel-user
+              wad #'invalidate-following-users)
+             ;; Set inherited cells of WAD either to the inheritable
+             ;; cells of the preceding wad or the initial reader
+             ;; state.  The inherited cells are used when parsing
+             ;; starts after WAD and a reader state for that location
+             ;; has to be computed.
+             (setf (dep:inherited wad)
+                   (alexandria:if-let ((prefix (prefix cache)))
+                     (dep:inheritable (first prefix))
+                     (initial-reader-state analyzer)))
+             ;; Add the fully processed WAD to the prefix of CACHE.
+             (push-to-prefix cache wad)))))
     (values kind wad)))
 
 (defun read-forms (analyzer)
-  (let* ((cache (cache analyzer))
+  (let* ((client (make-instance 'client :stream* analyzer))
+         (cache  (cache analyzer))
          (prefix (prefix cache)))
+    (update-lines-cache analyzer (lines analyzer))
     ;; Position ANALYZER (which is a stream) after the last prefix wad
     ;; (remember the cache prefix is stored in reverse order) if any.
-    (update-lines-cache analyzer (lines analyzer))
     (setf (values (line-number analyzer) (item-number analyzer))
           (if (null prefix)
               (values 0 0)
               (let ((first (first prefix)))
                 (values (end-line first) (end-column first)))))
-    ;; Keep reading top-level expressions until the stream position is
-    ;; at the start of the cache suffix (wads on the cache suffix are
-    ;; unmodified and relative except the first one, so neither
-    ;; re-`read'ing nor adjusting them is necessary) or the EOF is
-    ;; reached.  Remove wads from the cache residue and cache suffix
-    ;; as the stream positions passes them by.  Push newly created
-    ;; wads to the cache prefix (this happens in
-    ;; `read-and-cache-top-level-expression').
-    (loop :with client  = (make-instance 'client :stream* analyzer)
-          :with *cache* = cache
-          :for kind = (eclector.reader:call-as-top-level-read
-                       client (lambda ()
-                                (read-and-cache-top-level-expression
-                                 analyzer client))
-                       analyzer t nil nil)
-          ;; If we reach EOF while reading whitespace, the cache
-          ;; suffix must be empty, and the cache residue is either
-          ;; empty or it contains wads that should be removed.  If we
-          ;; do not reach EOF, then we stop only if the current
-          ;; position is that of the first parse result on the cache
-          ;; suffix.
-          :when (or (eq kind :eof)
-                    (let ((suffix (suffix cache)))
-                      (and (not (null suffix))
-                           (position= (first suffix) analyzer))))
-            :do (setf (residue cache) '())
-                (return-from read-forms nil)
-          ;; In case we skipped some whitespace, discard any wads on
-          ;; the cache residue and cache suffix that are now before
-          ;; the current stream position.
-          :unless (eq kind :whitespace)
-            :do (drain-result-list analyzer cache residue pop-from-residue)
-                (when (null (residue cache))
-                  (drain-result-list analyzer cache suffix pop-from-suffix)))))
+    ;; Set up the reader state for the following `read' calls.  If no
+    ;; wad in CACHE precedes the buffer location of ANALYZER, install
+    ;; the initial reader state which is stored in ANALYZER (and was
+    ;; provided by the client).
+    (dep:with-cells ()
+      (dep:install-state (initial-reader-state analyzer))
+      (when (not (null prefix))
+        (dep:install-state-from-user (first prefix) t))
+      ;; Keep reading top-level expressions until the stream position
+      ;; is at the start of the cache suffix (wads on the cache suffix
+      ;; are unmodified and relative except the first one, so neither
+      ;; re-`read'ing nor adjusting them is necessary) or the EOF is
+      ;; reached.  Remove wads from the cache residue and cache suffix
+      ;; as the stream positions passes them by.  Push newly created
+      ;; wads to the cache prefix (this happens in
+      ;; `read-and-cache-top-level-expression').
+      (loop :with *cache* = cache
+            :for kind = (progn
+                          (dbg:log :read "at ~D:~D~%"
+                                   (line-number analyzer) (item-number analyzer))
+                          (multiple-value-bind (kind wad orphan-result)
+                              (eclector.reader:call-as-top-level-read
+                               client (lambda ()
+                                        (read-and-cache-top-level-expression
+                                         analyzer client))
+                               analyzer t nil nil)
+                            (dbg:log :read "~A~%  wad    ~A~%  orphan ~:A~%"
+                                     kind wad orphan-result)
+                            (when (eq kind :object)
+                              (apply-semantics client wad))
+                            kind))
+            ;; If we reach EOF while reading whitespace, the cache
+            ;; suffix must be empty, and the cache residue is either
+            ;; empty or it contains wads that should be removed.  If
+            ;; we do not reach EOF, then we stop only if the current
+            ;; position is that of the first parse result on the cache
+            ;; suffix.
+            :when (or (eq kind :eof)
+                      (let ((suffix (suffix cache)))
+                        (and (not (null suffix))
+                             (zerop (suffix-invalid-count cache))
+                             (position= (first suffix) analyzer))))
+              :do (alexandria:when-let ((residue (residue cache)))
+                    (mapc #'detach-wad residue)
+                    (setf (residue cache) '()))
+                  (return-from read-forms nil)
+            ;; In case we skipped some whitespace, discard any wads on
+            ;; the cache residue and cache suffix that are now before
+            ;; the current stream position.
+            :unless (eq kind :whitespace)
+              :do (drain-result-list analyzer cache residue pop-from-residue)
+                  (when (null (residue cache))
+                    (drain-result-list analyzer cache suffix pop-from-suffix))))))

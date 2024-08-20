@@ -24,6 +24,12 @@ jobs:
             --eval '(quicklisp-quickstart:install)' \
             --quit
 
+      - name: Clone dependencies into local-projects
+        run: |
+          cd "${HOME}/quicklisp/local-projects"                                 \
+            && git clone -b master https://github.com/robert-strandh/cluffer    \
+            && git clone -b master https://github.com/s-expressionists/eclector
+
       - name: Run tests
         run: |
           sbcl --noinform --disable-debugger                                                                                                \

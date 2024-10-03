@@ -173,3 +173,21 @@ correctly."
      ;; become a child of the positive conditional.
      '(:poke (0 2))
      #1#)))
+
+(test regressions.reparent-incomplete-reader-conditional-wad
+  "Ensure that an incomplete reader conditional wad can become a child of
+another wad."
+  (edits-cases ()
+    (;; An incomplete reader conditional with two errors.
+     "
+#+"
+     '(#1=(inc:skipped-positive-conditional-wad ((1 0) (1 2))
+             (:errors ((((1 2) (1 2)) eclector.reader:end-of-input-after-sharpsign-plus-minus)
+                       (((1 2) (1 2)) eclector.reader:end-of-input-after-feature-expression)))))
+     ;; The reader conditional becomes a child of the wad which
+     ;; represents the unterminated list. the reader conditional wad
+     ;; and its error children should remain unchanged.
+     '(:insert (0 0) "(")
+     '((inc:atom-wad ((0 0) (1 2))
+          (:errors ((((1 2) (1 2)) eclector.reader:unterminated-list)))
+        #1#)))))

@@ -382,8 +382,11 @@
                     (maybe-notify))))
                ((cons (eql :delete))
                 (destructuring-bind (amount) (rest edit)
-                  (loop :repeat amount :do (cluffer:delete-item cursor)
-                                           (maybe-notify))))
+                  (loop :repeat amount
+                        :do (if (cluffer:end-of-line-p cursor)
+                                (cluffer:join-line cursor)
+                                (cluffer:delete-item cursor))
+                            (maybe-notify))))
                (string
                 (loop :for c :across edit
                       :do (case c

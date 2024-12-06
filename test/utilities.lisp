@@ -415,7 +415,7 @@
     (apply-one edit)))
 
 (defun edits-test-case (&rest edits-and-results)
-  (flet ((do-it (mode)
+  (flet ((do-it (step-mode map-wads-and-spaces?)
            ;; Sequentially apply all edits updating the cache and checking the
            ;; result after each edit.
            (loop :with (analyzer cache buffer cursor) = (multiple-value-list
@@ -424,17 +424,24 @@
                  :for (edit expected-results) :on edits-and-results :by #'cddr
                  :do (apply-edit cursor edit
                                  :after-step (lambda ()
-                                               (when (eq mode :small-step)
+                                               (when (eq step-mode :small-step)
                                                  (update-cache analyzer cache))))
-                     (when (eq mode :big-step)
+                     (when (eq step-mode :big-step)
                        (update-cache analyzer cache))
                      (let ((input   (cons (buffer-string buffer)
                                           (format nil "~A mode, after edit ~D"
-                                                  mode (1+ i))))
+                                                  step-mode (1+ i))))
                            (results (update-cache analyzer cache)))
-                       (are-results expected-results results :input input)))))
-    (do-it :small-step) ; update cache after each item change
-    (do-it :big-step))) ; update cache after each edit
+                       (when map-wads-and-spaces?
+                         (inc:map-wads-and-spaces
+                          cache 0 (1- (inc:line-count cache))
+                          #1=(lambda (&rest args) (declare (ignore args))) #1#))
+                       (unless (eq expected-results :ignore)
+                         (are-results expected-results results :input input))))))
+    (do-it :small-step nil) ; update cache after each item change
+    (do-it :big-step   nil) ; update cache after each edit
+    (do-it :small-step t)   ; like above but call `map-wads-and-spaces' after
+    (do-it :big-step   t))) ; each update
 
 (defmacro edits-cases (() &body cases)
   `(progn ,@(mapcar (lambda (case) `(edits-test-case ,@case)) cases)))

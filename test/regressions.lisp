@@ -191,3 +191,20 @@ another wad."
      '((inc:atom-wad ((0 0) (1 2))
           (:errors ((((1 2) (1 2)) eclector.reader:unterminated-list)))
         #1#)))))
+
+(test regressions.delete-first-line
+  "Deleting the contents of the first buffer line could lead to invalid
+inherited cells in the first element of the cache suffix."
+  (edits-cases ()
+    (;; A "second" line.
+     "2
+"
+     :ignore
+     ;; Add a first line before the second line.
+     '(:insert (0 0) "1
+")
+     :ignore
+     ;; Delete the contents of the first line. This removes the single
+     ;; element of the prefix.
+     '(:erase (0 0) 1)
+     :ignore)))

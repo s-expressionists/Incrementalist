@@ -193,14 +193,17 @@
            (old-prefix-width (prefix-width cache))
            (old-width        (first old-prefix-width))
            (new-width        (max-line-width wad)))
-      (if (null old-prefix-top)
-          (alexandria:maxf
-           new-width (max-line-length cache 0 (1- (start-line wad))))
+      (if (not (null old-prefix-top))
+          (setf (dep:inherited wad) (dep:inheritable old-prefix-top))
+          (assert (not (eq :invalid (dep:inherited wad)))))
+      (if (not (null old-prefix-top))
           (alexandria:maxf
            new-width
            old-width
            (max-line-length
-            cache (1+ (end-line old-prefix-top)) (1- (start-line wad)))))
+            cache (1+ (end-line old-prefix-top)) (1- (start-line wad))))
+          (alexandria:maxf
+           new-width (max-line-length cache 0 (1- (start-line wad)))))
       (setf (prefix-width cache) (list* new-width old-prefix-width)
             (prefix       cache) new-prefix)
       (link-siblings old-prefix-top wad)
@@ -213,18 +216,19 @@
       ;; 1) the absolute line numbers in WAD itself and its
       ;;    descendants are potentially invalid.
       ;; 2) the list of inherited cells in WAD is not populated
+      ;; We handle 1) here while 2) is handled by `push-to-prefix'.
       (compute-absolute-line-numbers wad)
-      (setf (dep:inherited wad) (dep:inheritable (first (prefix cache))))
       (push-to-prefix cache wad))))
 
 (defgeneric prefix-to-suffix (cache)
   (:method ((cache cache))
     (let ((wad (pop-from-prefix cache)))
-      ;; During the time WAD will spend on the suffix, its list of
-      ;; inherited cells would not be kept up-to-date.  So we clear
-      ;; the slot here and recompute a new value when WAD is moved to
-      ;; the prefix.
-      (setf (dep:inherited wad) :invalid)
+      ;; During the time WAD will spend on the suffix, unless the
+      ;; prefix is empty, its list of inherited cells would not be
+      ;; kept up-to-date.  So we clear the slot here and recompute a
+      ;; new value when WAD is moved to the prefix.
+      (unless (null (prefix cache))
+        (setf (dep:inherited wad) :invalid))
       (push-to-suffix cache wad))))
 
 (defun pop-from-worklist (cache)

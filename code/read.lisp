@@ -137,16 +137,14 @@
              ;; available and thus the users must be invalidated.
              (dep:update-escaping-for-toplevel-user
               wad #'invalidate-following-users)
-             ;; Set inherited cells of WAD either to the inheritable
-             ;; cells of the preceding wad or the initial reader
-             ;; state.  The inherited cells are used when parsing
-             ;; starts after WAD and a reader state for that location
-             ;; has to be computed.
-             (setf (dep:inherited wad)
-                   (alexandria:if-let ((prefix (prefix cache)))
-                     (dep:inheritable (first prefix))
-                     (initial-reader-state analyzer)))
-             ;; Add the fully processed WAD to the prefix of CACHE.
+             ;; Add the WAD to the prefix of CACHE.  `push-to-prefix'
+             ;; sets the inherited cells of WAD either to the
+             ;; inheritable cells of the preceding wad or the initial
+             ;; reader state.  The inherited cells are used when
+             ;; parsing starts after WAD and a reader state for that
+             ;; location has to be computed.
+             (when (null (prefix cache))
+               (setf (dep:inherited wad) (initial-reader-state analyzer)))
              (push-to-prefix cache wad)))))
     (values kind wad)))
 
@@ -207,11 +205,19 @@
               :do (alexandria:when-let ((residue (residue cache)))
                     (mapc #'detach-wad residue)
                     (setf (residue cache) '()))
-                  (return-from read-forms nil)
+                  (return)
             ;; In case we skipped some whitespace, discard any wads on
             ;; the cache residue and cache suffix that are now before
             ;; the current stream position.
             :unless (eq kind :whitespace)
               :do (drain-result-list analyzer cache residue pop-from-residue)
                   (when (null (residue cache))
-                    (drain-result-list analyzer cache suffix pop-from-suffix))))))
+                    (drain-result-list analyzer cache suffix pop-from-suffix))))
+    ;; If the buffer changed such that the prefix was previously not
+    ;; empty and is now empty and the suffix is non-empty, ensure that
+    ;; the first element of the suffix has the initial reader state as
+    ;; its set of inherited cells.
+    (when (null (prefix cache))
+      (alexandria:when-let ((suffix-top (first (suffix cache))))
+        (when (eq (dep:inherited suffix-top) :invalid)
+          (setf (dep:inherited suffix-top) (initial-reader-state analyzer)))))))

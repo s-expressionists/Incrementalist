@@ -11,6 +11,29 @@
                               :end-column          end-column
                               :condition           condition)))
 
+(defun make-dummy-result-for-errors (stream errors)
+  ;; If errors occurred but no result was produced (an isolated . is
+  ;; an example of this since Eclector's `recover' restart will skip
+  ;; the invalid token without producing a result), make a dummy
+  ;; result to attach the errors to.
+  (let (start-line start-column end-line end-column)
+    (mapc (lambda (error)
+            (assert (not (relative-p error)))
+            (when (or (null start-line)
+                      (%position< (start-line error) (start-column error)
+                                  start-line         start-column))
+              (setf start-line   (start-line   error)
+                    start-column (start-column error)))
+            (when (or (null end-line)
+                      (%position> (end-line error) (end-column error)
+                                  end-line         end-column))
+              (setf end-line   (end-line   error)
+                    end-column (end-column error))))
+          errors)
+    (basic-wad* 'reader-macro-wad stream
+                start-line start-column
+                end-line   end-column)))
+
 ;;; The `read-maybe-nothing' method collects Eclector errors in
 ;;; *ERRORS* during reading.
 (defvar *errors*)
@@ -54,14 +77,18 @@
             (setf (values object kind result) (call-next-method))
             (when (not (null result))
               (add-dependencies result)))
-          (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
-            (dbg:log :state "Got fresh wad ~A~%" result)
-            (when (member kind '(:object :skip))
-              (add-errors result *errors*))
-            ;; Put defined and escaping cells into escaping cells for
-            ;; surround `read' call (if any).
-            (dep:register-escaping result))
-          (values object kind result))
+          (let* ((errors *errors*)
+                 (result (if (and (not (null errors)) (null result))
+                             (make-dummy-result-for-errors stream errors)
+                             result)))
+            (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
+              (dbg:log :state "Got fresh wad ~A and errors ~A~%" result errors)
+              (when (member kind '(:object :skip))
+                (add-errors result errors))
+              ;; Put defined and escaping cells into escaping cells for
+              ;; surround `read' call (if any).
+              (dep:register-escaping result))
+            (values object kind result)))
         ;; There is a cached wad for the current input position.  Turn
         ;; the wad into appropriate return values, inject it into
         ;; Eclector's result stack and advance STREAM.

@@ -210,6 +210,9 @@ a b"
 (test errors
   "Tests for errors."
   (analysis-cases ()
+    ("."
+     '((inc:reader-macro-wad ((0 0) (0 1))
+        (:errors ((((0 0) (0 1)) eclector.reader:invalid-context-for-consing-dot))))))
     ("#\\does-not-exist"
      '((inc:atom-wad ((0 0) (0 16))
         (:errors ((((0 2) (0 16)) eclector.reader:unknown-character-name))))))

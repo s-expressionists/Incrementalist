@@ -163,8 +163,8 @@
       (list errors)
       (t    (list errors)))))
 
-(declaim (inline add-errors))
-(defun add-errors (wad reversed-errors)
+(declaim (inline set-errors))
+(defun set-errors (wad reversed-errors)
   (unless (null reversed-errors)
     (let ((errors (nreverse reversed-errors)))
       (loop :for base = (start-line wad) :then start-line
@@ -173,6 +173,21 @@
       (setf (%errors wad) (if (null (cdr errors))
                               (first errors)
                               errors)))))
+
+(defun add-error (wad error)
+  (assert (not (relative-p error)))
+  (let ((old-errors (%errors wad)))
+    (absolute-to-relative error (absolute-start-line wad))
+    (setf (%errors wad)
+          (cond ((null old-errors)
+                 error)
+                ((not (consp old-errors))
+                 (if (wad-starts-before-wad-p error old-errors)
+                     (list error old-errors)
+                     (list old-errors error)))
+                (t
+                 (merge 'list (list error) old-errors
+                        #'wad-starts-before-wad-p))))))
 
 (declaim (inline link-siblings))
 (defun link-siblings (left right)

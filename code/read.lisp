@@ -84,7 +84,7 @@
             (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
               (dbg:log :state "Got fresh wad ~A and errors ~A~%" result errors)
               (when (member kind '(:object :skip))
-                (add-errors result errors))
+                (set-errors result errors))
               ;; Put defined and escaping cells into escaping cells for
               ;; surround `read' call (if any).
               (dep:register-escaping result))

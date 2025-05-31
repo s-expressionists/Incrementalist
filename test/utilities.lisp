@@ -243,11 +243,18 @@
                      (is-true (cst:null result))
                      (is-false (cst:null result)))
                  (is-raw expected-raw raw result-info :input input)))
-             ;; Assertions for feature expression of `conditional-wad's.
+             ;; Assertions for feature expression of `conditional-wad's
              (when expected-feature-expression-supplied?
                (let ((feature-expression (inc:feature-expression result)))
                  (is-raw expected-feature-expression feature-expression result-info
                          :input input)))
+             ;; Assertions for `labeled-object-reference-wad'
+             (when (typep result 'inc:labeled-object-reference-wad)
+               (let* ((target     (eclector.concrete-syntax-tree:target result))
+                      (definition (inc:parent target)))
+                 (is-true (typep definition 'inc:labeled-object-definition-wad))
+                 (is (eq (cst:raw definition) (cst:raw result)))))
+             ;; Spelling.
              (when expected-misspelled-supplied?
                (is-with-node (eq expected-misspelled (inc:misspelled result))
                              "misspelled status" result-info input))

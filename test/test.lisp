@@ -55,18 +55,72 @@
          (inc:cons-wad ((0 7) (0 12)) ()
           (inc:cons-wad ((0 9) (0 12)) ()
            (inc:atom-wad ((0 10) (0 11)) (:raw 3))))))))
-    ("'(#1=1 #1# 3)"
-     '((inc:cons-wad ((0 0) (0 13)) ()
-        (inc:cons-wad ((0 1) (0 13)) ()
-         (inc:labeled-object-definition-wad ((0 2) (0 6)) ()
-          (inc:atom-wad ((0 5) (0 6)) (:raw 1)))
-         (inc:labeled-object-reference-wad ((0 7) (0 10)) (:raw 1))
+    ;; List with sharing but no circularity. One reference and two
+    ;; references.
+    ("(#1=1 #1# 3)"
+     '((inc:cons-wad ((0 0) (0 12)) ()
+        (inc:labeled-object-definition-wad ((0 1) (0 5)) ()
+         (inc:atom-wad ((0 4) (0 5)) (:raw 1)))
+        (inc:labeled-object-reference-wad ((0 6) (0 9)) (:raw 1))
+        (inc:atom-wad ((0 10) (0 11)) (:raw 3)))))
+    ("(#2=1 #2# #2#)"
+     '((inc:cons-wad ((0 0) (0 14)) ()
+        (inc:labeled-object-definition-wad ((0 1) (0 5)) ()
+         (inc:atom-wad ((0 4) (0 5)) (:raw 1)))
+        (inc:labeled-object-reference-wad ((0 6) (0 9)) (:raw 1))
+        (inc:labeled-object-reference-wad ((0 10) (0 13)) (:raw 1)))))
+    ;; List with circularity. One reference and two references.
+    ("#1=(1 #1# 3)"
+     '((inc:labeled-object-definition-wad ((0 0) (0 12)) ()
+        (inc:cons-wad ((0 3) (0 12)) ()
+         (inc:atom-wad ((0 4) (0 5)) (:raw 1))
+         (inc:labeled-object-reference-wad ((0 6) (0 9)) ())
+         (inc:atom-wad ((0 10) (0 11)) (:raw 3))))))
+    ("#10=(1 #10# #10#)"
+     '((inc:labeled-object-definition-wad ((0 0) (0 17)) ()
+        (inc:cons-wad ((0 4) (0 17)) ()
+         (inc:atom-wad ((0 5) (0 6)) (:raw 1))
+         (inc:labeled-object-reference-wad ((0 7) (0 11)) ())
+         (inc:labeled-object-reference-wad ((0 12) (0 16)) ())))))
+    ;; Vector with sharing but no circularity. One reference and two
+    ;; references.
+    ("#(#1=1 #1# 3)"
+     '((inc:atom-wad ((0 0) (0 13)) ()
+        (inc:labeled-object-definition-wad ((0 2) (0 6)) ()
+         (inc:atom-wad ((0 5) (0 6)) (:raw 1)))
+        (inc:labeled-object-reference-wad ((0 7) (0 10)) (:raw 1))
+        (inc:atom-wad ((0 11) (0 12)) (:raw 3)))))
+    ("#(#1=1 #1# #1#)"
+     '((inc:atom-wad ((0 0) (0 15)) ()
+        (inc:labeled-object-definition-wad ((0 2) (0 6)) ()
+         (inc:atom-wad ((0 5) (0 6)) (:raw 1)))
+        (inc:labeled-object-reference-wad ((0 7) (0 10)) (:raw 1))
+        (inc:labeled-object-reference-wad ((0 11) (0 14)) (:raw 1)))))
+    ;; Vector with circularity. One reference and two references.
+    ("#1=#(1 #1# 3)"
+     '((inc:labeled-object-definition-wad ((0 0) (0 13)) ()
+        (inc:atom-wad ((0 3) (0 13)) ()
+         (inc:atom-wad ((0 5) (0 6)) (:raw 1))
+         (inc:labeled-object-reference-wad ((0 7) (0 10)) ())
          (inc:atom-wad ((0 11) (0 12)) (:raw 3))))))
+    ("#1=#(1 #1# #1#)"
+     '((inc:labeled-object-definition-wad ((0 0) (0 15)) ()
+        (inc:atom-wad ((0 3) (0 15)) ()
+         (inc:atom-wad ((0 5) (0 6)) (:raw 1))
+         (inc:labeled-object-reference-wad ((0 7) (0 10)) ())
+         (inc:labeled-object-reference-wad ((0 11) (0 14)) ())))))
+    ;; Skipped input within labeled object definitions.
     ("#1=#|a|#1"
      '((inc:labeled-object-definition-wad ((0 0) (0 9)) ()
         (inc:block-comment-wad ((0 3) (0 8)) ()
          (inc:word-wad ((0 5) (0 6))))
         (inc:atom-wad ((0 8) (0 9)) (:raw 1)))))
+    ("#1=(#|a|# #1#)"
+     '((inc:labeled-object-definition-wad ((0 0) (0 14)) ()
+        (inc:cons-wad ((0 3) (0 14)) ()
+         (inc:block-comment-wad ((0 4) (0 9)) ()
+          (inc:word-wad ((0 6) (0 7))))
+         (inc:labeled-object-reference-wad ((0 10) (0 13)) ())))))
     ("#+common-lisp 1"
      `((inc:read-positive-conditional-wad ((0 0) (0 15))
           (:feature-expression (inc:existing-symbol-token

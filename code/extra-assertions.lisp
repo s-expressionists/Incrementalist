@@ -220,6 +220,15 @@
    (let ((*duplicate-children-allowed-p* t))
      (call-next-method))))
 
+(defmethod reader:new-value-for-fixup :before ((client         client)
+                                               (labeled-object t)
+                                               (current-value  cst-wad)
+                                               (final-value    t))
+  (multiple-value-bind (state object)
+      (reader:labeled-object-state client labeled-object)
+    (assert (eq state :final/circular))
+    (assert (eq object final-value))))
+
 (defmethod concrete-syntax-tree:reconstruct
     :around ((client client) (expression t) (cst t) &key default-source)
   (declare (ignore default-source))

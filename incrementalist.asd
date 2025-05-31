@@ -10,8 +10,8 @@
                 "cluffer"
                 "flexichain"
                 "concrete-syntax-tree"
-                "eclector"
-                "eclector-concrete-syntax-tree"
+                (:version "eclector"                      #2="0.11")
+                (:version "eclector-concrete-syntax-tree" #2#)
                 "spell")
 
   :components  ((:module     "debug"

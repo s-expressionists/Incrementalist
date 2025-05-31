@@ -340,6 +340,8 @@
     (adjust-result cst 'labeled-object-definition-wad stream source
                    :children children)))
 
+;;; This method is used for non-circular labeled object references
+;;; like (#1=1 #1#).
 (defmethod eclector.parse-result:make-expression-result
     ((client   client)
      (result   eclector.parse-result:reference)
@@ -348,6 +350,69 @@
   (let ((cst    (call-next-method))
         (stream (stream* client)))
     (adjust-result cst 'labeled-object-reference-wad stream source)))
+
+;;; Fixup processing
+;;;
+;;; The `make-expression-result' methods above take care of
+;;; representing definitions #1=(...) as
+;;; `labeled-object-definition-wad' and non-circular references like
+;;; (#1=... ... #1#) as `labeled-object-reference-wad'.
+;;;
+;;; However, circular cases like #1=(1 ... #1#) depend on Eclector's
+;;; fixup mechanism which must be applied to read objects as well as
+;;; the corresponding parse results.  The following methods add fixup
+;;; support for our parse results.
+
+;;; Allow Eclector's fixup processing to traverse the "extra children"
+;;; in instances of `maybe-extra-children-mixin'.  "Ordinary children"
+;;; in `cons-cst's are handled by the next method which is defined in
+;;; the Eclector code.
+(defmethod reader:fixup ((client       client)
+                         (object       maybe-extra-children-mixin)
+                         (seen-objects t))
+  ;; Traverse "extra children" and potentially perform fixup
+  ;; processing by replacing the respective child with the respective
+  ;; final value.
+  (loop :for rest    :on (slot-value object '%children)
+        :for (child) =   rest
+        :when (typep child 'cst:cst)
+          :do (let ((current-raw-value (cst:raw child)))
+                (reader:fixup-case (client current-raw-value)
+                  (() ; not a finalized labeled object
+                   (reader:fixup client child seen-objects))
+                  ((final-value) ; finalized labeled object
+                   (setf (car rest)
+                         (reader:new-value-for-fixup
+                          client current-raw-value child final-value))))))
+  ;; If OBJECT is of type `cst:cst', additional fixup processing may
+  ;; be necessary, for example for the first and rest children of a
+  ;; `cst:cons-cst'.
+  (call-next-method))
+
+;;; This method is used for circular labeled object references like
+;;; #1=(1 #1#).
+(defmethod reader:new-value-for-fixup ((client         client)
+                                       (labeled-object t)
+                                       (current-value  cst-wad)
+                                       (final-value    t))
+  ;; At the beginning of this method, CURRENT-VALUE is an `atom-wad'
+  ;; instance the raw object of which is LABELED-OBJECT.
+  ;; LABELED-OBJECT is the "fixup marker" that Eclector inserted into
+  ;; the raw object graph.  Our task is to compute a parse result (or
+  ;; modify CURRENT-VALUE) to replace CURRENT-VALUE with.  That parse
+  ;; result has the final (circular) object as its raw value and the
+  ;; parse result which represents the definition of the circular
+  ;; object as its target.  The final (circular) raw value is
+  ;; available in the FINAL-VALUE parameter and we can obtain the
+  ;; parse result which represents the definition from LABELED-OBJECT.
+  (multiple-value-bind (state object parse-result)
+      (reader:labeled-object-state client labeled-object)
+    ;; We already know that STATE is `:final/circular' and OBJECT is
+    ;; FINAL-VALUE.
+    (declare (ignore state object))
+    (change-class current-value 'labeled-object-reference-wad
+                  :raw    final-value
+                  :target parse-result)))
 
 ;;; S-expression generation
 

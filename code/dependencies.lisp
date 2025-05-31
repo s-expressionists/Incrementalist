@@ -86,16 +86,6 @@
 
 ;;; Labeled objects state
 
-(defmethod eclector.reader:find-labeled-object ((client client) (label t))
-  (let* ((cell   (dep:find-cell 'labeled-objects))
-         (value  (dep:value cell))
-         (object (alexandria:assoc-value value label)))
-    (assert (not (null cell)))
-    (dep:register-use cell)
-    (if (null object)
-        (call-next-method)
-        object)))
-
 (defmethod eclector.reader:note-labeled-object ((client        client)
                                                 (input-stream  t)
                                                 (label         t)
@@ -109,6 +99,42 @@
      'labeled-objects :top-level-expression new-value
      #'invalidate-following-users :parent parent)
     (values-list values)))
+
+(defmethod eclector.reader:forget-labeled-object ((client client)
+                                                  (label  integer))
+  ;; In case a labeled object definition turns out to be invalid (such
+  ;; as when first reading #1= and then the whole thing turns out to
+  ;; be #1=#1#), Eclector calls the generic function of this method to
+  ;; forget the labeled object.
+  ;;
+  ;; We have created a temporary wad and have created and registered a
+  ;; cell for `labeled-objects' aspect and possibly recorded a use of
+  ;; that cell (for the #1# part).  We must undo those changes to
+  ;; prevent the cell definition and use to be associated with
+  ;; whatever wad gets used in the end.
+  (let* ((labeled-object (eclector.reader:find-labeled-object client label))
+         (parse-result   (nth-value 2 (eclector.reader:labeled-object-state
+                                       client labeled-object))))
+    (assert (eq labeled-object (cst:raw parse-result)))
+    (detach-wad parse-result)
+    (let ((cell (dep:find-cell 'labeled-objects)))
+      (assert (null (dep:users cell)))
+      (assert (eq (alexandria:assoc-value (dep:value cell) label)
+                  labeled-object))
+      (dep:pop-cell 'labeled-objects)
+      (alexandria:deletef dep::*defined-cells* cell :test #'eq :count 1)
+      (alexandria:deletef dep::*used-cells* cell :test #'eq :count 1)))
+  (call-next-method))
+
+(defmethod eclector.reader:find-labeled-object ((client client) (label t))
+  (let* ((cell   (dep:find-cell 'labeled-objects))
+         (value  (dep:value cell))
+         (object (alexandria:assoc-value value label)))
+    (assert (not (null cell)))
+    (dep:register-use cell)
+    (if (null object)
+        (call-next-method)
+        object)))
 
 ;;; Other state value
 

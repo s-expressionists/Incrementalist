@@ -191,6 +191,7 @@
 
 (defmethod eclector.parse-result:make-expression-result
     :around ((client client) (result t) (children t) (source t))
+  (assert (not (null source)))
   ;; When WADs appear as children, they have to be absolute WADs while
   ;; their respective descendants have to be relative (as always). The
   ;; purpose of checking this recursively here is mainly to catch

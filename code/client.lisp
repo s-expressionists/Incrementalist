@@ -110,20 +110,11 @@
 
 ;;; Result construction
 
-;;; TODO Remove this and depend on the correct Eclector version once that is
-;;; released.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (let* ((generic-function #'eclector.parse-result:make-skipped-input-result)
-         (lambda-list      (c2mop:generic-function-lambda-list
-                            generic-function)))
-    (when (= (length lambda-list) 5)
-      (pushnew 'skipped-input-children *features*))))
-(defmethod eclector.parse-result:make-skipped-input-result
-    ((client client)
-     (stream t)
-     (reason t)
-     #+incrementalist::skipped-input-children (children t)
-     (source t))
+(defmethod eclector.parse-result:make-skipped-input-result ((client   client)
+                                                            (stream   t)
+                                                            (reason   t)
+                                                            (children t)
+                                                            (source   t))
   (etypecase reason
     ((cons (eql :line-comment))
      (let* ((semicolon-count (cdr reason))
@@ -140,22 +131,18 @@
     ((eql :reader-macro)
      (basic-wad 'reader-macro-wad stream source))
     ((eql *read-suppress*)
-     (wad-with-children 'read-suppress-wad stream source
-                        #+incrementalist::skipped-input-children children
-                        #-incrementalist::skipped-input-children '()))
+     (wad-with-children 'read-suppress-wad stream source children))
     ((cons (member :sharpsign-plus :sharpsign-minus))
      (destructuring-bind (which . feature-expression) reason
        (let ((result (ecase which
                        (:sharpsign-plus
                         (basic-wad 'skipped-positive-conditional-wad stream source
                                    :feature-expression feature-expression
-                                   :children           #+incrementalist::skipped-input-children children
-                                                       #-incrementalist::skipped-input-children '()))
+                                   :children           children))
                        (:sharpsign-minus
                         (basic-wad 'skipped-negative-conditional-wad stream source
                                    :feature-expression feature-expression
-                                   :children           #+incrementalist::skipped-input-children children
-                                                       #-incrementalist::skipped-input-children '())))))
+                                   :children           children)))))
          (make-children-relative-and-set-family-relations result))))))
 
 (defmethod eclector.parse-result:make-expression-result

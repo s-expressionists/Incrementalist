@@ -1,6 +1,7 @@
 *.cp
 *.cps
 *.fn
+*.fns
 
 *.aux
 *.log

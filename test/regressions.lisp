@@ -208,3 +208,60 @@ inherited cells in the first element of the cache suffix."
      ;; element of the prefix.
      '(:erase (0 0) 1)
      :ignore)))
+
+(test regressions.incomplete-labeled-object-followed-by-two-comments
+  "For an incomplete labeled object with only skipped input expressions
+as its children, Eclector used to produce incorrect parse results."
+  (edits-cases ()
+    (;; Two line comments.  Completely harmless so far.
+     "
+;;1
+;;2"
+     :ignore
+     ;; Add an incomplete labeled object which makes the two line
+     ;; comments its children.  The problem used to be that Eclector
+     ;; picked one of the comment wads as the parse result that
+     ;; represents the final value of the labeled object.  The correct
+     ;; result is shown below: due to error recovery in Eclector,
+     ;; there is no labeled object definition at all; just the
+     ;; replacement value with the comment wads as children.
+     '(:insert (0 0) "#1=")
+     '((inc:atom-wad ((0 0) (2 3))
+          (:raw    (inc:existing-symbol-token :symbol ("COMMON-LISP" "NIL"))
+           :errors ((((2 3) (2 3)) eclector.reader:end-of-input-after-sharpsign-equals)))
+        (inc:semicolon-comment-wad ((1 0) (2 0)) ()
+         (inc:text-wad ((1 2) (1 3))))
+        (inc:semicolon-comment-wad ((2 0) (2 3)) ()
+         (inc:text-wad ((2 2) (2 3))))))
+     ;; Final state is the complete labeled object. This is harmless
+     ;; again (except for potential problems from updating the
+     ;; previous state).
+     `(:insert (2 3) ,(format nil "~%(1 #1#)"))
+     '((inc:labeled-object-definition-wad ((0 0) (3 7)) ()
+        (inc:semicolon-comment-wad ((1 0) (2 0)) ()
+         (inc:text-wad ((1 2) (1 3))))
+        (inc:semicolon-comment-wad ((2 0) (3 0)) ()
+         (inc:text-wad ((2 2) (2 3))))
+        (inc:cons-wad ((3 0) (3 7)) ()
+         (inc:atom-wad ((3 1) (3 2)) (:raw 1))
+         (inc:labeled-object-reference-wad ((3 3) (3 6))))))
+     ;; Not related to the original regression: Replace the labeled
+     ;; object definition with a non-circular, in fact unused, one.
+     '(progn (:erase (3 0) 7) (:insert (3 0) "1" ))
+     '((inc:labeled-object-definition-wad ((0 0) (3 1)) ()
+        (inc:semicolon-comment-wad ((1 0) (2 0)) ()
+         (inc:text-wad ((1 2) (1 3))))
+        (inc:semicolon-comment-wad ((2 0) (3 0)) ()
+         (inc:text-wad ((2 2) (2 3))))
+        (inc:atom-wad ((3 0) (3 1)) (:raw 1))))
+     ;; Not related to the original regression: change to sharing
+     ;; without circularity.
+     '(progn (:insert (0 0) "(") (:insert (3 1) " #1#)"))
+     '((inc:cons-wad ((0 0) (3 6)) ()
+        (inc:labeled-object-definition-wad ((0 1) (3 1)) ()
+         (inc:semicolon-comment-wad ((1 0) (2 0)) ()
+          (inc:text-wad ((1 2) (1 3))))
+         (inc:semicolon-comment-wad ((2 0) (3 0)) ()
+          (inc:text-wad ((2 2) (2 3))))
+         (inc:atom-wad ((3 0) (3 1)) (:raw 1)))
+        (inc:labeled-object-reference-wad ((3 2) (3 5)) (:raw 1)))))))

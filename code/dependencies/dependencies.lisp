@@ -272,7 +272,7 @@
                          (dbg:log :invalidate "  ~A reached toplevel, invalidating following users~%" cell)
                          (funcall invalidate-users cell))))
                  user)
-    (dbg:log :register "  For ~A, reducing escaping~%  from ~:A~%  to   ~:A~% "
+    (dbg:log :register "  For ~A, reducing escaping~%  from ~:A~%  to   ~:A~%"
              user (escaped user) escaping)
     (setf (escaped user) (nreverse escaping))))
 

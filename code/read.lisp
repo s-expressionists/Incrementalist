@@ -46,6 +46,8 @@
           (lambda (condition)
             (destructuring-bind (line . column)
                 (eclector.base:stream-position condition)
+              (dbg:log :read "Handling condition at ~D:~D: ~A~%"
+                       line column condition)
               (let* ((offset       (eclector.base:position-offset condition))
                      (length       (eclector.base:range-length condition))
                      (start-column (max 0 (+ column offset)))
@@ -54,6 +56,7 @@
                                     condition
                                     line start-column line end-column)))
                 (push error-wad *errors*)))
+            (dbg:log :read "Invoking ~A restart~%" 'eclector.reader:recover)
             (eclector.reader:recover))))
      ,@body))
 
@@ -82,7 +85,7 @@
                              (make-dummy-result-for-errors stream errors)
                              result)))
             (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
-              (dbg:log :state "Got fresh wad ~A and errors ~A~%" result errors)
+              (dbg:log :state "Got fresh wad ~A and errors ~:A~%" result errors)
               (when (member kind '(:object :skip))
                 (set-errors result errors))
               ;; Put defined and escaping cells into escaping cells for
@@ -191,6 +194,7 @@
     ;; wad in CACHE precedes the buffer location of ANALYZER, install
     ;; the initial reader state which is stored in ANALYZER (and was
     ;; provided by the client).
+    (dbg:log :read "===~76,,,'=@< Reading forms ~>~%")
     (dep:with-cells ()
       (dep:install-state (initial-reader-state analyzer))
       (when (not (null prefix))
@@ -205,7 +209,7 @@
       ;; `read-and-cache-top-level-expression').
       (loop :with *cache* = cache
             :for kind = (progn
-                          (dbg:log :read "at ~D:~D~%"
+                          (dbg:log :read "---~76,,,'-@< Reading at ~D:~D ~>~%"
                                    (line-number analyzer) (item-number analyzer))
                           (multiple-value-bind (kind wad orphan-result)
                               (eclector.reader:call-as-top-level-read

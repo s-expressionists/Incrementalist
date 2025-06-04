@@ -58,7 +58,7 @@
      ,@body))
 
 (defmethod reader:read-maybe-nothing :around
-    ((client client) (stream analyzer) eof-error-p eof-value)
+    ((client client) (stream analyzer) (eof-error-p t) (eof-value t))
   (let ((cached (cached-wad stream)))
     (if (or (null cached)
             ;; Can't use zero length cached wad (can happen for

@@ -16,8 +16,11 @@
 @c subtitle Incremental parsing of Common Lisp code.
 
 @copying
+This manual is for @sysname{} version @sysversion{}.
+
 Copyright @copyright{} 2013 Robert Strandh
-Copyright @copyright{} 2024 Jan Moringen
+
+Copyright @copyright{} 2024, 2025 Jan Moringen
 @end copying
 
 @dircategory Common Lisp
@@ -37,7 +40,7 @@ Copyright @copyright{} 2024 Jan Moringen
 @node Top
 @top @sysname{} User's Manual
 
-This manual is for @sysname{} version @sysversion{}.
+@insertcopying
 @end ifnottex
 
 @menu

@@ -43,9 +43,8 @@
       (null
        (values))
       ((cons null null)
-       (make-instance 'existing-symbol-token
-                      :name         **nil-symbol-name**
-                      :package-name **common-lisp-package-name**))
+       (make-instance 'interned-symbol-token :symbol (pkg:find-symbol "NIL" "CL") ; TODO: **nil-symbol**
+                      ))
       (t
        (values-list values)))))
 
@@ -97,51 +96,50 @@
                                     (package-indicator package-info)
                                     (symbol-name       t)
                                     (internp           t))
-  (let ((package-indicator (package-info-name package-indicator))
-        (marker1           (package-info-marker1 package-indicator))
-        (marker2           (package-info-marker2 package-indicator)))
-    (multiple-value-bind (package package-name)
-        (case package-indicator
-          (:current (let ((package-name (reader:state-value client '*package*)))
-                      (values (find-package package-name) package-name)))
-          (:keyword (load-time-value (find-package '#:keyword)))
-          (t        (values (find-package package-indicator) package-indicator)))
-      (macrolet ((make-token (token-class package-name symbol-name)
-                   `(let ((package-name (intern-package-name ,package-name))
-                          (symbol-name  (intern-symbol-name ,symbol-name)))
-                      (make-instance ',token-class :package-name     package-name
-                                                   :package-marker-1 marker1
-                                                   :package-marker-2 marker2
-                                                   :name             symbol-name))))
-        (if (null package)
-            (make-token non-existing-package-symbol-token
-                        package-name
-                        symbol-name)
-            (multiple-value-bind (symbol status)
-                (find-symbol symbol-name package)
-              (cond ((null status)
-                     (make-token non-existing-symbol-token
-                                 (cl:package-name package)
-                                 symbol-name))
-                    ((and (not (null marker1))
-                          (null marker2)
-                          (not (eq status :external)))
-                     (let ((symbol (eclector.reader::symbol-is-not-external
-                                    input-stream package symbol-name symbol status)))
-                       (make-token existing-symbol-token
-                                   (cl:package-name (symbol-package symbol))
-                                   (symbol-name symbol))))
-                    (t
-                     (make-token existing-symbol-token
-                                 (cl:package-name (symbol-package symbol))
-                                 (symbol-name symbol))))))))))
+  (let* ((indicator (package-info-name package-indicator))
+         (marker1   (package-info-marker1 package-indicator))
+         (marker2   (package-info-marker2 package-indicator))
+         (package   (case indicator
+                      (:current (reader:state-value client '*package*))
+                      (:keyword (find-package '#:keyword))
+                      (t
+                       (or (pkg:find-package indicator)
+                           (restart-case
+                               (error 'package-error-with-location
+                                      :stream          input-stream
+                                      :stream-position (eclector.base:source-position
+                                                        client input-stream)
+                                      ;; TODO: these lengths are wrong if escape characters were used
+                                      :position-offset (- (+ (length symbol-name)
+                                                             (if marker1 1 0)
+                                                             (if marker2 1 0)
+                                                             (length indicator)))
+                                      :length          (length indicator)
+                                      :cause           (make-condition 'pkg::package-does-not-exist-error :package indicator))
+                             (eclector.reader:recover () ; TODO: restart name
+                               :report "Use CL-USER package"
+                               (pkg:find-package "CL-USER")))))))
+         (symbol    (multiple-value-bind (symbol status) ; TODO: remember status in the token?
+                        (pkg:intern symbol-name package)
+                      #+no (if (null status)
+                               (make-token non-existing-symbol-token
+                                           (cl:package-name package)
+                                           symbol-name)
+                               (make-token existing-symbol-token
+                                           (cl:package-name (symbol-package symbol))
+                                           (symbol-name symbol)))
+                      symbol)))
+    (make-instance 'interned-symbol-token :symbol           symbol
+                                          :package-marker-1 marker1
+                                          :package-marker-2 marker2)))
 
 (defmethod reader:interpret-symbol ((client            client)
                                     (input-stream      t)
                                     (package-indicator null)
                                     (symbol-name       t)
                                     (internp           t))
-  (make-instance 'uninterned-symbol-token :name symbol-name))
+  (let ((symbol (pkg:make-symbol symbol-name)))
+    (make-instance 'uninterned-symbol-token :symbol symbol)))
 
 ;;; Source position
 
@@ -190,16 +188,20 @@
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result symbol-token) (children t) (source t))
-  (if (and (null children)
-           (not (eq (package-name result) **common-lisp-package-name**)))
-      (let* ((stream     (stream* client))
-             (text-wads  (make-text-wads (cache stream) source :min-length 2)))
-        (if (null text-wads)
-            (call-next-method)
-            (wad-with-children
-             'atom-wad-with-extra-children stream source text-wads
-             :raw result)))
-      (call-next-method)))
+  (let* ((symbol  (symbol result))
+         (package (pkg:symbol-package symbol)))
+   (if (and (null children)
+            (or (null package)
+                (not (string= (pkg:package-name package) "COMMON-LISP" ; TODO: was **common-lisp-package-name**
+                              ))))
+       (let* ((stream     (stream* client))
+              (text-wads  (make-text-wads (cache stream) source :min-length 2)))
+         (if (null text-wads)
+             (call-next-method)
+             (wad-with-children
+              'atom-wad-with-extra-children stream source text-wads
+              :raw result)))
+       (call-next-method))))
 
 (defmethod eclector.parse-result:make-expression-result
     ((client client) (result string) (children t) (source t))

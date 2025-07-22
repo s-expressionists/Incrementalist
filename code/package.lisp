@@ -12,12 +12,16 @@
 
    (#:flx       #:flexichain)
 
+   (#:pkg       #:parcl)
+
    (#:dep       #:incrementalist.dependencies)
 
    (#:dbg       #:incrementalist.debug))
 
   (:shadow
    #:condition ; reader of `error-wad'
+   #:symbol
+   #:package
    #:package-name)
 
   ;; Tokens

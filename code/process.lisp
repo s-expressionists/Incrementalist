@@ -1,9 +1,9 @@
 (cl:in-package #:incrementalist)
 
 (defun maybe-set-read-base (client expression)
-  (if (and (typep expression '(cons existing-symbol-token
-                               (cons existing-symbol-token
-                                (cons t null))))
+  (if (and (typep expression '(cons symbol-token
+                                    (cons symbol-token
+                                          (cons t null))))
            (and (equal (package-name (first expression))
                        **common-lisp-package-name**)
                 (equal (name (first expression)) "SETF"))
@@ -24,13 +24,13 @@
                (cst:consp wad)
                (let ((first (cst:first wad)))
                  (and (cst:atom first)
-                      (typep (cst:raw first) 'existing-symbol-token)
-                      (string= (package-name (cst:raw first)) "COMMON-LISP")
                       (let ((raw (cst:raw first)))
-                        (string= (typecase raw
-                                   (string raw)
-                                   (t      (name raw)))
-                                 "IN-PACKAGE"))))
+                        (and (typep raw 'symbol-token)
+                             (let ((symbol  (symbol raw)))
+                               (and (string= (pkg:symbol-name symbol) "IN-PACKAGE")
+                                    (let ((package (pkg:symbol-package symbol)))
+                                      (and package
+                                           (string= (pkg:package-name package) "COMMON-LISP")))))))))
                (let ((rest (cst:rest wad)))
                  (and (cst:consp rest)
                       (cst:null (cst:rest rest))

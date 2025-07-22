@@ -26,9 +26,9 @@
          symbol-name)))
 
 (defclass symbol-token (token)
-  ((%name :initarg  :name
-          :type     string
-          :reader   name)))
+  ((%symbol :initarg  :symbol
+            :type     (not null) ; TODO: symbol
+            :reader   symbol)))
 
 (defun maybe-truncate-string (thing &key (limit 32))
   (cond ((not (stringp thing))
@@ -39,12 +39,15 @@
          (concatenate 'string (subseq thing 0 (1- limit)) "…"))))
 
 (defmethod print-object ((object symbol-token) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~@[[~A]~]~:[~;:~]~:[~;:~]~A"
-            (maybe-truncate-string (package-name object))
-            (package-marker-1 object)
-            (package-marker-2 object)
-            (maybe-truncate-string (name object)))))
+  (let* ((symbol  (symbol object))
+         (package (pkg:symbol-package symbol)))
+    (print-unreadable-object (object stream :type t :identity t)
+      (format stream "~@[[~A]~]~:[~;:~]~:[~;:~]~A"
+              (when package
+                (maybe-truncate-string (pkg:package-name package)))
+              (package-marker-1 object)
+              (package-marker-2 object)
+              (maybe-truncate-string (pkg:symbol-name symbol))))))
 
 (defclass uninterned-symbol-token (symbol-token)
   ())
@@ -66,17 +69,4 @@
    (%package-marker-2 :initarg  :package-marker-2
                       :type     (or null integer)
                       :reader   package-marker-2
-                      :initform nil)
-   (%package-name     :initarg  :package-name
-                      :type     (or null string)
-                      :reader   package-name
                       :initform nil)))
-
-(defclass non-existing-package-symbol-token (interned-symbol-token)
-  ())
-
-(defclass non-existing-symbol-token (interned-symbol-token)
-  ())
-
-(defclass existing-symbol-token (interned-symbol-token)
-  ())

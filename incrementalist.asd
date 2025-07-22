@@ -9,7 +9,8 @@
   :depends-on  ("trivial-gray-streams"
                 (:version "text.editor-buffer"            "0.1")
                 "flexichain"
-                "concrete-syntax-tree"
+                "concrete-syntax-tree" ; TODO: version
+                "parcl-extrinsic" ; TODO: version
                 (:version "eclector"                      #2="0.12")
                 (:version "eclector-concrete-syntax-tree" #2#)
                 "spell")

@@ -18,7 +18,7 @@
          ,(expected-symbol-wad '((1 2) (1 15)) 'in-package)
          ,(expected-symbol-wad
            '((1 16) (1 21)) "BAZ"
-           :token-class  'incrementalist:uninterned-symbol-token
+           :token-class  'inc:uninterned-symbol-token
            :package-name nil
            :words        '(:ignore-children)))
         ,(expected-symbol-wad '((2 1) (2 4)) "BAR")))
@@ -172,7 +172,7 @@ bar"
                               :words        '(:ignore-children)))
        ,(expected-symbol-wad
          '((2 0) (2 3)) "BAR"
-         :token-class  'inc:non-existing-package-symbol-token
+         :token-class  'inc:interned-symbol-token
          :package-name "BAZ"))
      '(:erase (1 0) 21)
      `(,(expected-symbol-wad '((0 0) (0 3)) "FOO")
@@ -245,7 +245,7 @@ foo"
        #1#
        ,(expected-symbol-wad
          '((2 0) (2 3)) "FOO"
-         :token-class  'inc:non-existing-package-symbol-token
+         :token-class  'inc:interned-symbol-token
          :package-name "FOO")))))
 
 (test dependencies.between-expressions.4

@@ -127,7 +127,7 @@ reader macro."
                      (symbol
                       (and (typep actual 'inc:symbol-token)
                            (string= (symbol-name expected)
-                                    (inc:name actual))))))
+                                    (parcl:symbol-name (inc:symbol actual)))))))
                  (check (child sub-expression)
                    (etypecase sub-expression
                      (cons

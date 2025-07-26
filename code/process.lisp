@@ -5,10 +5,10 @@
                                     (cons symbol-token
                                           (cons t null))))
            (and (equal (package-name (first expression))
-                       **common-lisp-package-name**)
+                       "COMMON-LISP")
                 (equal (name (first expression)) "SETF"))
            (and (equal (package-name (second expression))
-                       **common-lisp-package-name**)
+                       "COMMON-LISP")
                 (equal (name (second expression)) "*READ-BASE*")))
       (let* ((form   (subst `(eclector.reader:state-value ,client '*read-base*)
                             '*read-base*
@@ -40,9 +40,11 @@
                         (typep raw '(or string symbol-token))))))
       (setf (reader:state-value client '*package*)
             (let ((raw (cst:raw (cst:first (cst:rest wad)))))
-              (typecase raw
-                (string raw)
-                (t      (name raw)))))
+              ;; TODO: set current package around `find-package' calls for package-local nicknames
+              (pkg::find-undeleted-package-or-error
+               pkg:*client* (typecase raw
+                              (string raw)
+                              (t      (pkg:symbol-name (symbol raw)))))))
       t)))
 
 (defun apply-semantics (client wad)

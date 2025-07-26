@@ -454,8 +454,11 @@
 (defmethod cst:null ((cst atom-wad))
   (let ((raw (cst:raw cst)))
     (and (typep raw 'symbol-token)
-         (eq (name         raw) **nil-symbol-name**)
-         (eq (package-name raw) **common-lisp-package-name**))))
+         (let ((symbol (symbol raw))) ; TODO: the parcl-client should have a singleton `nil' instance (or any cl symbol) and we should be `eq' comparing
+           (and (string= (pkg:symbol-name symbol) "NIL")
+                (let ((package (pkg:symbol-package symbol)))
+                  (and package
+                       (string= (pkg:package-name package) "COMMON-LISP"))))))))
 
 (defmethod detach-wad ((wad atom-wad) &key recursive)
   (declare (ignore recursive))

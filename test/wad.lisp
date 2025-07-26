@@ -68,7 +68,7 @@
              (foo             . :missing)))))
     (test-case
      "#-common-lisp 1"
-     '(((0 0) ((*package*       . #:KEYWORD)
+     '(((0 0) ((*package*       . "KEYWORD")
                (*read-suppress* . nil)
                (*read-base*     . 10)))
        ((0 1) ((*package*       . "INCREMENTALIST.TEST.TEST-PACKAGE")

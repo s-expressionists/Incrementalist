@@ -11,6 +11,7 @@
                 "flexichain"
                 "concrete-syntax-tree" ; TODO: version
                 "parcl-extrinsic" ; TODO: version
+                "parcl-core/test" ; TODO: temporary
                 (:version "eclector"                      #2="0.12")
                 (:version "eclector-concrete-syntax-tree" #2#)
                 "spell")
@@ -42,6 +43,7 @@
                               (:file "utilities")
                               (:file "protocol")
                               ;; Model
+                              (:file "symbol") ; TODO: temporary
                               (:file "token")
                               (:file "wad")
                               ;; Cache

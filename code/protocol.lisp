@@ -2,13 +2,11 @@
 
 ;;; Symbol token protocol
 
+(defgeneric symbol (symbol-token))
+
 (defgeneric package-marker-1 (symbol-token))
 
 (defgeneric package-marker-2 (symbol-token))
-
-(defgeneric package-name (symbol-token))
-
-(defgeneric name (symbol-token))
 
 ;;; Children protocol
 

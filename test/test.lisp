@@ -17,7 +17,7 @@
         (inc:text-wad ((0 1) (0 2))))))
     ("||"
      '((inc:atom-wad ((0 0) (0 2))
-          (:raw (inc:non-existing-symbol-token
+          (:raw (inc:interned-symbol-token
                  :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "")))
         (inc:punctuation-wad ((0 0) (0 1)))
         (inc:punctuation-wad ((0 1) (0 2))))))
@@ -37,7 +37,7 @@
     ("#'foo"
      `((inc:cons-wad ((0 0) (0 5)) ()
         ,(expected-symbol-wad '((0 2) (0 5)) "FOO"
-                              :token-class 'inc:non-existing-symbol-token))))
+                              :token-class 'inc:interned-symbol-token))))
     ("'(1 2 3)"
      '((inc:cons-wad ((0 0) (0 8)) ()
         (inc:cons-wad ((0 1) (0 8)) ()
@@ -121,19 +121,19 @@
          (inc:labeled-object-reference-wad ((0 10) (0 13)) ())))))
     ("#+common-lisp 1"
      `((inc:read-positive-conditional-wad ((0 0) (0 15))
-          (:feature-expression (inc:existing-symbol-token
+          (:feature-expression (inc:interned-symbol-token
                                 :symbol ("KEYWORD" "COMMON-LISP")))
         ,(expected-symbol-wad '((0 2) (0 13)) :common-lisp
                               :words '(:ignore-children))
         (inc:atom-wad ((0 14) (0 15)) (:raw 1)))))
     ("#+a b"
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
-          (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
+          (:feature-expression (inc:interned-symbol-token :symbol ("KEYWORD" "A")))
         ,(expected-symbol-wad '((0 2) (0 3)) :a)
        (inc:read-suppress-wad ((0 4) (0 5)) ()))))
     ("#-a b"
      `((inc:read-negative-conditional-wad ((0 0) (0 5))
-          (:raw (inc:non-existing-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
+          (:raw (inc:interned-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
         ,(expected-symbol-wad '((0 2) (0 3)) :a)
         ,(expected-symbol-wad '((0 4) (0 5)) "B"))))
     ("#-
@@ -330,11 +330,11 @@ a b"
         (inc:word-wad ((0 1) (0 4)) (:misspelled nil)))))
     ("foo"
      '((inc:atom-wad ((0 0) (0 3))
-          (:raw (inc:non-existing-symbol-token
+          (:raw (inc:interned-symbol-token
                  :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "FOO")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled t)))))
     ("bar"
      '((inc:atom-wad ((0 0) (0 3))
-        (:raw (inc:non-existing-symbol-token
+        (:raw (inc:interned-symbol-token
                :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "BAR")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled nil)))))))

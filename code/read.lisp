@@ -182,9 +182,10 @@
       (values kind wad))))
 
 (defun read-forms (analyzer)
-  (let* ((client (make-instance 'client :stream* analyzer))
-         (cache  (cache analyzer))
-         (prefix (prefix cache))
+  (let* ((reader-client  (reader-client analyzer))
+         (parcl:*client* (parcl-client analyzer))
+         (cache          (cache analyzer))
+         (prefix         (prefix cache))
          initial-line initial-column)
     (update-lines-cache analyzer (lines analyzer))
     ;; Position ANALYZER (which is a stream) after the last prefix wad
@@ -219,14 +220,19 @@
                                    (line-number analyzer) (item-number analyzer))
                           (multiple-value-bind (kind wad orphan-result)
                               (eclector.reader:call-as-top-level-read
-                               client (lambda ()
-                                        (read-and-cache-top-level-expression
-                                         analyzer client))
+                               reader-client
+                               (lambda ()
+                                 (read-and-cache-top-level-expression
+                                  analyzer reader-client))
                                analyzer t nil nil)
                             (dbg:log :read "Top-level result ~A~%  wad    ~A~%  orphan ~:A~%"
                                      kind wad orphan-result)
                             (when (eq kind :object)
-                              (apply-semantics client wad))
+                              (handler-case
+                                  (apply-semantics reader-client wad)
+                                (error (condition)
+                                  ;; TODO: turn into error-wad
+                                  (princ condition *trace-output*))))
                             kind))
             ;; If we reach EOF while reading whitespace, the cache
             ;; suffix must be empty, and the cache residue is either

@@ -130,7 +130,7 @@ correctly."
 )"
      `((inc:cons-wad ((0 0) (4 1)) ()
         (inc:skipped-positive-conditional-wad ((1 2) (2 3))
-           (:feature-expression (inc:existing-symbol-token
+           (:feature-expression (inc:interned-symbol-token
                                  :symbol ("KEYWORD" "A")))
          ,(expected-symbol-wad '((1 4) (1 5)) :a)
          (inc:read-suppress-wad ((2 2) (2 3))))
@@ -143,7 +143,7 @@ correctly."
      '(:insert (1 0) " ")
      `((inc:cons-wad ((0 0) (4 1)) ()
         (inc:skipped-positive-conditional-wad ((1 3) (2 3))
-           (:feature-expression (inc:existing-symbol-token
+           (:feature-expression (inc:interned-symbol-token
                                  :symbol ("KEYWORD" "A")))
          ,(expected-symbol-wad '((1 5) (1 6)) :a)
          (inc:read-suppress-wad ((2 2) (2 3))))
@@ -219,7 +219,7 @@ as its children, Eclector used to produce incorrect parse results."
      ;; replacement value with the comment wads as children.
      '(:insert (0 0) "#1=")
      '((inc:atom-wad ((0 0) (2 3))
-          (:raw    (inc:existing-symbol-token :symbol ("COMMON-LISP" "NIL"))
+          (:raw    (inc:interned-symbol-token :symbol ("COMMON-LISP" "NIL"))
            :errors ((((2 3) (2 3)) eclector.reader:end-of-input-after-sharpsign-equals)))
         (inc:semicolon-comment-wad ((1 0) (2 0)) ()
          (inc:text-wad ((1 2) (1 3))))

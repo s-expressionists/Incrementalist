@@ -19,8 +19,9 @@
                                                (feature-expression t))
   (let ((features (eclector.reader:state-value client '*features*)))
     (and (typep feature-expression 'symbol-token)
-         (find (name feature-expression) features :test #'string=
-                                                  :key  'symbol-name))))
+         (let* ((symbol (symbol feature-expression))
+                (name   (parcl:symbol-name symbol)))
+          (find name features :test #'string= :key 'symbol-name)))))
 
 ;;; Read-time evaluation
 
@@ -48,90 +49,98 @@
       (t
        (values-list values)))))
 
-;;; This structure is used to pass information about the spelling of
-;;; the package indicator from `reader:interpret-symbol-token' to
-;;; `reader:interpret-symbol'.
-(declaim (inline package-info))
-(defstruct (package-info
-            (:constructor package-info (name marker1 marker2))
-            (:predicate nil)
-            (:copier nil))
-  (name    :current :type (or string (member :keyword :current)) :read-only t)
-  (marker1 nil      :type (or null alexandria:array-index)       :read-only t)
-  (marker2 nil      :type (or null alexandria:array-index)       :read-only t))
-
 (defmethod reader:interpret-symbol-token ((client                    client)
                                           (input-stream              t)
                                           (token                     string)
                                           (position-package-marker-1 t)
                                           (position-package-marker-2 t))
-  (flet ((interpret (package-name symbol-name internp)
-           (let ((package-info (package-info package-name
-                                             position-package-marker-1
-                                             position-package-marker-2)))
-             (declare (dynamic-extent package-info))
-             (reader:interpret-symbol
-              client input-stream package-info symbol-name internp))))
-    (cond ((null position-package-marker-1)
-           (interpret :current token t))
-          ((zerop position-package-marker-1)
-           ;; We use PACKAGE-MARKERS-END so we can handle ::foo which
-           ;; can happen when recovering from errors.
-           (let ((package-markers-end (or position-package-marker-2
-                                          position-package-marker-1)))
-             (interpret :keyword
-                        (subseq token (1+ package-markers-end))
-                        t)))
-          ((not (null position-package-marker-2))
-           (interpret (subseq token 0 position-package-marker-1)
-                      (subseq token (1+ position-package-marker-2))
-                      t))
-          (t
-           (interpret (subseq token 0 position-package-marker-1)
-                      (subseq token (1+ position-package-marker-1))
-                      nil)))))
+  (multiple-value-bind (package-indicator symbol-name internp)
+      (cond ((null position-package-marker-1)
+             (values :current ; (reader:state-value client '*package*)
+                     token
+                     t)) ; TODO: hello
+            ((null position-package-marker-2)
+             (values (if (= position-package-marker-1 0)
+                         :keyword ; **keyword-package-name**
+                         (subseq token 0 position-package-marker-1))
+                     (subseq token (1+ position-package-marker-1))
+                     t))
+            (t
+             (values (subseq token 0 position-package-marker-1)
+                     (subseq token (1+ position-package-marker-2))
+                     nil)))
+    (let* (#+no (package (or (pkg:find-package package-designator)
+                        (restart-case
+                            (error 'package-error-with-location
+                                   :stream          input-stream
+                                   :stream-position (eclector.base:source-position client input-stream)
+                                   :position-offset (- (length token))
+                                   :length          (length token)
+                                   :cause           (make-condition 'pkg::package-does-not-exist-error :package package-designator))
+                          (eclector.reader:recover () ; TODO: restart name
+                            :report "Use CL-USER package"
+                            (pkg:find-package "CL-USER")))))
+           (symbol (reader:interpret-symbol client input-stream package-indicator symbol-name internp)
+             #++ (multiple-value-bind (symbol status) ; TODO: remember status in the token?
+                 (pkg:intern symbol-name package)
+               #+no (if (null status)
+                        (make-token non-existing-symbol-token
+                                    (cl:package-name package)
+                                    symbol-name)
+                        (make-token existing-symbol-token
+                                    (cl:package-name (symbol-package symbol))
+                                    (symbol-name symbol)))
+               symbol)))
+      (make-instance
+       'interned-symbol-token
+       :symbol           symbol
+       :package-marker-1 position-package-marker-1
+       :package-marker-2 position-package-marker-2))))
 
+;;; TODO: copied from eclector
 (defmethod reader:interpret-symbol ((client            client)
                                     (input-stream      t)
-                                    (package-indicator package-info)
+                                    (package-indicator t)
                                     (symbol-name       t)
                                     (internp           t))
-  (let* ((indicator (package-info-name package-indicator))
-         (marker1   (package-info-marker1 package-indicator))
-         (marker2   (package-info-marker2 package-indicator))
-         (package   (case indicator
-                      (:current (reader:state-value client '*package*))
-                      (:keyword (find-package '#:keyword))
-                      (t
-                       (or (pkg:find-package indicator)
-                           (restart-case
-                               (error 'package-error-with-location
-                                      :stream          input-stream
-                                      :stream-position (eclector.base:source-position
-                                                        client input-stream)
-                                      ;; TODO: these lengths are wrong if escape characters were used
-                                      :position-offset (- (+ (length symbol-name)
-                                                             (if marker1 1 0)
-                                                             (if marker2 1 0)
-                                                             (length indicator)))
-                                      :length          (length indicator)
-                                      :cause           (make-condition 'pkg::package-does-not-exist-error :package indicator))
-                             (eclector.reader:recover () ; TODO: restart name
-                               :report "Use CL-USER package"
-                               (pkg:find-package "CL-USER")))))))
-         (symbol    (multiple-value-bind (symbol status) ; TODO: remember status in the token?
-                        (pkg:intern symbol-name package)
-                      #+no (if (null status)
-                               (make-token non-existing-symbol-token
-                                           (cl:package-name package)
-                                           symbol-name)
-                               (make-token existing-symbol-token
-                                           (cl:package-name (symbol-package symbol))
-                                           (symbol-name symbol)))
-                      symbol)))
-    (make-instance 'interned-symbol-token :symbol           symbol
-                                          :package-marker-1 marker1
-                                          :package-marker-2 marker2)))
+  (prog (package symbol)
+   package
+     (setf package (case package-indicator
+                     (:current (reader:state-value client '*package*))
+                     (:keyword (pkg:find-package "KEYWORD")) ; TODO find-package-using-package?
+                     (t        (or ;; Bind `*package*' so that package-
+                                   ;; local nicknames use the correct
+                                   ;; base package.
+                                   (let ((pkg:*package* (reader:state-value client '*package*)))
+                                     (pkg:find-package package-indicator))
+                                   (multiple-value-bind (value kind)
+                                       (reader::package-does-not-exist
+                                        input-stream
+                                        package-indicator symbol-name internp)
+                                     (ecase kind
+                                       (cl:symbol
+                                        (return (parcl:make-symbol (symbol-name value)))) ; HACK
+                                       (cl:package
+                                        value)
+                                       (:package-name
+                                        (setf package-indicator value)
+                                        (go package))))))))
+   symbol
+     (setf symbol (if internp
+                      (pkg:intern symbol-name package)
+                      (multiple-value-bind (symbol status)
+                          (pkg:find-symbol symbol-name package)
+                        (cond ((null status)
+                               (let ((symbol (reader::symbol-does-not-exist
+                                              input-stream package symbol-name)))
+                                 (parcl:make-symbol (symbol-name symbol)))) ; HACK
+                              ((not (eq status :external))
+                               (reader:symbol-is-not-external
+                                input-stream package symbol-name symbol status))
+                              (t
+                               symbol)))))
+   done
+     (return symbol)))
 
 (defmethod reader:interpret-symbol ((client            client)
                                     (input-stream      t)
@@ -449,13 +458,12 @@
 ;;; S-expression generation
 
 (flet ((make-form (symbol-name package-name &rest rest)
-         (let ((head (make-instance 'existing-symbol-token
-                                    :name         symbol-name
-                                    :package-name package-name)))
+         (let ((head (make-instance 'interned-symbol-token
+                                    :symbol (pkg:intern symbol-name package-name)))) ; TODO: cache
            (list* head rest))))
 
   (defmethod eclector.reader:wrap-in-quote ((client client) (material t))
-    (make-form "QUOTE" **common-lisp-package-name** material))
+    (make-form "QUOTE" "COMMON-LISP" material))
 
   (defmethod eclector.reader:wrap-in-quasiquote ((client client) (form t))
     (make-form "QUASIQUOTE" "ECLECTOR.READER" form))
@@ -467,4 +475,4 @@
     (make-form "UNQUOTE-SPLICING" "ECLECTOR.READER" form))
 
   (defmethod eclector.reader:wrap-in-function ((client client) (name t))
-    (make-form "FUNCTION" **common-lisp-package-name** name)))
+    (make-form "FUNCTION" "COMMON-LISP" name)))

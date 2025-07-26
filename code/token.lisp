@@ -2,32 +2,14 @@
 
 (defclass token () ())
 
-(#+sbcl sb-ext:defglobal #-sbcl defvar **keyword-package-name**
-  "KEYWORD")
-
-(#+sbcl sb-ext:defglobal #-sbcl defvar **common-lisp-package-name**
-  "COMMON-LISP")
-
-(defun intern-package-name (package-name)
-  (cond ((string= package-name **common-lisp-package-name**)
-         **common-lisp-package-name**)
-        ((string= package-name **keyword-package-name**)
-         **keyword-package-name**)
-        (t
-         package-name)))
-
-(#+sbcl sb-ext:defglobal #-sbcl defvar **nil-symbol-name**
-  "NIL")
-
-(defun intern-symbol-name (symbol-name)
-  (cond ((string= symbol-name **nil-symbol-name**)
-         **nil-symbol-name**)
-        (t
-         symbol-name)))
-
 (defclass symbol-token (token)
+  ;; TODO: does this, or the symbol itself need a reference to the environment?
+  ;; maybe not. maybe could make it so that `symbol-name' and `symbol-package' work for our symbol classes even if `parcl:*client*' is `nil'. we would have to bind `parcl:*client*' to `nil' be default
+  ;; Then the package objects could have references to their environments?
+  ;; No, that doesn't work because the status of a symbol can be different in different environments
+  ;; So does the symbol or the token itself need a reference to the environment after all?
   ((%symbol :initarg  :symbol
-            :type     (not null) ; TODO: symbol
+            :type     (not null)     ; TODO: (satisfies parcl:symbolp)
             :reader   symbol)))
 
 (defun maybe-truncate-string (thing &key (limit 32))
@@ -58,9 +40,8 @@
 (defmethod package-marker-2 ((symbol-token uninterned-symbol-token))
   nil)
 
-(defmethod package-name ((symbol-token uninterned-symbol-token))
-  nil)
-
+;; TODO: make two sub-classes of `interned-symbol-token', with and without package-marker slots
+;; TODO: store both package-markers in one slot; since adjacent second marker needs only one bit
 (defclass interned-symbol-token (symbol-token)
   ((%package-marker-1 :initarg  :package-marker-1
                       :type     (or null integer)

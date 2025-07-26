@@ -2,9 +2,6 @@
 
 ;;; Constructing buffer, analyzer and cache
 
-(defpackage #:incrementalist.test.test-package (:use))
-(defpackage #:incrementalist.test.using-package (:use #:cl))
-
 ;;; TODO (c:items buffer)
 (defun buffer-string (buffer)
   (with-output-to-string (stream)
@@ -20,13 +17,33 @@
     (b:insert-items-at cursor content :line-separator #\Newline)
     (values buffer cursor)))
 
-(defun prepared-analyzer
-    (buffer-content &key (initial-package      "INCREMENTALIST.TEST.TEST-PACKAGE")
-                         (initial-reader-state (inc:make-initial-reader-state
-                                                :package initial-package)))
+(defvar *test-package-name* "INCREMENTALIST.TEST.TEST-PACKAGE")
+(defvar *using-package-name* "INCREMENTALIST.TEST.USING-PACKAGE")
+
+(defun prepared-package-system ()
+  (let* ((client         (inc::make-package-system-client))
+         (parcl:*client* client)
+         (keyword        (parcl:find-package "KEYWORD"))
+         (test-package   (parcl:make-package *test-package-name*))
+         (using-package  (parcl:make-package *using-package-name*
+                                             :use (list (parcl:find-package
+                                                         "COMMON-LISP")))))
+    (declare (ignore test-package using-package))
+    (do-external-symbols (symbol "KEYWORD")
+      (parcl:intern (symbol-name symbol) keyword))
+    client))
+
+(defun prepared-analyzer (buffer-content
+                          &key (parcl-client    (prepared-package-system))
+                               (initial-package *test-package-name*)
+                               (initial-reader-state
+                                (let ((parcl:*client* parcl-client))
+                                  (inc:make-initial-reader-state
+                                   :package initial-package)))) ; TODO: package or designator
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((analyzer (make-instance 'inc:analyzer
                                     :buffer               buffer
+                                    :parcl-client         parcl-client
                                     :initial-reader-state initial-reader-state))
            (cache    (inc:cache analyzer)))
       (values analyzer cache buffer cursor))))
@@ -185,11 +202,13 @@
         (when expected-symbol-supplied?
           (destructuring-bind (expected-package-name expected-name)
               expected-symbol
-            (let ((actual-package-name (inc:package-name raw))
-                  (actual-name         (inc:name raw)))
+            (let* ((symbol              (inc:symbol raw))
+                   (actual-symbol-name  (parcl:symbol-name symbol))
+                   (package             (parcl:symbol-package symbol))
+                   (actual-package-name (parcl:package-name package)))
               (is-with-node (string= expected-package-name actual-package-name)
                             "package name of the symbol token of the node")
-              (is-with-node (string= expected-name actual-name)
+              (is-with-node (string= expected-name actual-symbol-name)
                             "name of the symbol token of the node")))))
       (is-with-node (equal expected-raw raw) "raw value of the node")))
 
@@ -203,11 +222,21 @@
                   (rec (car expected) (car actual))
                   (rec (cdr expected) (cdr actual)))
                  (inc:symbol-token
-                  (is-with-node (string= (inc:package-name expected)
-                                         (inc:package-name actual))
-                                "package name of the symbol token of the node")
-                  (is-with-node (string= (inc:name expected) (inc:name actual))
-                                "name of the symbol token of the node"))
+                  ;; TODO: can we test object identity?
+                  (let* ((expected-symbol       (inc:symbol expected))
+                         (expected-symbol-name  (parcl:symbol-name expected-symbol))
+                         (expected-package      (parcl:symbol-package expected-symbol))
+                         (expected-package-name (parcl:package-name expected-package))
+                         (actual-symbol         (inc:symbol actual))
+                         (actual-symbol-name    (parcl:symbol-name actual-symbol))
+                         (actual-package        (parcl:symbol-package actual-symbol))
+                         (actual-package-name   (parcl:package-name actual-package)))
+                    (is-with-node (string= expected-package-name
+                                           actual-package-name)
+                                  "package name of the symbol token of the node")
+                    (is-with-node (string= expected-symbol-name
+                                           actual-symbol-name)
+                                  "name of the symbol token of the node")))
                  (t
                   (is-with-node (equal expected actual)
                                 "raw value of the node"))))))
@@ -244,7 +273,7 @@
              (when (and expected-raw-supplied?
                         (typep result expected-type))
                (let ((raw (cst:raw result)))
-                 (if (equal expected-raw '(inc:existing-symbol-token
+                 (if (equal expected-raw '(inc:interned-symbol-token
                                            :symbol ("COMMON-LISP" "NIL")))
                      (is-true (cst:null result))
                      (is-false (cst:null result)))
@@ -344,9 +373,7 @@
      &key (package-name (if (symbolp symbol-name)
                             (package-name (symbol-package symbol-name))
                             "INCREMENTALIST.TEST.TEST-PACKAGE"))
-          (token-class  (if (symbolp symbol-name)
-                            'inc:existing-symbol-token
-                            'inc:non-existing-symbol-token))
+          (token-class  'inc:interned-symbol-token)
           (words        (cond ((equal package-name "COMMON-LISP")
                                '())
                               ((> (length (string symbol-name)) 1)

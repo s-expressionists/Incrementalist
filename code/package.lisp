@@ -20,25 +20,19 @@
 
   (:shadow
    #:condition ; reader of `error-wad'
-   #:symbol
-   #:package
-   #:package-name)
+   #:symbol)
 
   ;; Tokens
   (:export
    #:token ; class
 
    #:symbol-token ; class
-   #:package-marker-1 ; readers
+   #:symbol ; readers
+   #:package-marker-1
    #:package-marker-2
-   #:package-name
-   #:name
 
    #:uninterned-symbol-token ; classes
-   #:interned-symbol-token
-   #:non-existing-package-symbol-token
-   #:non-existing-symbol-token
-   #:existing-symbol-token)
+   #:interned-symbol-token)
 
   ;; Wads
   (:export

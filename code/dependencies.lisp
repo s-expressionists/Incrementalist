@@ -138,6 +138,11 @@
 
 ;;; Other state value
 
+(defmethod eclector.reader:valid-state-value-p ((cient  client)
+                                                (aspect (eql '*package*))
+                                                (value  t))
+  (parcl:packagep value))
+
 (defmethod eclector.reader:state-value ((client client) (aspect t))
   (let ((cell (dep:find-cell aspect)))
     (assert (not (null cell)))
@@ -156,16 +161,25 @@
                   :expected-type (case aspect ; TODO: get type from Eclector?
                                    (*read-base* '(integer 2 36))
                                    (t           nil))
-                  :aspect        aspect))))
+                  :aspect        aspect)))
+       (set-value (aspect value)
+         (let* ((parent (dep:find-cell aspect))
+                (scope  (dep:scope parent)))
+           (dep:make-and-register-cell
+            aspect scope value #'invalidate-following-users)))
+       (call-with-value (thunk aspect value)
+         (let ((parent (dep:find-cell aspect)))
+           (dep:make-and-register-cell
+            aspect :lexical value #'invalidate-following-users :parent parent)
+           (unwind-protect
+                (funcall thunk)
+             (dep:pop-cell-until aspect parent)))))
 
   (defmethod (setf eclector.reader:state-value) ((new-value t)
                                                  (client    client)
                                                  (aspect    t))
     (check-state-value-type client aspect new-value)
-    (let* ((parent (dep:find-cell aspect))
-           (scope  (dep:scope parent)))
-      (dep:make-and-register-cell
-       aspect scope new-value #'invalidate-following-users))
+    (set-value aspect new-value)
     new-value)
 
   (defmethod eclector.reader:call-with-state-value ((client client)
@@ -173,9 +187,24 @@
                                                     (aspect t)
                                                     (value  t))
     (check-state-value-type client aspect value)
-    (let ((parent (dep:find-cell aspect)))
-      (dep:make-and-register-cell
-       aspect :lexical value #'invalidate-following-users :parent parent)
-      (unwind-protect
-           (funcall thunk)
-        (dep:pop-cell-until aspect parent)))))
+    (call-with-value thunk aspect value))
+
+  ;; For the `cl:*package*' aspect, we allow designators since
+  ;; Eclector has no protocol for turning package designators into
+  ;; package objects and thus, for example, uses "KEYWORD" when
+  ;; reading feature expressions.
+  (defmethod (setf eclector.reader:state-value) ((new-value t)
+                                                 (client    client)
+                                                 (aspect    (eql '*package*)))
+    (let ((package (parcl::find-undeleted-package-or-error
+                    parcl:*client* new-value)))
+      (set-value aspect package))
+    new-value)
+
+  (defmethod eclector.reader:call-with-state-value ((client client)
+                                                    (thunk  t)
+                                                    (aspect (eql '*package*))
+                                                    (value  t))
+    (let ((package (parcl::find-undeleted-package-or-error
+                    parcl:*client* value)))
+      (call-with-value thunk aspect package))))

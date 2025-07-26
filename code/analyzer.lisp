@@ -4,7 +4,7 @@
 
 (defun make-initial-reader-state
     (&key (readtable                 eclector.reader:*readtable*)
-          (package                   "COMMON-LISP-USER")
+          (package                   (pkg:find-package "COMMON-LISP-USER"))
           (read-base                 10)
           (read-default-float-format 'single-float)
           (read-eval                 t)
@@ -41,6 +41,12 @@
                           :reader   buffer)
    (%cache                :initarg  :cache
                           :reader   cache)
+   ;; Client for operations on symbols and the package system.
+   (%parcl-client         :initarg  :parcl-client
+                          :reader   parcl-client)
+   ;; Client for reader operations.
+   (%reader-client        :initarg  :reader-client
+                          :reader   reader-client)
    ;; Specifies the reader state that should be used for reading the
    ;; first toplevel expression of the buffer. The value is a list of
    ;; `cell's.
@@ -48,39 +54,50 @@
                                     #-incrementalist-debug list
                           :reader   initial-reader-state))
   (:default-initargs
-   :buffer               (alexandria:required-argument :buffer)
-   :lines                nil
-   :initial-reader-state (make-initial-reader-state)))
+   :buffer       (alexandria:required-argument :buffer)
+   :lines        nil
+   :parcl-client parcl:*client* ; TODO: will be something like (make-instance 'parcl.test::mock-client)
+   ))
 
 (defmethod shared-initialize :around
-    ((instance   analyzer)
-     (slot-names t)
+    ((instance analyzer) (slot-names t)
      &rest args
      &key (buffer               nil buffer-supplied-p)
           (cache                nil cache-supplied-p)
+          (parcl-client         nil parcl-client-supplied-p)
           (initial-reader-state nil initial-reader-state-supplied-p))
   (prog1
-      (cond ((not buffer-supplied-p)
-             (call-next-method))
-            (cache-supplied-p
-             (let ((lines (lines cache)))
-               (apply #'call-next-method instance slot-names :lines lines
-                      args)))
-            (t
-             (let* ((cache (make-instance 'cache :buffer buffer))
-                    (lines (lines cache)))
+      (let* ((reader-client  (make-instance 'client :stream* instance))
+             (extra-initargs (list* :reader-client reader-client args)))
+        (cond ((not buffer-supplied-p)
                (apply #'call-next-method instance slot-names
-                      :cache cache :lines lines args))))
-    ;; If supplied, use aspects from INITIAL-READER-STATE to add
-    ;; aspects to or change aspects in the default initial reader
+                      extra-initargs))
+              (cache-supplied-p
+               (let ((lines (lines cache)))
+                 (apply #'call-next-method instance slot-names :lines lines
+                        extra-initargs)))
+              (t
+               (let* ((cache (make-instance 'cache :buffer buffer))
+                      (lines (lines cache)))
+                 (apply #'call-next-method instance slot-names
+                        :cache cache :lines lines
+                        extra-initargs)))))
+    ;; If PARCL-CLIENT is supplied (which suggests initialization
+    ;; rather than re-initialization) or if INITIAL-READER-STATE
+    ;; itself is supplied, use aspects from INITIAL-READER-STATE to
+    ;; add aspects to or change aspects in the default initial reader
     ;; state.
-    (when initial-reader-state-supplied-p
-      (loop :for (aspect . value) :in (merge-initial-reader-states
-                                       initial-reader-state
-                                       (make-initial-reader-state))
-            :collect (dep:make-cell :global aspect value) :into cells
-            :finally (setf (slot-value instance '%initial-reader-state)
-                           cells)))))
+    (when (or parcl-client-supplied-p initial-reader-state-supplied-p)
+      (let ((initial-reader-state (let ((parcl:*client* parcl-client))
+                                    (if (null initial-reader-state)
+                                        (make-initial-reader-state)
+                                        (merge-initial-reader-states
+                                         initial-reader-state
+                                         (make-initial-reader-state))))))
+        (loop :for (aspect . value) :in initial-reader-state
+              :collect (dep:make-cell :global aspect value) :into cells
+              :finally (setf (slot-value instance '%initial-reader-state)
+                             cells))))))
 
 ;;;
 

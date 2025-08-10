@@ -1,0 +1,405 @@
+@node Concepts
+@chapter Concepts
+
+@menu
+* Representation of the Editor Buffer::
+* Parsing using the @commonlisp{} Reader::
+* Parse Results::
+* Incremental Updates::
+* The Analyzer::
+@end menu
+
+This chapter describes the approaches and abstract data types which
+@sysname{} uses to incrementally and only when necessary parse buffer
+contents in order to fill and update a cache of parse results that
+clients can query.  @ref{fig:analyzer} presents an overview of the
+concepts which will be explained in the following sections.
+
+@float Figure,fig:analyzer
+@center @image{fig-analyzer}
+@caption{Important concepts from the @cluffer{} and @sysname{} libraries
+and their relations. Dashed arrows with circled numbers and labels
+indicate the use of protocols and the typical sequence of events.}
+@end float
+
+As shown in the figure, a client works with a @cluffer{} buffer and an
+associated @sysname{} analyzer including the respective sub-structures.
+The buffer represents some content as sequence of lines each of which is
+a sequence of items (often characters).  In typical usage, the sequence
+of actions is something like this:
+
+@itemize @w{}
+
+@item
+(1) The client manipulates the buffer content via the @cluffer{} edit
+protocol.
+
+@item
+(2) When the client wishes to work with syntax trees that represent the
+buffer content, the client invokes the @sysname{} analyzer update
+protocol to bring the analyzer and its cache up-to-date.
+
+@item
+(3) @sysname{} then uses the @cluffer{} update protocol to determine the
+buffer lines that have changed since the previous update and invalidates
+cache data accordingly.
+
+@item
+(4) After that @sysname{} uses @eclector{} to read (or re-read) in
+accordance with @commonlisp{} syntax all buffer regions that have become
+invalid due to the changes.
+
+@item
+(5) The client can query the up-to-data syntax trees using the
+@sysname{} cache query protocol.
+
+@end itemize
+
+@node Representation of the Editor Buffer
+@section Representation of the Editor Buffer
+
+@sysname{} uses the @clufferlink{} library to represent its buffers.  We
+briefly describe the essential aspects of that library below.  For
+detailed information on how it works, see the dedicated documentation.
+
+@cluffer{} provides two distinct protocols, namely the @emph{edit
+protocol} and the @emph{update protocol}.
+
+@itemize
+
+@item
+@cindex edit protocol
+@anchor{term-edit-protocol}
+The @dfn{edit protocol} provides operations for editing the buffer
+contents.  It has been designed to be both simple and very efficient.
+As such, it does not provide operations on larger chunks of contents
+such as @emph{regions}.  It provides operations only on single items,
+and operations to split and join lines.  These editing operations do
+not trigger any view updates which is why they can be invoked a large
+number of times for each user interaction without loss of performance.
+This feature is taken advantage of in operations on regions and in
+keyboard macros.
+
+@item
+@cindex update protocol
+@cindex buffer time stamp
+@cindex time stamp (of buffer)
+The @anchor{term-update-protocol}@dfn{update protocol} is designed to be
+run at the frequency of the event loop.  It is based on the concept of
+@anchor{term-buffer-time-stamp}@dfn{time stamps}.  Any number of edit
+operations can be performed between two invocations of the update
+protocol, and the update protocol can be invoked at different times for
+different views, including very rarely for views that are not currently
+on display.  Given that the amount of data displayed in a view is
+relatively modest, no attempt is made to minimize the modifications to
+the view.  The smallest unit of an update is a @emph{line} of items.
+
+@end itemize
+
+@node Parsing using the @commonlisp{} Reader
+@section Parsing using the @commonlisp{} Reader
+
+@sysname{} uses a special version of the @commonlisp{} reader, i.e.,
+@eclectorlink{}, to parse the contents of a buffer.  We use a special
+version of the reader for the following reasons:
+
+@itemize
+
+@item
+We need a different action from that of the standard reader when it
+comes to interpreting tokens.  In particular, we do not necessarily want
+the incremental parser to intern symbols automatically, and we do not
+want the reader to fail when a symbol with an explicit package prefix
+does not exist or when the package corresponding to the package prefix
+does not exists.
+
+@item
+We need for the reader to return not only a resulting expression, but an
+object that describes the start and end locations in the buffer where
+the expression was read.
+
+@item
+The reader needs to return source elements that are not returned by an
+ordinary reader, such as comments and expressions that are skipped by
+certain other reader macros.
+
+@item
+The reader can not fail but must instead recover in some way when
+either some invalid syntax is encountered, or when end of file is
+encountered in the middle of a call.
+
+@end itemize
+
+@node Parse Results
+@section Parse Results
+
+@menu
+* WAD Structure::
+* Concrete Syntax Tree Representation::
+@end menu
+
+@cindex wad
+@cindex syntax tree
+@cindex concrete syntax tree
+We call the data structure for storing parse results which are the
+(modified) return value of the reader together with start and end
+location a @anchor{term-wad}@dfn{wad}.  The following sub-sections
+describe the structure of a wad and the interpretation of wads as
+Concrete Syntax Tree nodes respectively.  We realize that the
+nomenclature is slightly confusing since wads are nodes in two different
+syntax trees which are both @emph{concrete} syntax trees according to
+standard terminology.  When we capitalize the term as ``Concrete Syntax
+Tree'', we refer to the particular concrete syntax tree representation
+of the @cstlink{} library.
+
+@node WAD Structure
+@subsection WAD Structure
+
+@cindex wad
+A wad contains the following slots:
+
+@itemize
+
+@item
+The start and the end location of the wad in the buffer.  The start line
+number within this location information is either
+@anchor{term-absolute}@dfn{absolute} which means that it directly
+corresponds to a line number of the underlying buffer or
+@anchor{term-relative}@dfn{relative} which means that it represents an
+offset from the start line number of a parent or sibling wad.
+
+@item
+The ``raw'' expression that was read, with some possible modifications.
+Some tokens, in particular symbols, are not represented as themselves
+for reasons mentioned in @ref{Parsing using the Common Lisp Reader}.
+
+@item
+A list of @dfn{children}.  These are wads that were returned by
+recursive calls to the reader.  The children are represented in the
+order they were encountered in the buffer.  This order may be different
+from the order in which the corresponding expressions appear in the
+expression resulting from the call to the reader.  Furthermore, the
+descendants of a given wad can contain wads which correspond to source
+elements that would not be present in the s-expression tree returned by
+@t{cl:read} at all such as comments or expressions guarded by feature
+expressions.
+
+@end itemize
+
+The representation of a wad is illustrated in @ref{fig:wad}.
+
+@float Figure,fig:wad
+@center @image{fig-wad}
+@caption{Representation of a wad. The major components are highlighted:
+location information in green, tree structure information in blue and
+``raw'' information in orange. Not all wad classes contain children and
+``raw'' data. The faintly rendered tree structure slots are computed
+on-demand and are thus always present but not always bound. }
+@end float
+
+@cindex top-level location
+@cindex top-level wad
+A location in the buffer is considered a
+@anchor{term-top-level-location}@dfn{top-level location} if and only if,
+when the buffer is parsed by a number of consecutive calls to @t{read},
+when this location is reached, the reader is in its initial state with
+no recursive pending invocations.  Similarly, a wad is considered a
+@anchor{term-top-level-wad}@dfn{top-level wad} if it is the result of an
+immediate call to @t{read}, as opposed to a recursive call.
+
+Let the @anchor{term-initial-character}@dfn{initial character} of some
+wad be the first non-whitespace character encountered during the call to
+the reader that produced this wad.  Similarly, let the
+@anchor{term-final-character}@dfn{final character} of some wad be the
+last character encountered during the call to the reader that produced
+this wad, excluding any look-ahead character that could be un-read
+before the wad was returned.
+
+The value of the @t{start-line} slot for a wad @var{w} is computed as
+follows:
+
+@itemize
+
+@item
+If @var{w} is @ref{term-absolute,absolute}, which is the case if and
+only if @var{w} is one of the top-level wads in the prefix
+(@pxref{Prefix and Suffix}) or the first top-level wad in the suffix,
+then the value of this slot is the absolute line number of the initial
+character of @var{w}.  The first line of the buffer is numbered
+@math{0}.
+
+@item
+Otherwise @var{w} is @ref{term-relative,relative} which is the case for
+different kinds of placements of @var{w} in the overall hierarchical
+structure of wads:
+
+@itemize
+
+@item
+If @var{w} is a top-level wad in the suffix other than the first one,
+then the value of this slot is the number of lines between the value of
+the slot @t{start-line} of the preceding wad and the initial character
+of @var{w}.  A value of @math{0} indicates the same line as the
+@t{start-line} of the preceding wad.
+
+@item
+If @var{w} is the first in a list of children of some parent wad
+@var{p}, then the value of this slot is the number of lines between the
+start line of @var{p} (which is different from the value of the
+@t{start-line} slot of @var{p} if @var{p} is itself @emph{relative}) and
+the initial character of @var{w}.
+
+@item
+If @var{w} is the child other than the first in a list of children of
+some parent wad, then the value of this slot is the number of lines
+between the start line of the preceding sibling wad and the initial
+character of @var{w}.
+
+@end itemize
+
+@end itemize
+
+The value of the slot @t{height} of some wad @var{w} is the number of
+lines between the start line of @var{w} and the final character of
+@var{w}.  If @var{w} starts and ends on the same line, then the value of
+this slot is @math{0}.
+
+The value of the slot @t{start-column} is the absolute column number of
+the initial character of this wad.  A value of @math{0} means the
+leftmost column.
+
+The value of the slot @t{end-column} is the absolute column number of
+the final character of the wad.
+
+@node Concrete Syntax Tree Representation
+@subsection Concrete Syntax Tree Representation
+
+@cindex concrete syntax tree
+While the previous section explained the representation of parse results
+as @ref{term-wad,wads}, the introduction to the @ref{Parse Results}
+section mentioned that some wads are also Concrete Syntax Tree (CST)
+nodes.  This sub-section focuses on this dual nature.  The reason for
+having two different views on parse results is that they are used in
+different ways: On the one hand, uses such as syntax highlighting are
+concerned only with nodes that correspond directly to item sequences in
+the buffer, including comments and other ``skipped material'.  On the
+other hand, uses such as semantic analyses of the buffer content as a
+@commonlisp{} program are not concerned with ``skipped material'' and
+instead require an s-expression tree that can be processed using
+@t{atom}, @t{null}, @t{first} and @t{rest}.
+
+@multitable @columnfractions 0.3 0.3 0.3
+@headitem Aspect                     @tab WAD node                 @tab CST node
+@item     Purpose                    @tab Highlighting and editing @tab Analysis by early compiler stages
+@item     Source Location            @tab Always                   @tab Optional
+@item     S-expression (@t{cst:raw}) @tab Optional                 @tab Always
+@item     Children                   @tab Arbitrary list           @tab Either none or two (first and rest)
+@end multitable
+
+As a concrete example, consider the following @commonlisp{} code which
+(assuming the default configuration of the reader) contains a proper
+list, a dotted list, three numbers and a block comment:
+
+@lisp
+(#|foo|# 1 (2 . 3))
+@end lisp
+
+
+@sysname{} produces the following Concrete Syntax Tree representation
+for this example:
+@c TODO generate automatically
+@verbatim
+#<CONS-WAD-WITH-EXTRA-CHILDREN abs:0[0],0 -> 0,19>
++-#<ATOM-WAD rel:0[0],9 -> 0,10 raw: 1>
+`-#<CONS-CST raw: ((2 . 3)) {100875D8E3}>
+  +-#<CONS-WAD-WITH-EXTRA-CHILDREN rel:0[0],11 -> 0,18>
+  | +-#<ATOM-WAD rel:0[0],12 -> 0,13 raw: 2>
+  | `-#<ATOM-WAD rel:0[0],16 -> 0,17 raw: 3>
+  `-#<ATOM-CST raw: NIL {100875D8A3}>
+@end verbatim
+The Concrete Syntax Tree consists of cons nodes and atom nodes.  Atom
+nodes have no children and cons nodes always have two children one of
+which may correspond to the implicit @t{nil} that terminates a proper
+list but is not present in the source text.  ``Skipped material'' such
+as the block comment @t{#|foo|#} is not represented.  This Concrete
+Syntax Tree is suitable for analysis phases such as parsing the
+s-expression structure and analyzing the code according to @commonlisp{}
+semantics after that.
+
+In contrast, the interpretation of the example code as a wad tree looks
+like this:
+@verbatim
+#<CONS-WAD-WITH-EXTRA-CHILDREN abs:0[0],0 -> 0,19>
++-#<BLOCK-COMMENT-WAD rel:0[0],1 -> 0,8>
+| `-#<WORD-WAD rel:0[0],3 -> 0,6>
++-#<ATOM-WAD rel:0[0],9 -> 0,10 raw: 1>
+`-#<CONS-WAD-WITH-EXTRA-CHILDREN rel:0[0],11 -> 0,18>
+  +-#<ATOM-WAD rel:0[0],12 -> 0,13 raw: 2>
+  +-#<ATOM-WAD rel:0[0],14 -> 0,15 raw: #:|.|>
+  `-#<ATOM-WAD rel:0[0],16 -> 0,17 raw: 3>
+@end verbatim
+The wad tree includes the ``skipped material'' such as the block comment
+and the consing dot that was missing from the Concrete Syntax Tree and
+closely reflects the structure of the source code.  Note that CST nodes
+that are not represented in the source code or otherwise have no source
+location such as the implicit @t{nil} which terminates the proper list
+are not part of the wad tree.
+
+The following figure illustrates both representations at once for the
+above example:
+
+@float Figure,fig:wad-vs-cst
+@center @image{fig-wad-vs-cst}
+@caption{Dual representation of wads and CST nodes.  WAD aspects are
+indicated by a blue color, CST aspects are indicated by an orange
+color.}
+@end float
+
+@node Incremental Updates
+@section Incremental Updates
+
+@cindex cache
+When @sysname{} produces parse results for a given snapshot (which is
+identified by a buffer time stamp) of the contents of a buffer in the
+way described above, @sysname{} stores those results in a
+@anchor{term-cache}@dfn{cache} and updates a
+@anchor{term-cache-time-stamp}@dfn{time stamp} within the cache to the
+buffer time stamp (@pxref{Parse Results} for details of the parse result
+representation).  Once the cache is up-to-date, clients can query it,
+for example to obtain parse results which correspond to a particular
+range of lines in the buffer.
+
+@node The Analyzer
+@section The Analyzer
+
+@cindex analyzer
+A final concept, the @anchor{term-analyzer}@dfn{analyzer}, ties together
+the previously mentioned components (See @ref{fig:analyzer} for a
+graphical illustration of all components and their relations):
+
+@table @asis
+
+@item The Buffer
+@cindex buffer time stamp
+@cindex time stamp (of buffer)
+The buffer serves as the input for the incremental parsing and contains
+a time stamp that is incremented for each modification.  An analyzer
+remains attached to a single buffer for the entire lifetime of the
+analyzer.
+
+@item The Reader
+Or more precisely, a stream that presents the contents of the buffer to
+the reader.  The analyzer contains (or itself acts as) a @commonlisp{}
+stream which can efficiently seek to particular buffer line and item
+numbers.  The modified reader reads changed parts of the buffer contents
+from this stream.
+
+@item The Cache
+The analyzer creates and maintains a cache which holds parse results
+that the reader produces from the buffer stream.
+
+@end table
+
+Clients use the @sysname{} library by constructing an analyzer for a
+given buffer and then repeatedly updating the analyzer and querying the
+parse results in the associated cache.

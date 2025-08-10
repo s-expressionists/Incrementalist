@@ -45,8 +45,7 @@ Copyright @copyright{} 2024, 2025 Jan Moringen
 
 @menu
 * Introduction::
-* Representation of the Editor Buffer::
-* Parsing using the @commonlisp{} Reader::
+* Concepts::
 * Incremental Parsing::
 * Concept index::
 * Function and macro and variable and type index::
@@ -54,9 +53,7 @@ Copyright @copyright{} 2024, 2025 Jan Moringen
 
 @include chapter-introduction.texi
 
-@include chapter-buffer-representation.texi
-
-@include chapter-reader.texi
+@include chapter-concepts.texi
 
 @include chapter-incremental-parsing.texi
 

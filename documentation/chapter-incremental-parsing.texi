@@ -83,133 +83,18 @@ computation as incremental as possible.
 
 @end enumerate
 
+@menu
+* Data Structures::
+* Moving Top-level Wads::
+* Incremental Update::
+@end menu
+
 @node Data Structures
 @section Data Structures
 
-@node WADs
-@subsection WADs
-
-@cindex wad
-
-We call the data structure for storing the (modified) return value of
-the reader together with start and end location a
-@anchor{term-wad}@dfn{wad}.  It contains the following slots:
-
-@itemize
-
-@item
-The start and the end location of the wad in the buffer.  The start line
-number within this location information is either
-@anchor{term-absolute}@dfn{absolute} which means that it directly
-corresponds to a line number of the underlying buffer or
-@anchor{term-relative}@dfn{relative} which means that it represents an
-offset from the start line number of a parent or sibling wad.  A
-dedicated slot indicates whether the start line number is relative or
-absolute.
-
-@item
-The ``raw'' expression that was read, with some possible modifications.
-Tokens, in particular symbols, are not represented as themselves for
-reasons mentioned above.
-
-@item
-A list of @dfn{children}.  These are wads that were returned by
-recursive calls to the reader.  The children are represented in the
-order they were encountered in the buffer.  This order may be different
-from the order in which the corresponding expressions appear in the
-expression resulting from the call to the reader.  Furthermore, the
-descendants of a given wad can contain wads which correspond to source
-elements that would not be present in the s-expression tree returned by
-@t{cl:read} at all such as comments or expressions guarded by feature
-expressions.
-
-@end itemize
-
-The representation of a wad is shown in
-@ref{fig:wad}.
-
-@float Figure,fig:wad
-@center @image{fig-wad}
-@caption{Representation of a wad. The major components are highlighted:
-location information in green, tree structure information in blue and
-``raw'' information in orange. Not all wad classes contain children and
-``raw'' data. The faintly rendered tree structure slots are computed
-on-demand and are thus always present but not always bound. }
-@end float
-
-@cindex top-level location
-@cindex top-level wad
-
-A location in the buffer is considered a
-@anchor{term-top-level-location}@dfn{top-level location} if and only if,
-when the buffer is parsed by a number of consecutive calls to @t{read},
-when this location is reached, the reader is in its initial state with
-no recursive pending invocations.  Similarly A wad is considered a
-@anchor{term-top-level-wad}@dfn{top-level wad} if it is the result of an
-immediate call to @t{read}, as opposed to of a recursive call.
-
-Let the @dfn{initial character} of some wad be the first non-whitespace
-character encountered during the call to the reader that produced this
-wad.  Similarly, let the @dfn{final character} of some wad be the last
-character encountered during the call to the reader that produced this
-wad, excluding any look-ahead character that could be un-read before the
-wad was returned.
-
-The value of the @t{start-line} slot for a wad @var{w} is computed as
-follows:
-
-@itemize
-
-@item
-If @var{w} is @ref{term-absolute,absolute}, which is the case if and
-only if @var{w} is one of the top-level wads in the prefix
-(@pxref{Prefix and Suffix}) or the first top-level wad in the suffix,
-then the value of this slot is the absolute line number of the initial
-character of @var{w}.  The first line of the buffer is numbered
-@math{0}.
-
-@item
-Otherwise @var{w} is @ref{term-relative,relative} which is the case for
-different kinds of placements of @var{w} in the overall hierarchical
-structure of wads:
-
-@itemize
-
-@item
-If @var{w} is a top-level wad in the suffix other than the first one,
-then the value of this slot is the number of lines between the value of
-the slot @t{start-line} of the preceding wad and the initial character
-of @var{w}.  A value of @math{0} indicates the same line as the
-@t{start-line} of the preceding wad.
-
-@item
-If @var{w} is the first in a list of children of some parent wad
-@var{p}, then the value of this slot is the number of lines between the
-start line of @var{p} (which is different from the value of the
-@t{start-line} slot of @var{p} if @var{p} is itself @emph{relative}) and
-the initial character of @var{w}.
-
-@item
-If @var{w} is the child other than the first in a list of children of
-some parent wad, then the value of this slot is the number of lines
-between the start line of the preceding sibling wad and the initial
-character of @var{w}.
-
-@end itemize
-
-@end itemize
-
-The value of the slot @t{height} of some wad @var{w} is the number of
-lines between the start line of @var{w} and the final character of
-@var{w}.  If @var{w} starts and ends on the same line, then the value of
-this slot is @math{0}.
-
-The value of the slot @t{start-column} is the absolute column number of
-the initial character of this wad.  A value of @math{0} means the
-leftmost column.
-
-The value of the slot @t{end-column} is the absolute column number of
-the final character of the wad.
+@menu
+* Prefix and Suffix::
+@end menu
 
 @node Prefix and Suffix
 @subsection Prefix and Suffix
@@ -478,6 +363,11 @@ suffix
 43 00 (f 20)
 ...
 @end verbatim
+
+@menu
+* Processing Modifications::
+* Recreating the Cache::
+@end menu
 
 @node Processing Modifications
 @subsection Processing Modifications
@@ -748,6 +638,7 @@ suffix
 @node Recreating the Cache
 @subsection Recreating the Cache
 
+@cindex cache
 Once the cache has been processed so that only wads that are known to be
 valid remain, the new buffer contents must be fully parsed so that its
 complete structure is reflected in the cache.

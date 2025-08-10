@@ -35,6 +35,13 @@ Cluffer
 @url{https://github.com/robert-strandh/Cluffer,@cluffer{}}
 @end macro
 
+@macro cst
+Concrete Syntax Tree
+@end macro
+@macro cstlink
+@url{https://github.com/s-expressionists/Concrete-Syntax-Tree,@cst{}}
+@end macro
+
 @c ===================================================================
 @c Lambda list keywords
 @c ===================================================================

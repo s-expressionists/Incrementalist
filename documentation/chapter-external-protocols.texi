@@ -1,0 +1,752 @@
+@node External Protocols
+@chapter External Protocols
+
+This chapter describes protocols that clients of @sysname{} can use.  As
+described in the introduction of section @ref{Concepts} and
+@ref{fig:analyzer}, the main activities of clients are on the one hand
+updating the @link{term-cache,cache} via the
+@link{term-analyzer,analyzer} and on the other hand querying and working
+with parse results, that is @link{term-wad,wads}.  Accordingly, the
+first two sections of this chapter describe protocols for working with
+wads while the remaining sections focus on updating and querying the
+cache.
+
+@menu
+* Token Protocol and Classes::
+* WAD Protocols and Classes::
+* The Associated Buffer Protocol::
+* The Cache Protocol::
+* The Analyzer Protocol::
+@end menu
+
+@node Token Protocol and Classes
+@section Token Protocol and Classes
+
+As mentioned in @ref{Parsing using the Common Lisp Reader}, for some
+tokens in the buffer content such as symbols, the corresponding
+representation in the @t{raw} slot of the containing wad is not simply a
+@commonlisp{} object of the appropriate type but instead an instance of
+some token class.  These token objects have two purposes:
+
+@itemize
+
+@item
+In case of symbols, represent symbols without modifying the package
+system.
+
+@item
+Store information about the ``spelling'' (use of package prefixes and
+package markers, radix for numbers) that are not part of the
+@commonlisp{} objects that the standard reader produces.
+
+@end itemize
+
+This section describes token classes and readers.
+
+@example
+@classref{token,@toppackage{}}
+`-@classref{symbol-token,@toppackage{}}
+  +-@classref{uninterned-symbol-token,@toppackage{}}
+  `-@classref{interned-symbol-token,@toppackage{}}
+    +-@classref{existing-symbol-token,@toppackage{}}
+    +-@classref{non-existing-package-symbol-token,@toppackage{}}
+    `-@classref{non-existing-symbol-token,@toppackage{}}
+@end example
+
+@defclassa{token,@toppackage{}}
+
+Superclass for all token classes.
+@end deftp
+
+@defclassa{symbol-token,@toppackage{}}
+
+Instances of subclasses of this class represent symbol tokens in the
+buffer content including some information about the concrete
+``spelling''.
+@end deftp
+
+The following readers can be applied to objects of type
+@classref{symbol-token,@toppackage{}}:
+
+@defgena{package-name,@toppackage{}} symbol-token
+
+Return @t{nil} or a string that is the name of the package of the symbol
+to which @var{symbol-token} refers.  The value @t{nil} is returned if
+@var{symbol-token} represents an uninterned symbol.
+
+@quotation Warning
+This function will be probably change when @sysname{} transitions to a
+more complete model of the package system.
+@end quotation
+@end deffn
+
+@defgena{name,@toppackage{}} symbol-token
+
+Return a string that is the name of the symbol to which
+@var{symbol-token} refers.
+
+@quotation Warning
+This function will be probably change when @sysname{} transitions to a
+more complete model of the package system.
+@end quotation
+@end deffn
+
+@defgena{package-marker-1,@toppackage{}} symbol-token
+
+Return @t{nil} or the offset of the first package marker character
+within the item sequence from which @var{symbol-token} has been read.
+@end deffn
+
+@defgena{package-marker-2,@toppackage{}} symbol-token
+
+Return @t{nil} or the offset of the second package marker character
+within the item sequence from which @var{symbol-token} has been read.
+@end deffn
+
+@defclassa{uninterned-symbol-token,@toppackage{}}
+
+Instances of this classes represent symbols that do not have a home
+package.
+@end deftp
+
+@defclassa{interned-symbol-token,@toppackage{}}
+
+Instances of this classes represent symbols that have a home package.
+@end deftp
+
+@defclassa{existing-symbol-token,@toppackage{}}
+
+Instances of this classes represent symbols that exist in the
+environment.
+@end deftp
+
+@defclassa{non-existing-package-symbol-token,@toppackage{}}
+
+Instances of this classes represent symbols for which the specified
+package does not exist in the environment.
+@end deftp
+
+@defclassa{non-existing-symbol-token,@toppackage{}}
+
+Instances of this classes represent symbols that do not exist in the
+environment.
+@end deftp
+
+@node WAD Protocols and Classes
+@section WAD Protocols and Classes
+
+@cindex wad
+@sysname{} provides various generic functions for working with
+@ref{term-wad,wads}.  Those generic functions are organized into
+multiple separate protocols for better coherence.  Each of the
+subsections of this section describes one such protocol.  The @ref{Wad
+Classes,final subsection} describes the wad classes to which the
+protocols can be applied.
+
+@menu
+* Children Protocol::
+* Family Relations Protocol::
+* Basic Wad Protocol::
+* Wad Protocol::
+* Wad Classes::
+@end menu
+
+@node Children Protocol
+@subsection Children Protocol
+
+This protocol allows the client to process or obtain the children of a
+given @ref{term-wad,wad}.  The children of a wad are also wads.
+
+Note that the sequence of (wad) children considered by the functions in
+this section is often different from the (CST) children obtained via the
+readers @t{cst:first} and @t{cst:rest} for several reasons
+(@pxref{Concrete Syntax Tree Representation}):
+
+@itemize
+
+@item
+CST children may not have an associated source location such as the
+second @t{cons} in @t{(1 2)} while wads always have a source location.
+
+@item
+A CST child may be linked to its parent via multiple relations such as
+the string @t{"a"} which is the @t{cst:first} and @t{cst:second} of its
+parent in @t{(#1="a" . #1#)}.  In contrast, a wad child must appear
+exactly once in the sequence of children of its parent.
+
+@item
+Skipped material such as comments does not have a representation as a
+CST node at all.  For the wad tree however, comments and other skipped
+material appear as children or top-level nodes.
+
+@item
+The hierarchy and order of CST nodes may differ from the source text due
+to rearrangement by reader macros.  In contrast, for the wad tree
+structure, hierarchy corresponds to containment of text regions and the
+order of child nodes corresponds to the order of their text regions.
+
+@end itemize
+
+@defgena{map-children,@toppackage{}} function wad
+
+Call @var{function} with each child of @var{wad} as the sole argument.
+
+The calls happen in the order in which the children of @var{wad} appear
+in the source text.
+
+The return value of this function is not specified.
+@end deffn
+
+@defgena{children,@toppackage{}} wad
+
+Return a fresh list which contains the children of @var{wad}.
+
+The order of the elements in the returned list is the order in which the
+children of @var{wad} appear in the source text.
+@end deffn
+
+@node Family Relations Protocol
+@subsection Family Relations Protocol
+
+@defgena{parent,@toppackage{}} wad
+
+Return the parent wad of @var{wad} or @t{nil} if @var{wad} is a
+@ref{term-top-level-wad,top-level wad}.
+@end deffn
+
+@defgena{left-sibling,@toppackage{}} wad
+
+Return the wad that is the left sibling of @var{wad} or @t{nil} if
+@var{wad} does not have a left sibling.
+
+There are two possible cases in which @var{wad} does not have a left
+sibling:
+
+@itemize
+
+@item
+If @var{wad} is the first child of its parent.
+
+@item
+If @var{wad} is a @ref{term-top-level-wad, top-level wad} and is the
+first element of the @ref{term-prefix, prefix}.
+
+@end itemize
+@end deffn
+
+@defgena{right-sibling,@toppackage{}} wad
+
+Return the wad that is the right sibling of @var{wad} or @t{nil} if
+@var{wad} does not have a right sibling.
+
+There are two possible cases in which @var{wad} does not have a right
+sibling:
+
+@itemize
+
+@item
+If @var{wad} is the last child of its parent.
+
+@item
+If @var{wad} is a @ref{term-top-level-wad, top-level wad} and is the
+last element of the @ref{term-suffix, suffix}.
+
+@end itemize
+@end deffn
+
+@node Basic Wad Protocol
+@subsection Basic Wad Protocol
+
+The section describes the basic wad protocol which is applicable to all
+wad-like objects including instances of
+@classref{error-wad,@toppackage{}} and
+@classref{text-wad,@toppackage{}}.
+
+@defgena{absolute-start-line,@toppackage{}} wad
+
+Return a non-negative integer that is the absolute start line number of
+@var{wad}.
+
+@quotation warning
+An absolute start line number may not be available, for example if
+@var{wad} is a member of the @ref{term-suffix,suffix} of the
+@ref{term-cache,cache}.
+@end quotation
+@end deffn
+
+@defgena{height,@toppackage{}} wad
+
+Return a non-negative integer that is the difference between the end
+line number and the start line number of @var{wad}.
+@end deffn
+
+@defgena{end-line,@toppackage{}} wad
+
+Return a non-negative integer that is the absolute end line number of
+@var{wad}.
+
+@quotation warning
+The absolute end line number is available only if @var{wad} is
+@ref{term-absolute,absolute}.
+@end quotation
+@end deffn
+
+@defgena{start-column,@toppackage{}} wad
+
+Return a non-negative integer that is the position of the
+@ref{term-initial-character,initial character} within the start line of
+@var{wad}.
+@end deffn
+
+@defgena{end-column,@toppackage{}} wad
+
+Return a non-negative integer that is the position of the
+@ref{term-final-character,final character} within the end line of
+@var{wad}.
+@end deffn
+
+@defgena{items,@toppackage{}} wad
+
+Return the sequence of buffer items which belong to @var{wad}.
+
+@quotation warning
+The sequence of buffer items can be obtained only if the absolute start
+line number of @var{wad} is available.
+@end quotation
+@end deffn
+
+@node Wad Protocol
+@subsection Wad Protocol
+
+The section describes the wad protocol which is applicable to all proper
+wad objects but not wad-like objects such as instances of @t{error-wad}
+and @classref{word-wad,@toppackage{}}.
+
+@defgena{errors,@toppackage{}} wad
+
+Return a list of errors that are associated with @var{wad}.
+
+The elements of the returned list of instances of
+@classref{error-wad,@toppackage{}}.
+@end deffn
+
+@defgena{indentation,@toppackage{}} wad
+@end deffn
+
+@node Wad Classes
+@subsection Wad Classes
+
+The following diagram illustrates the hierarchy of wad classes which
+@sysname{} provides:
+
+@example
+@classref{basic-wad,@toppackage{}}
++-@classref{wad,@toppackage{}}
+| +-@classref{cst-wad,@toppackage{}}
+| | +-@classref{atom-wad,@toppackage{}}
+| | +-@classref{cons-wad,@toppackage{}}
+| | `-@classref{labeled-object-wad,@toppackage{}}
+| |   +-@classref{labeled-object-reference-wad,@toppackage{}}
+| |   `-@classref{labeled-object-definition-wad,@toppackage{}}
+| `-@classref{non-cst-wad,@toppackage{}}
+|   +-@classref{skipped-wad,@toppackage{}}
+|   | +-@classref{ignored-wad,@toppackage{}}
+|   | | +-@classref{reader-macro-wad,@toppackage{}}
+|   | | +-@classref{read-suppress-wad,@toppackage{}}
+|   | | `-@classref{skipped-conditional-wad,@toppackage{}}
+|   | |   +-@classref{skipped-negative-conditional-wad,@toppackage{}}
+|   | |   `-@classref{skipped-positive-conditional-wad,@toppackage{}}
+|   | `-@classref{comment-wad,@toppackage{}}
+|   |   +-@classref{block-comment-wad,@toppackage{}}
+|   |   `-@classref{semicolon-comment-wad,@toppackage{}}
+|   `-@classref{text-wad,@toppackage{}}
+|     `-@classref{word-wad,@toppackage{}}
+`-@classref{error-wad,@toppackage{}}
+@end example
+
+Instances of subclasses of @classref{basic-wad,@toppackage{}} can be
+used with the @ref{Children Protocol}, the @ref{Family Relations
+Protocol} and the @ref{Basic Wad Protocol}.  Instances of subclasses of
+@t{wad} can additionally be used with the @ref{Wad Protocol}.
+
+@defclassa{basic-wad,@toppackage{}}
+
+Superclass for wad-like classes.  Not intended for use by clients at the
+moment.
+@end deftp
+
+@defclassa{wad,@toppackage{}}
+
+Superclass for wad classes.
+@end deftp
+
+@defclassa{conditional-wad,@toppackage{}}
+
+Instances of subclasses of this class represent four different kinds of
+read-time conditional expressions which consist of a ``positive'' or
+``negative'' feature expression followed by a guarded expression.
+
+The direct subclass @classref{read-conditional-wad,@toppackage{}} is
+also a subclass of @classref{cst-wad,@toppackage{}}.  Instances of its
+subclasses and represent read-time conditionals that were @emph{read}
+(as opposed to skipped) due to the respective feature expression.
+
+The direct subclass @classref{skipped-conditional-wad,@toppackage{}} is
+also a subclass of @classref{skipped-wad,@toppackage{}}.  Instances of
+its subclasses and represent read-time conditionals that were
+@emph{skipped} (as opposed to read) due to the respective feature
+expression.
+@end deftp
+
+@defgena{feature-expression,@toppackage{}} sharpsign-wad
+
+Return the feature expression of @var{sharpsign-wad}.
+@end deffn
+
+@defclassa{cst-wad,@toppackage{}}
+
+Superclass for wad classes that are also subclasses of
+@t{concrete-syntax-tree:cst}.
+@end deftp
+
+@defclassa{atom-wad,@toppackage{}}
+
+Instances of this class are wads and atom CST nodes at the same time.
+
+The reader @t{concrete-syntax-tree:raw} returns the raw atom expression.
+@end deftp
+
+@defclassa{cons-wad,@toppackage{}}
+
+Instances of this class are wads and cons CST nodes at the same time.
+
+The reader @t{concrete-syntax-tree:raw} returns the raw cons expression.
+The readers @t{concrete-syntax-tree:first} and
+@t{concrete-syntax-tree:rest} return the CST children.
+
+Note that the CST children and wad children are usually distinct but not
+disjoint sets.  That is, usually some but not all CST children are also
+wad children and the other way around
+(@pxref{Concrete Syntax Tree Representation} and @ref{Children Protocol}
+for details).
+@end deftp
+
+@defclassa{labeled-object-wad,@toppackage{}}
+
+Instances of subclasses of this class represent labeled object
+definitions and references which are usually written using the
+@t{#@var{N}=} and @t{#@var{N}#} reader macros.
+@end deftp
+
+@defclassa{labeled-object-definition-wad,@toppackage{}}
+
+Instances of this class represent labeled object definitions which are
+usually written using the @t{#@var{N}=} reader macro.
+@end deftp
+
+@defclassa{labeled-object-reference-wad,@toppackage{}}
+
+Instances of this class represent labeled object references which are
+usually written using the @t{#@var{N}#} reader macro.
+@end deftp
+
+@defclassa{read-conditional-wad,@toppackage{}}
+
+Instances of subclasses of this class represent a read-time conditional
+expression for which the guarded sub-expression was @emph{read} (as
+opposed to skipped).  Instances consist of a feature expression and
+potentially a subsequent expression.
+
+See @classref{skipped-conditional-wad,@toppackage{}} and its subclasses
+for the representation of the opposite case, that is the guarded
+expression was @emph{skipped}.
+@end deftp
+
+@defclassa{read-positive-conditional-wad,@toppackage{}}
+
+Instances of this class represent a read-time condition expression with
+a @t{#+} feature expression and a guarded expression that was
+@emph{read} (as opposed to skipped).  In other words, the feature
+expression must have evaluated to @emph{true}.
+@end deftp
+
+@defclassa{read-negative-conditional-wad,@toppackage{}}
+
+Instances of this class represent a read-time condition expression with
+a @t{#-} feature expression and a guarded expression that was
+@emph{read} (as opposed to skipped).  In other words, the feature
+expression must have evaluated to @emph{false}.
+@end deftp
+
+@defclassa{non-cst-wad,@toppackage{}}
+
+Superclass for wad classes that are not sublcasses of
+@t{concrete-syntax-tree:cst}.  Objects that are instances of subclasses
+of this class mostly represent ``skipped material'' such as comments and
+expressions that the reader ignored.
+@end deftp
+
+@defclassa{skipped-wad,@toppackage{}}
+
+Superclass of wad classes that represent ``skipped material'' such as
+comments and expressions that the reader ignored.
+@end deftp
+
+@defclassa{ignored-wad,@toppackage{}}
+
+Superclass of wad classes that represent expressions that the reader
+ignored.
+@end deftp
+
+@defclassa{reader-macro-wad,@toppackage{}}
+
+Instances of this class represent material that was skipped because the
+reader encountered an unknown or invalid reader macro.
+@end deftp
+
+@defclassa{read-suppress-wad,@toppackage{}}
+
+Instances of this class represent material that was skipped because
+@t{*read-suppress*} was true.
+@end deftp
+
+@defclassa{skipped-conditional-wad,@toppackage{}}
+
+Instances of subclasses of this class represent a read-time conditional
+expression for which the guarded sub-expression was @emph{skipped} (as
+opposed to read).  Instances consist of a feature expression and
+potentially a subsequent skipped expression.
+
+See @classref{read-conditional-wad,@toppackage{}} and its subclasses
+for the representation of the opposite case, that is the guarded
+expression was @emph{read}.
+@end deftp
+
+@defclassa{skipped-positive-conditional-wad,@toppackage{}}
+
+Instances of this class represent skipped material that consists of a
+@t{#+} feature expression and potentially a skipped subsequent
+expression.  In other words, the feature expression must have evaluated
+to @emph{false}.
+@end deftp
+
+@defclassa{skipped-negative-conditional-wad,@toppackage{}}
+
+Instances of this class represent skipped material that consists of a
+@t{#-} feature expression and potentially a skipped subsequent
+expression.  In other words, the feature expression must have evaluated
+to @emph{true}.
+@end deftp
+
+@defclassa{comment-wad,@toppackage{}}
+
+Instances of subclasses of this class represent comments in the source
+text.
+@end deftp
+
+@defclassa{block-comment-wad,@toppackage{}}
+
+Instances of this class represent a @commonlisp{} block comment which
+has the syntax @t{#|...|#} when the reader operates in its default
+configuration.
+@end deftp
+
+@defclassa{semicolon-comment-wad,@toppackage{}}
+
+Instances of this class represent a @commonlisp{} line comment which has
+the syntax @t{;...} when the reader operates in its default
+configuration.
+@end deftp
+
+@defgena{semicolon-count,@toppackage{}} semicolon-comment-wad
+
+This reader returns the number of @t{#\;} characters@footnote{Or other
+line comment initiating characters, depending on the readtable.} at the
+beginning of @var{semicolon-comment-wad}.
+@end deffn
+
+@defclassa{text-wad,@toppackage{}}
+
+Instances of this class and its subclasses represent text chunks such as
+words within comments, strings or symbol names.
+@end deftp
+
+@defclassa{word-wad,@toppackage{}}
+
+Instances of this class represent words within comments, strings or
+symbol names.
+@end deftp
+
+@defgena{misspelled,@toppackage{}} word-wad
+
+Return true if @var{word-wad} contains a spelling error.
+@end deffn
+
+@defclassa{error-wad,@toppackage{}}
+
+Instances of this class encapsulate errors that occurred during the
+processing of buffer content.
+
+The location information of instances corresponds to that of the
+encapsulated error conditions.
+@end deftp
+
+@defgena{condition,@toppackage{}} error-wad
+
+Return the encapsulated condition of @var{error-wad}.
+
+The returned object is of type @t{cl:condition}, usually of type
+@t{cl:error} or @t{cl:warning}.
+@end deffn
+
+@node The Associated Buffer Protocol
+@section The Associated Buffer Protocol
+
+This tiny protocol consists of a single generic function which looks up
+the @cluffer{} buffer associated with a given object.  Clients can use
+this protocol for looking up the buffers associated with @t{cache} and
+@classref{analyzer,@toppackage{}} objects.
+
+@defgena{buffer,@toppackage{}} object
+
+Return the @cluffer{} buffer associated with @var{object}.
+@end deffn
+
+@node The Cache Protocol
+@section The Cache Protocol
+
+@cindex cache
+This protocol extends the @ref{The Associated Buffer Protocol,associated
+buffer protocol}, that is, the
+@ref{Generic-Function @toppackage{}|buffer,buffer generic function} is
+applicable to objects which implement the cache protocol.
+
+@defgena{time-stamp,@toppackage{}} cache
+
+Return @t{nil} or an integer time stamp which indicates the most recent
+time stamp of the associated buffer for which the cache has been
+synchronized to the contents of the buffer.
+@end deffn
+
+@defgena{line-count,@toppackage{}} cache
+
+Return the number of lines in @var{cache}.
+
+The returned number reflects the state of the associated buffer at the
+time returned by the @t{time-stamp} reader for @var{cache}, not
+necessarily the current state.
+@end deffn
+
+@defgena{line-length,@toppackage{}} cache line-number
+
+Return the number of items in the line with number @var{line-number}
+within @var{cache}.
+
+The returned number reflects the state of the associated buffer at the
+time returned by the @t{time-stamp} reader for @var{cache}, not
+necessarily the current state.
+@end deffn
+
+@defgena{line-contents,@toppackage{}} cache line-number
+
+Return the contents of the line with number @var{line-number} within
+@var{cache} as a @t{cl:vector} if items.
+
+The returned items reflect the state of the associated buffer at the
+time returned by the @t{time-stamp} reader for @var{cache}, not
+necessarily the current state.
+@end deffn
+
+@defgena{find-wad-beginning-line,@toppackage{}} cache line-number
+
+Return the wad in @var{cache} the @ref{term-initial-character,initial
+character} of which has the minimal item number within @var{line-number}
+or @t{nil}.
+@end deffn
+
+@defgena{find-wads-containing-position,@toppackage{}} cache@
+  line-number column-number @pkey{} start-relation end-relation
+
+Return a list of pairs of the form @t{(@var{n} . @var{wad})} where
+@var{wad} is a wad, and @var{n} is the absolute start line number of
+@var{wad}, such that all the wads are in @var{cache} and contain the
+position defined by @var{line-number} and @var{column-number}.  The list
+is ordered from the innermost wad containing the position to the
+top-level wad containing the position.  The empty list is returned if
+the position is inside no wad.
+
+Each of @var{start-relation} and @var{end-relation} which must be
+either the symbol @t{<} or the symbol @t{<=} and select the respective
+relation for comparisons of location.  @var{start-relation} controls
+how the start location of candidate wads is compared to the location
+defined by @var{line-number} and @var{column-number}.
+@var{end-relation} controls the comparison for the end location of
+candidate wads.
+@end deffn
+
+@defgena{map-wads-containing-position,@toppackage{}} function@
+  cache line-number column-number @pkey{} start-relation end-relation
+
+Call @var{function} once for each wad in @var{cache} that contains the
+location defined by @var{line-number} and @var{column-number}.  The
+function calls happen in the order from the innermost wad containing
+the location to the top-level wad containing the location.
+
+Each of @var{start-relation} and @var{end-relation} which must be
+either the symbol @t{<} or the symbol @t{<=} and select the respective
+relation for comparisons of location.  @var{start-relation} controls
+how the start location of candidate wads is compared to the location
+defined by @var{line-number} and @var{column-number}.
+@var{end-relation} controls the comparison for the end location of
+candidate wads.
+@end deffn
+
+@node The Analyzer Protocol
+@section The Analyzer Protocol
+
+@cindex analyzer
+This protocol extends the
+@ref{The Associated Buffer Protocol,associated buffer protocol}, that
+is, the @genref{buffer,@toppackage{}} is applicable to objects which
+implement the analyzer protocol.
+
+@defgena{cache,@toppackage{}} analyzer
+
+Return the cache associated with @var{analyzer}.
+@end deffn
+
+@defgena{update,@toppackage{}} analyzer
+
+Update the cache associated with @var{analyzer} according to changes in
+the buffer associated with @var{analyzer}.
+
+The function does not return a meaningful result.  Instead, the client
+queries the updated cache associated with @var{analyzer} after the
+update is complete.
+@end deffn
+
+@defclassa{analyzer,@toppackage{}}
+
+Instances of this class and potential subclasses implement the analyzer
+protocol by tying together three aspects:
+
+@itemize
+
+@item
+The analyzer instance consumes the content of an associated @cluffer{}
+buffer.
+
+@item
+The analyzer implements the behavior of a @commonlisp{} stream which
+enables the @eclector{}-based reader to read expressions from the
+analyzer.
+
+@item
+The analyzer maintains the results of reading from the stream in an
+associated cache of parse results (@pxref{Parse Results}).
+
+@end itemize
+
+See @ref{fig:analyzer} and @ref{The Analyzer} for an overview of the
+different components and their relations.
+@end deftp

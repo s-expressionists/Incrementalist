@@ -46,6 +46,7 @@ Copyright @copyright{} 2024, 2025 Jan Moringen
 @menu
 * Introduction::
 * Concepts::
+* External Protocols::
 * Incremental Parsing::
 * Concept index::
 * Function and macro and variable and type index::
@@ -54,6 +55,8 @@ Copyright @copyright{} 2024, 2025 Jan Moringen
 @include chapter-introduction.texi
 
 @include chapter-concepts.texi
+
+@include chapter-external-protocols.texi
 
 @include chapter-incremental-parsing.texi
 

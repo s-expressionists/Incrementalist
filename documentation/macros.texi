@@ -92,6 +92,9 @@ Concrete Syntax Tree
 @anchor{Generic-Function \PACKAGE\|\NAME\}
 @deffn {Generic Function} {@symbol{\NAME\,\PACKAGE\}}
 @end macro
+@macro genref{NAME,PACKAGE}
+@link{Generic-Function \PACKAGE\|\NAME\,\PACKAGE\:\NAME\}
+@end macro
 
 @macro defmaca{NAME,PACKAGE}
 @anchor{Macro \PACKAGE\|\NAME\}
@@ -101,4 +104,7 @@ Concrete Syntax Tree
 @macro defclassa{NAME,PACKAGE}
 @anchor{Class \PACKAGE\|\NAME\}
 @deftp {Class} {@symbol{\NAME\,\PACKAGE\}}
+@end macro
+@macro classref{NAME,PACKAGE}
+@link{Class \PACKAGE\|\NAME\,\PACKAGE\:\NAME\}
 @end macro

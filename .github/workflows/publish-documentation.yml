@@ -17,6 +17,24 @@ jobs:
 
       - uses: actions/checkout@v1
 
+      - name: Install quicklisp
+        run: |
+          wget https://beta.quicklisp.org/quicklisp.lisp
+          sbcl --noinform --disable-debugger        \
+            --load quicklisp.lisp                   \
+            --eval '(quicklisp-quickstart:install)' \
+            --quit
+
+      # Until concrete-syntax-tree 0.3, eclector 0.11 and a recent
+      # version of spell become available via Quicklisp
+      - name: Clone dependencies into local-projects
+        run: |
+          cd "${HOME}/quicklisp/local-projects"                                             \
+            && git clone -b master https://github.com/robert-strandh/cluffer                \
+            && git clone -b master https://github.com/s-expressionists/concrete-syntax-tree \
+            && git clone -b master https://github.com/s-expressionists/eclector             \
+            && git clone -b main https://github.com/s-expressionists/spell
+
       - name: Build documentation
         run: |
           cd documentation

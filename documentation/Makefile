@@ -1,8 +1,14 @@
+SBCL ?= sbcl
+QUICKLISP_DIRECTORY ?= $${HOME}/quicklisp/
+ASDF_SOURCE_REGISTRY ?= (quote (:source-registry (:directory "'$$(pwd)/..'") :ignore-inherited-configuration))
+
 NAME = incrementalist
 
 SOURCES = $(wildcard *.texi)
 
-GENERATED = generated-version.texi
+GENERATED = generated-version.texi               \
+            generated-token-class-hierarchy.texi \
+            generated-wad-class-hierarchy.texi
 
 INPUTS = $(SOURCES) $(GENERATED)
 
@@ -21,11 +27,23 @@ all : $(NAME).info $(NAME).pdf $(NAME).html
 	rsvg-convert --format=png $< > $@
 
 generated-version.texi: ../data/version-string.sexp
-	sbcl --noinform --disable-debugger --no-sysinit --no-userinit                           \
-             --eval '(require :asdf)'                                                           \
-             --eval '(format t "@macro sysversion~%~A~%@end macro" (uiop:read-file-form "$<"))' \
-             --quit                                                                             \
+	$(SBCL) --noinform --disable-debugger --no-sysinit --no-userinit                     \
+          --eval '(require :asdf)'                                                           \
+          --eval '(format t "@macro sysversion~%~A~%@end macro" (uiop:read-file-form "$<"))' \
+          --quit                                                                             \
           > $@
+
+generated-token-class-hierarchy.texi generated-wad-class-hierarchy.texi &: \
+  ../tools/generate-documentation.lisp \
+  ../code/token.lisp                   \
+  ../code/wad.lisp
+	$(SBCL) --noinform --disable-debugger --no-sysinit --no-userinit                   \
+          --load "$(QUICKLISP_DIRECTORY)/setup.lisp"                                       \
+          --eval '(asdf:initialize-source-registry $(ASDF_SOURCE_REGISTRY))'               \
+          --eval '(ql:quickload (list "incrementalist" "utilities.print-tree") :silent t)' \
+          --load '../tools/generate-documentation.lisp'                                    \
+          --quit --end-toplevel-options                                                    \
+          generated-token-class-hierarchy.texi generated-wad-class-hierarchy.texi
 
 $(NAME).info: $(INPUTS) $(IMAGES)
 	makeinfo --output $@ $(NAME).texi

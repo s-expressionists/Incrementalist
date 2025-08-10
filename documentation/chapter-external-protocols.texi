@@ -43,15 +43,7 @@ package markers, radix for numbers) that are not part of the
 
 This section describes token classes and readers.
 
-@example
-@classref{token,@toppackage{}}
-`-@classref{symbol-token,@toppackage{}}
-  +-@classref{uninterned-symbol-token,@toppackage{}}
-  `-@classref{interned-symbol-token,@toppackage{}}
-    +-@classref{existing-symbol-token,@toppackage{}}
-    +-@classref{non-existing-package-symbol-token,@toppackage{}}
-    `-@classref{non-existing-symbol-token,@toppackage{}}
-@end example
+@include generated-token-class-hierarchy.texi
 
 @defclassa{token,@toppackage{}}
 
@@ -339,30 +331,7 @@ The elements of the returned list of instances of
 The following diagram illustrates the hierarchy of wad classes which
 @sysname{} provides:
 
-@example
-@classref{basic-wad,@toppackage{}}
-+-@classref{wad,@toppackage{}}
-| +-@classref{cst-wad,@toppackage{}}
-| | +-@classref{atom-wad,@toppackage{}}
-| | +-@classref{cons-wad,@toppackage{}}
-| | `-@classref{labeled-object-wad,@toppackage{}}
-| |   +-@classref{labeled-object-reference-wad,@toppackage{}}
-| |   `-@classref{labeled-object-definition-wad,@toppackage{}}
-| `-@classref{non-cst-wad,@toppackage{}}
-|   +-@classref{skipped-wad,@toppackage{}}
-|   | +-@classref{ignored-wad,@toppackage{}}
-|   | | +-@classref{reader-macro-wad,@toppackage{}}
-|   | | +-@classref{read-suppress-wad,@toppackage{}}
-|   | | `-@classref{skipped-conditional-wad,@toppackage{}}
-|   | |   +-@classref{skipped-negative-conditional-wad,@toppackage{}}
-|   | |   `-@classref{skipped-positive-conditional-wad,@toppackage{}}
-|   | `-@classref{comment-wad,@toppackage{}}
-|   |   +-@classref{block-comment-wad,@toppackage{}}
-|   |   `-@classref{semicolon-comment-wad,@toppackage{}}
-|   `-@classref{text-wad,@toppackage{}}
-|     `-@classref{word-wad,@toppackage{}}
-`-@classref{error-wad,@toppackage{}}
-@end example
+@include generated-wad-class-hierarchy.texi
 
 Instances of subclasses of @classref{basic-wad,@toppackage{}} can be
 used with the @ref{Children Protocol}, the @ref{Family Relations
@@ -569,6 +538,12 @@ beginning of @var{semicolon-comment-wad}.
 
 Instances of this class and its subclasses represent text chunks such as
 words within comments, strings or symbol names.
+@end deftp
+
+@defclassa{punctuation-wad,@toppackage{}}
+
+Instances of this class represent punctuation characters within comments,
+strings or symbol names.
 @end deftp
 
 @defclassa{word-wad,@toppackage{}}

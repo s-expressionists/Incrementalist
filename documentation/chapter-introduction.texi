@@ -1,0 +1,92 @@
+@node Introduction
+@chapter Introduction
+
+@sysname{} is a system for incrementally parsing possibly invalid
+@commonlisp{} code, which will typically exist within the buffer of a
+code editor, into concrete and abstract syntax trees.  As a first
+concrete illustration, consider the following simplified example of that
+process
+@footnote{While they are not the focus of the example, we provide the
+definitions of the two helper functions @t{make-buffer-with-content} and
+@t{print-parse-result} for completeness:
+
+@lisp
+(defun make-buffer-with-content (content)
+  (let* ((line (make-instance 'cluffer-standard-line:open-line))
+         (buffer (make-instance 'cluffer-standard-buffer:buffer :initial-line line))
+         (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
+    (cluffer:attach-cursor cursor line 0)
+    (loop for c across content
+          do (case c
+               (#\Newline (cluffer:split-line cursor))
+               (t         (cluffer:insert-item cursor c))))
+    (values buffer cursor)))
+
+(defun print-parse-result (stream root)
+  (utilities.print-tree:print-tree *standard-output*
+                                   first-result
+                                   (utilities.print-tree:make-node-printer
+                                    (lambda (stream depth node)
+                                      (princ node stream))
+                                    nil
+                                    #'incrementalist:children)))
+@end lisp
+}:
+
+@lisp
+(let* ((buffer (make-buffer-with-content "(#|foo|# 1 (2 . 3))"))
+       (analyzer (make-instance 'incrementalist:analyzer :buffer buffer))
+       (cache (incrementalist:cache analyzer)))
+  (incrementalist:update analyzer)
+  (let ((first-result (cdr (first (incrementalist:find-wads-containing-position
+                                   cache 0 0)))))
+    (print-parse-result *standard-output* first-result)))
+@end lisp
+
+This code uses @sysname{} to parse (in the @t{incrementalist:update}
+call) the provided buffer content and present the first entry of the
+resulting cache of parse results as a tree which looks similar to the
+following:
+
+@example
+#<CONS-WAD-WITH-EXTRA-CHILDREN abs:0[0],0 -> 0,19>
++-#<BLOCK-COMMENT-WAD rel:0[0],1 -> 0,8>
+| `-#<WORD-WAD rel:0[0],3 -> 0,6>
++-#<ATOM-WAD rel:0[0],9 -> 0,10 raw: 1>
+`-#<CONS-WAD-WITH-EXTRA-CHILDREN rel:0[0],11 -> 0,18>
+  +-#<ATOM-WAD rel:0[0],12 -> 0,13 raw: 2>
+  +-#<ATOM-WAD rel:0[0],14 -> 0,15 raw: #:|.|>
+  `-#<ATOM-WAD rel:0[0],16 -> 0,17 raw: 3>
+@end example
+
+Historically, initial aspects of @sysname{} have been developed in the
+context of the @climacs{} editor for @commonlisp{} code.  @sysname is
+the result extracting some of that code into a separate system while
+enhancing many aspects (in fact, not much of the original ideas or code
+remains at this point).
+
+@itemize
+
+@item
+@sysname{} uses the @clufferlink{} library for its buffer representation
+which has better performance characteristic, especially on large
+buffers, and makes it easier to write sophisticated parsers for buffer
+contents compared to the @climacs{} version.
+
+@item
+In a similar fashion, @sysname{} uses the @eclectorlink{} library for
+parsing the contents of @commonlisp{} buffers instead of the specialized
+incremental parser used in @climacs{}.  Since @eclector{} is a
+conforming but extensible @commonlisp{} reader, its use reduces
+maintenance work and ensures that @sysname{} parses the buffer contents
+in the same way that a @commonlisp{} compiler would.  @eclector{} also
+provides access to ``skipped material'' like comments and handles
+recovering from syntax errors both of which are essential for a code
+editor.
+
+@item
+@sysname{} is independent of any particular library for making graphic
+user interfaces, allowing it to be configured with different such
+libraries.
+
+@end itemize

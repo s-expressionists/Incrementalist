@@ -52,7 +52,7 @@ Copyright @copyright{} 2024, 2025 Jan Moringen
 * Function and macro and variable and type index::
 @end menu
 
-@include chapter-intro.texi
+@include chapter-introduction.texi
 
 @include chapter-buffer-representation.texi
 

@@ -1,6 +1,4 @@
-@c ===================================================================
 @c Abbreviations
-@c ===================================================================
 
 @macro sysname
 Incrementalist
@@ -42,9 +40,7 @@ Concrete Syntax Tree
 @url{https://github.com/s-expressionists/Concrete-Syntax-Tree,@cst{}}
 @end macro
 
-@c ===================================================================
 @c Lambda list keywords
-@c ===================================================================
 
 @macro optional
 @t{&optional}
@@ -59,9 +55,7 @@ Concrete Syntax Tree
 @t{&body}
 @end macro
 
-@c ===================================================================
 @c Semantic markup and references
-@c ===================================================================
 
 @macro setf{NAME}
 (setf \NAME\)

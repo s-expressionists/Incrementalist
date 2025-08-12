@@ -591,10 +591,10 @@ Return the @cluffer{} buffer associated with @var{object}.
 @section The Cache Protocol
 
 @cindex cache
-This protocol extends the @ref{The Associated Buffer Protocol,associated
-buffer protocol}, that is, the
-@ref{Generic-Function @toppackage{}|buffer,buffer generic function} is
-applicable to objects which implement the cache protocol.
+This protocol extends the
+@ref{The Associated Buffer Protocol,associated buffer protocol},
+that is, the @genref{buffer,@toppackage{}} is applicable to objects
+which implement the cache protocol.
 
 @defgena{time-stamp,@toppackage{}} cache
 
@@ -608,8 +608,8 @@ synchronized to the contents of the buffer.
 Return the number of lines in @var{cache}.
 
 The returned number reflects the state of the associated buffer at the
-time returned by the @t{time-stamp} reader for @var{cache}, not
-necessarily the current state.
+time returned by the @genref{time-stamp,@toppackage{}} reader for
+@var{cache}, not necessarily the current state.
 @end deffn
 
 @defgena{line-length,@toppackage{}} cache line-number
@@ -618,8 +618,8 @@ Return the number of items in the line with number @var{line-number}
 within @var{cache}.
 
 The returned number reflects the state of the associated buffer at the
-time returned by the @t{time-stamp} reader for @var{cache}, not
-necessarily the current state.
+time returned by the @genref{time-stamp,@toppackage{}} reader for
+@var{cache}, not necessarily the current state.
 @end deffn
 
 @defgena{line-contents,@toppackage{}} cache line-number
@@ -628,8 +628,8 @@ Return the contents of the line with number @var{line-number} within
 @var{cache} as a @t{cl:vector} if items.
 
 The returned items reflect the state of the associated buffer at the
-time returned by the @t{time-stamp} reader for @var{cache}, not
-necessarily the current state.
+time returned by the @genref{time-stamp,@toppackage{}} reader for
+@var{cache}, not necessarily the current state.
 @end deffn
 
 @defgena{find-wad-beginning-line,@toppackage{}} cache line-number

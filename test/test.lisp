@@ -17,8 +17,7 @@
         (inc:text-wad ((0 1) (0 2))))))
     ("||"
      '((inc:atom-wad ((0 0) (0 2))
-          (:raw (inc:interned-symbol-token
-                 :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "")))
+          (:raw (inc:interned-symbol-token :symbol ("TEST" "")))
         (inc:punctuation-wad ((0 0) (0 1)))
         (inc:punctuation-wad ((0 1) (0 2))))))
     ("#:foo"
@@ -27,13 +26,13 @@
         (inc:punctuation-wad ((0 0) (0 1)))
         (inc:punctuation-wad ((0 1) (0 2)))
         (inc:word-wad ((0 2) (0 5))))))
-    ("foo::bar"
-     '((inc:atom-wad ((0 0) (0 8))
-          (:raw (inc:symbol-token :symbol ("FOO" "BAR")))
-        (inc:word-wad ((0 0) (0 3)))
-        (inc:punctuation-wad ((0 3) (0 4)))
+    ("test::bar"
+     '((inc:atom-wad ((0 0) (0 9))
+          (:raw (inc:symbol-token :symbol ("TEST" "BAR")))
+        (inc:word-wad ((0 0) (0 4)))
         (inc:punctuation-wad ((0 4) (0 5)))
-        (inc:word-wad ((0 5) (0 8))))))
+        (inc:punctuation-wad ((0 5) (0 6)))
+        (inc:word-wad ((0 6) (0 9))))))
     ("#'foo"
      `((inc:cons-wad ((0 0) (0 5)) ()
         ,(expected-symbol-wad '((0 2) (0 5)) "FOO"
@@ -133,7 +132,7 @@
        (inc:read-suppress-wad ((0 4) (0 5)) ()))))
     ("#-a b"
      `((inc:read-negative-conditional-wad ((0 0) (0 5))
-          (:raw (inc:interned-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
+          (:raw (inc:interned-symbol-token :symbol ("TEST" "B")))
         ,(expected-symbol-wad '((0 2) (0 3)) :a)
         ,(expected-symbol-wad '((0 4) (0 5)) "B"))))
     ("#-
@@ -330,11 +329,9 @@ a b"
         (inc:word-wad ((0 1) (0 4)) (:misspelled nil)))))
     ("foo"
      '((inc:atom-wad ((0 0) (0 3))
-          (:raw (inc:interned-symbol-token
-                 :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "FOO")))
+          (:raw (inc:interned-symbol-token :symbol ("TEST" "FOO")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled t)))))
     ("bar"
      '((inc:atom-wad ((0 0) (0 3))
-        (:raw (inc:interned-symbol-token
-               :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "BAR")))
+        (:raw (inc:interned-symbol-token :symbol ("TEST" "BAR")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled nil)))))))

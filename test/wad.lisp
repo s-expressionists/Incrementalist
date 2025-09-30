@@ -18,6 +18,9 @@
 (defun state-value-equal (expected actual)
   (typecase expected
     (symbol (string= expected actual))
+    (string (if (parcl:packagep actual)
+                (string= expected (parcl:package-name actual))
+                (equal expected actual)))
     (t      (equal expected actual))))
 
 (test state-value.smoke
@@ -56,13 +59,14 @@
                                 "~@<Expected the value of aspect ~S in wad ~A ~
                                 to be ~S but it is ~S.~@:>"
                                 aspect wad expected-value actual-value))))))
-           (test-case (input specs)
-             (loop :with result = (parse-result input)
+           (test-case (input-and-initargs specs)
+             (loop :with result = (apply #'parse-result (a:ensure-list
+                                                         input-and-initargs))
                    :for (path expected-state-values) :in specs
                    :do (check-wad result path expected-state-values))))
     (test-case
      "1"
-     '(((0) ((*package*       . "INCREMENTALIST.TEST.TEST-PACKAGE")
+     '(((0) ((*package*       . "TEST")
              (*read-suppress* . nil)
              (*read-base*     . 10)
              (foo             . :missing)))))
@@ -71,16 +75,16 @@
      '(((0 0) ((*package*       . "KEYWORD")
                (*read-suppress* . nil)
                (*read-base*     . 10)))
-       ((0 1) ((*package*       . "INCREMENTALIST.TEST.TEST-PACKAGE")
+       ((0 1) ((*package*       . "TEST")
                (*read-suppress* . t)
                (*read-base*     . 10)))))
     (test-case
      "#.(cl:setf cl:*read-base* 11) 1"
-     '(((1) ((*package*       . "INCREMENTALIST.TEST.TEST-PACKAGE")
+     '(((1) ((*package*       . "TEST")
              (*read-suppress* . nil)
              (*read-base*     . 11)))))
     (test-case
-     "(cl:in-package \"FOO\") 1"
+     '("(cl:in-package \"FOO\") 1" :extra-packages ("FOO"))
      '(((1) ((*package*       . "FOO")
              (*read-suppress* . nil)
              (*read-base*     . 10)))))))

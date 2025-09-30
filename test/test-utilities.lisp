@@ -17,7 +17,7 @@
     (b:insert-items-at cursor content :line-separator #\Newline)
     (values buffer cursor)))
 
-(defvar *test-package-name* "INCREMENTALIST.TEST.TEST-PACKAGE")
+(defvar *test-package-name* "TEST")
 (defvar *using-package-name* "INCREMENTALIST.TEST.USING-PACKAGE")
 
 (defun prepared-package-system ()
@@ -205,8 +205,9 @@
             (let* ((symbol              (inc:symbol raw))
                    (actual-symbol-name  (parcl:symbol-name symbol))
                    (package             (parcl:symbol-package symbol))
-                   (actual-package-name (parcl:package-name package)))
-              (is-with-node (string= expected-package-name actual-package-name)
+                   (actual-package-name (when package
+                                          (parcl:package-name package))))
+              (is-with-node (equal expected-package-name actual-package-name)
                             "package name of the symbol token of the node")
               (is-with-node (string= expected-name actual-symbol-name)
                             "name of the symbol token of the node")))))
@@ -226,13 +227,15 @@
                   (let* ((expected-symbol       (inc:symbol expected))
                          (expected-symbol-name  (parcl:symbol-name expected-symbol))
                          (expected-package      (parcl:symbol-package expected-symbol))
-                         (expected-package-name (parcl:package-name expected-package))
+                         (expected-package-name (when expected-package
+                                                  (parcl:package-name expected-package)))
                          (actual-symbol         (inc:symbol actual))
                          (actual-symbol-name    (parcl:symbol-name actual-symbol))
                          (actual-package        (parcl:symbol-package actual-symbol))
-                         (actual-package-name   (parcl:package-name actual-package)))
-                    (is-with-node (string= expected-package-name
-                                           actual-package-name)
+                         (actual-package-name   (when actual-package
+                                                  (parcl:package-name actual-package))))
+                    (is-with-node (equal expected-package-name
+                                         actual-package-name)
                                   "package name of the symbol token of the node")
                     (is-with-node (string= expected-symbol-name
                                            actual-symbol-name)
@@ -372,7 +375,7 @@
     (location symbol-name
      &key (package-name (if (symbolp symbol-name)
                             (package-name (symbol-package symbol-name))
-                            "INCREMENTALIST.TEST.TEST-PACKAGE"))
+                            *test-package-name*))
           (token-class  'inc:interned-symbol-token)
           (words        (cond ((equal package-name "COMMON-LISP")
                                '())

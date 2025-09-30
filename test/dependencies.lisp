@@ -312,7 +312,7 @@ bar
 (test dependencies.between-expressions.7
   (edits-cases ()
     ("(cl:in-package #:common-lisp)
-; (cl:in-package #:incrementalist.test.test-package)
+; (cl:in-package #:test)
 ;;;
 defun"
      `((inc:cons-wad ((0 0) (0 29)) ()
@@ -332,15 +332,15 @@ defun"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
                               :words        '(:ignore-children)))
-       (inc:cons-wad ((1 0) (1 50)) ()
+       (inc:cons-wad ((1 0) (1 22)) ()
         ,(expected-symbol-wad '((1 1) (1 14)) 'in-package)
-        ,(expected-symbol-wad '((1 15) (1 49)) "INCREMENTALIST.TEST.TEST-PACKAGE"
+        ,(expected-symbol-wad '((1 15) (1 21)) "TEST"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
                               :words        '(:ignore-children)))
        (inc:semicolon-comment-wad ((2 0) (3 0)) () :ignore-children)
        ,(expected-symbol-wad '((3 0) (3 5)) "DEFUN"
-                             :package-name "INCREMENTALIST.TEST.TEST-PACKAGE"
+                             :package-name "TEST"
                              :words        '(:ignore-children))))))
 
 (test dependencies.between-expressions.8

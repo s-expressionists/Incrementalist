@@ -4,12 +4,16 @@
   (if (and (typep expression '(cons symbol-token
                                     (cons symbol-token
                                           (cons t null))))
-           (and (equal (package-name (first expression))
-                       "COMMON-LISP")
-                (equal (name (first expression)) "SETF"))
-           (and (equal (package-name (second expression))
-                       "COMMON-LISP")
-                (equal (name (second expression)) "*READ-BASE*")))
+           (let* ((symbol  (symbol (first expression)))
+                  (package (pkg:symbol-package symbol)))
+             (and package
+                  (equal (pkg:package-name package) "COMMON-LISP")
+                  (equal (pkg:symbol-name symbol) "SETF")))
+           (let* ((symbol  (symbol (second expression)))
+                  (package (pkg:symbol-package symbol)))
+             (and package
+                  (equal (pkg:package-name package) "COMMON-LISP")
+                  (equal (pkg:symbol-name symbol) "*READ-BASE*"))))
       (let* ((form   (subst `(eclector.reader:state-value ,client '*read-base*)
                             '*read-base*
                             `(setf *read-base* ,(third expression))))

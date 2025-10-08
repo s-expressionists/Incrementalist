@@ -50,6 +50,20 @@
       (t
        (values-list values)))))
 
+(define-condition package-error-with-location (eclector.base::stream-position-reader-error)
+  ((%cause :initarg :cause
+           ;; :type   package-error
+           :reader  cause)))
+
+(defmethod acclimation:report-condition ((condition package-error-with-location)
+                                         (stream    t)
+                                         (language  t))
+  (acclimation:report-condition (cause condition) stream language))
+
+(princ (make-condition 'package-error-with-location :cause           (make-condition 'parcl:package-does-not-exist-error :package "hi")
+                                                    :stream          *standard-input*
+                                                    :stream-position 10))
+
 (defmethod reader:interpret-symbol-token ((client                    client)
                                           (input-stream              t)
                                           (token                     string)

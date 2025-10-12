@@ -228,11 +228,20 @@
                             (dbg:log :read "Top-level result ~A~%  wad    ~A~%  orphan ~:A~%"
                                      kind wad orphan-result)
                             (when (eq kind :object)
+                              ;; TODO: multiple improvements are needed
+                              ;; + A single `apply-semantics' should be able to signal multiple errors
+                              ;; + Error recovery
+                              ;; + Signaled errors should have a way to indicate precise source locations
                               (handler-case
                                   (apply-semantics reader-client wad)
                                 (error (condition)
-                                  ;; TODO: turn into error-wad
-                                  (princ condition *trace-output*))))
+                                  (add-error wad
+                                             (make-error-wad
+                                              condition
+                                              (start-line wad)
+                                              (start-column wad)
+                                              (end-line wad)
+                                              (end-column wad))))))
                             kind))
             ;; If we reach EOF while reading whitespace, the cache
             ;; suffix must be empty, and the cache residue is either

@@ -218,4 +218,36 @@
         (pkg:intern name eclector.reader)))
     client))
 
+(defun make-package-system-client ()
+  (let* ((client       (make-instance 'package-system-client))
+         (pkg:*client* client))
+    (labels ((copy-external-symbols (source-package target-package)
+               (let ((source-package (find-package source-package))
+                     (shadowing      (mapcar #'symbol-name (package-shadowing-symbols
+                                                            source-package))))
+                 (pkg:shadow shadowing target-package)
+                 (do-external-symbols (symbol source-package)
+                   (when (eq (symbol-package symbol) source-package)
+                     (let ((new-symbol (pkg:intern (symbol-name symbol) target-package)))
+                       (pkg:export new-symbol target-package))))))
+             (copy-package (source-package)
+               (let* ((package-name (package-name source-package))
+                      (package      (pkg:find-package package-name)))
+                 (format *trace-output* "Copying ~32A -> ~32A~%" source-package package)
+                 (if (not (null package))
+                     package
+                     (let* ((nicknames       (package-nicknames source-package))
+                            (used            (package-use-list source-package))
+                            (local-nicknames (sb-ext:package-local-nicknames source-package))
+                            (package         (pkg:make-package
+                                              package-name :nicknames nicknames)))
+                       (copy-external-symbols package-name package)
+                       (parcl:use-package (mapcar #'copy-package used) package)
+                       (loop :for (nickname . nicknamed-package) :in local-nicknames
+                             :do (pkg:add-package-local-nickname
+                                  nickname (copy-package nicknamed-package) package))
+                       package)))))
+      (mapc #'copy-package (list-all-packages)))
+    client))
+
 (setf pkg:*client* (make-package-system-client))

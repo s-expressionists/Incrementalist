@@ -201,7 +201,7 @@
             ;; TODO: missing initargs
             )
 
-(defun make-package-minimal-system-client ()
+(defun make-minimal-package-system-client ()
   (let ((client (make-instance 'package-system-client)))
     (let* ((pkg:*client*    client)
            (keyword         (pkg:make-package "KEYWORD"))
@@ -220,29 +220,46 @@
 
 (defun make-package-system-client ()
   (let* ((client       (make-instance 'package-system-client))
-         (pkg:*client* client))
+         (pkg:*client* client)
+         (seen         (make-hash-table :test #'eq)))
     (labels ((copy-external-symbols (source-package target-package)
-               (let ((source-package (find-package source-package))
-                     (shadowing      (mapcar #'symbol-name (package-shadowing-symbols
-                                                            source-package))))
-                 (pkg:shadow shadowing target-package)
-                 (do-external-symbols (symbol source-package)
-                   (when (eq (symbol-package symbol) source-package)
-                     (let ((new-symbol (pkg:intern (symbol-name symbol) target-package)))
-                       (pkg:export new-symbol target-package))))))
+               (do-external-symbols (symbol source-package)
+                 (let* ((symbol-name    (symbol-name symbol))
+                        (symbol-package (symbol-package symbol))
+                        (new-symbol     (cond ((pkg:find-symbol symbol-name target-package))
+                                              ((eq symbol-package source-package)
+                                               (pkg:intern symbol-name target-package))
+                                              (t
+                                               (let* ((home-package (copy-package symbol-package))
+                                                      (symbol       (or (pkg:find-symbol symbol-name home-package)
+                                                                        (pkg:intern symbol-name home-package))))
+                                                 (assert (nth-value 1 (find-symbol symbol-name symbol-package)))
+                                                 (pkg:import symbol target-package)
+                                                 symbol)))))
+                   (pkg:export new-symbol target-package)
+                   (assert (eq :external (nth-value 1 (pkg:find-symbol symbol-name target-package)))))))
              (copy-package (source-package)
-               (let* ((package-name (package-name source-package))
-                      (package      (pkg:find-package package-name)))
-                 (format *trace-output* "Copying ~32A -> ~32A~%" source-package package)
-                 (if (not (null package))
-                     package
+               (or (gethash source-package seen)
+                   (let ((package-name (package-name source-package)))
+                     (assert (null (pkg:find-package package-name)))
                      (let* ((nicknames       (package-nicknames source-package))
+                            (local-nicknames #+sbcl (sb-ext:package-local-nicknames source-package)
+                                             #-sbcl '())
                             (used            (package-use-list source-package))
-                            (local-nicknames (sb-ext:package-local-nicknames source-package))
+                                        ; (source-package (find-package source-package))
+                            (shadowing       (mapcar #'symbol-name (package-shadowing-symbols
+                                                                    source-package)))
                             (package         (pkg:make-package
                                               package-name :nicknames nicknames)))
+                       (format *trace-output* "Copying ~32A -> ~32A~%"
+                               source-package package)
+                       (setf (gethash source-package seen) package)
+                       (pkg:shadow shadowing package)
+                       ;; It is explicitly forbidden to pass the
+                       ;; KEYWORD to `use-package'.
+                       (unless (equal package-name "KEYWORD")
+                         (parcl:use-package (mapcar #'copy-package used) package))
                        (copy-external-symbols package-name package)
-                       (parcl:use-package (mapcar #'copy-package used) package)
                        (loop :for (nickname . nicknamed-package) :in local-nicknames
                              :do (pkg:add-package-local-nickname
                                   nickname (copy-package nicknamed-package) package))

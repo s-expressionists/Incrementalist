@@ -281,7 +281,14 @@ a b"
     ;; (sub-)characters as in the following test case.
     ("#{"
      '((inc:reader-macro-wad ((0 0) (0 2))
-        (:errors ((((0 1) (0 2)) eclector.reader:unknown-macro-sub-character))))))))
+        (:errors ((((0 1) (0 2)) eclector.reader:unknown-macro-sub-character))))))
+    ;; An error from a read-time evaluation.  At the moment, the error
+    ;; is caused by the fact that our read-time evaluation is too
+    ;; limited but that still works for simulating an error.
+    ("#.(cl:setf cl:*read-base* (cl:error \"foo\"))"
+     '((inc:atom-wad ((0 0) (0 43))
+        (:errors ((((0 42) (0 43)) eclector.reader:read-time-evaluation-error)))
+        :ignore-children)))))
 
 (test spell-checking.smoke
   "Test for spell-checking in symbols, strings and comments."

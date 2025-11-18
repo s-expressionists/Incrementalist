@@ -7,7 +7,7 @@
   (find character #(#\. #\? #\! #\: #\, #\;
                     #\( #\) #\< #\> #\[ #\] #\{ #\}
                     #\" #\' #\` #\|
-                    #\/ #\\ #\_ #\- #\+ #\* #\% #\= #\# #\~ #\@ #\&)))
+                    #\/ #\\ #\_ #\- #\+ #\* #\% #\= #\# #\~ #\@ #\& #\^)))
 
 (defun make-text-wad (text line start-column end-column line-length
                       min-length checkp)

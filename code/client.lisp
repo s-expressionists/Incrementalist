@@ -3,7 +3,7 @@
 (defclass client (eclector.concrete-syntax-tree:definition-csts-mixin
                   eclector.concrete-syntax-tree:reference-csts-mixin
                   eclector.concrete-syntax-tree:cst-client)
-  ;; TODO it would be nicer not to store the stream in the client like
+  ;; TODO: it would be nicer not to store the stream in the client like
   ;; this, but the method on make-expression-result needs the stream
   ;; and cannot access it in other ways.
   ((stream* :initarg :stream*
@@ -131,7 +131,7 @@
   (let ((symbol (pkg:make-symbol symbol-name)))
     (make-instance 'uninterned-symbol-token :symbol symbol)))
 
-;;; Source position
+;;; Source position ; TODO: move to top of file?
 
 (defmethod eclector.base:source-position ((client client) (stream buffer-stream))
   (cons (line-number stream) (item-number stream)))

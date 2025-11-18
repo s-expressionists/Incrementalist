@@ -156,7 +156,7 @@ correctly."
      #1#)))
 
 (test dependencies.between-expressions.1
-  (edits-cases ()
+  (edits-cases (:extra-packages '("BAZ"))
     ("foo
 
 bar"
@@ -223,7 +223,8 @@ bar"
 
 #-ccl ; CCL doesn't allow the way we mix labeled objects and quasiquote
 (test dependencies.between-expressions.3
-  (edits-cases ()
+  ;; TODO: make sure package "FOO" is defined
+  (edits-cases (:extra-packages '("FOO"))
     ;;
     ("
 #.(cl:setf cl:*read-base* 10)

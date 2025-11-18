@@ -17,11 +17,16 @@
     (b:insert-items-at cursor content :line-separator #\Newline)
     (values buffer cursor)))
 
-(defvar *test-package-name* "TEST")
-(defvar *using-package-name* "INCREMENTALIST.TEST.USING-PACKAGE")
-
-(defun prepared-package-system ()
-  (let* ((client         (inc::make-package-system-client))
+(defun prepared-package-system (&key extra-packages)
+  (let* ((client          (inc::make-minimal-package-system-client))
+         (parcl:*client*  client)
+         (parcl:*package* (parcl:find-package "CL-USER")))
+    (mapc (lambda (arguments)
+            (apply #'parcl.middle:ensure-package parcl:*client*
+                   (a:ensure-list arguments)))
+          extra-packages)
+    client)
+  #+no (let* ((client         (make-instance 'inc::package-system-client))
          (parcl:*client* client)
          (keyword        (parcl:find-package "KEYWORD"))
          (test-package   (parcl:make-package *test-package-name*))
@@ -31,15 +36,18 @@
     (declare (ignore test-package using-package))
     (do-external-symbols (symbol "KEYWORD")
       (parcl:intern (symbol-name symbol) keyword))
+    (mapc #'parcl:make-package extra-packages)
     client))
 
 (defun prepared-analyzer (buffer-content
-                          &key (parcl-client    (prepared-package-system))
+                          &key (extra-packages  '())
+                               (parcl-client    (prepared-package-system
+                                                 :extra-packages extra-packages))
                                (initial-package *test-package-name*)
                                (initial-reader-state
                                 (let ((parcl:*client* parcl-client))
                                   (inc:make-initial-reader-state
-                                   :package initial-package)))) ; TODO: package or designator
+                                   :package (parcl:find-package initial-package)))))
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((analyzer (make-instance 'inc:analyzer
                                     :buffer               buffer
@@ -53,8 +61,10 @@
   (append (reverse (inc::prefix cache)) (inc::suffix cache)))
 
 (defun parse-result (buffer-content &rest args
-                                    &key initial-package initial-reader-state)
-  (declare (ignore initial-package initial-reader-state))
+                                    &key extra-packages
+                                         initial-package
+                                         initial-reader-state)
+  (declare (ignore extra-packages initial-package initial-reader-state))
   (multiple-value-bind (analyzer cache)
       (apply #'prepared-analyzer buffer-content args)
     (update-cache analyzer cache)))
@@ -375,7 +385,7 @@
     (location symbol-name
      &key (package-name (if (symbolp symbol-name)
                             (package-name (symbol-package symbol-name))
-                            *test-package-name*))
+                            "COMMON-LISP-USER"))
           (token-class  'inc:interned-symbol-token)
           (words        (cond ((equal package-name "COMMON-LISP")
                                '())
@@ -397,8 +407,8 @@
 (defmacro analysis-cases (() &body cases)
   `(progn
      ,@(mapcar (lambda (case)
-                 (destructuring-bind (input expected-result) case
-                   `(analysis-test-case ,input ,expected-result)))
+                 (destructuring-bind (input-and-arguments expected-result) case
+                   `(analysis-test-case ,input-and-arguments  ,expected-result)))
                cases)))
 
 ;;; Utilities for editing test cases
@@ -465,12 +475,13 @@
                                 ,string)))))))
     (apply-one edit)))
 
-(defun edits-test-case (&rest edits-and-results)
+(defun edits-test-case (analyzer-initargs &rest edits-and-results)
   (flet ((do-it (step-mode map-wads-and-spaces?)
            ;; Sequentially apply all edits updating the cache and checking the
            ;; result after each edit.
-           (loop :with (analyzer cache buffer cursor) = (multiple-value-list
-                                                         (prepared-analyzer ""))
+           (loop :with (analyzer cache buffer cursor)
+                   = (multiple-value-list
+                      (apply #'prepared-analyzer "" analyzer-initargs))
                  :for i :from 0
                  :for (edit expected-results) :on edits-and-results :by #'cddr
                  :do (apply-edit cursor edit
@@ -496,5 +507,8 @@
     (do-it :small-step t)   ; like above but call `map-wads-and-spaces' after
     (do-it :big-step   t))) ; each update
 
-(defmacro edits-cases (() &body cases)
-  `(progn ,@(mapcar (lambda (case) `(edits-test-case ,@case)) cases)))
+(defmacro edits-cases ((&rest analyzer-initargs) &body cases)
+  `(progn
+     ,@(mapcar (lambda (case)
+                 `(edits-test-case (list ,@analyzer-initargs) ,@case))
+               cases)))

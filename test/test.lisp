@@ -141,7 +141,8 @@ a b"
         ,(expected-symbol-wad '((1 0) (1 1)) :a)
         ,(expected-symbol-wad '((1 2) (1 3)) "B"))))
     ;; Read in a different package that uses the CL package
-    ('("floor" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
+    ('("floor" :extra-packages  ((#1="USING-PACKAGE" :use "CL"))
+               :initial-package #1#)
      `(,(expected-symbol-wad '((0 0) (0 5)) 'floor)))))
 
 (test nil-spellings
@@ -149,7 +150,8 @@ a b"
   (analysis-cases ()
     ("()"
      `(,(expected-symbol-wad '((0 0) (0 2)) 'nil)))
-    ('("nil" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
+    ('("nil" :extra-packages  ((#1="USING-PACKAGE" :use ("CL")))
+             :initial-package #1#)
      `(,(expected-symbol-wad '((0 0) (0 3)) 'nil)))
     ("cl:nil"
      `(,(expected-symbol-wad '((0 0) (0 6)) 'nil)))
@@ -302,9 +304,10 @@ a b"
          (:errors ((((0 3) (0 4)) eclector.reader:invalid-context-for-consing-dot)))))))
     ;; There used to be a problem with inherited symbols being
     ;; processed like (re)exported symbols.
-    ("incrementalist.test.using-package:floor"
-     '((inc:atom-wad ((0 0) (0 39))
-        (:errors ((((0 34) (0 39)) eclector.reader:symbol-is-not-external))))))))
+    (`("using-package:floor"
+       :extra-packages (("USING-PACKAGE" :use ("CL"))))
+     '((inc:atom-wad ((0 0) (0 19))
+        (:errors ((((0 14) (0 19)) eclector.reader:symbol-is-not-external))))))))
 
 (test spell-checking.smoke
   "Test for spell-checking in symbols, strings and comments."

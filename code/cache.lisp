@@ -450,45 +450,35 @@
   ;; buffer) such that it is not the case that the first wad of the
   ;; prefix (i.e., the last wad of the buffer prefix) starts entirely
   ;; after LAST-LINE.
-  (let ((remaining
-          (loop for remaining on (prefix cache)
-                when (<= (start-line (first remaining)) last-line)
-                  return remaining)))
+  (let ((remaining (loop for remaining on (prefix cache)
+                         when (<= (start-line (first remaining)) last-line)
+                           return remaining)))
     (if (null remaining)
         (let ((line-length (line-length cache last-line)))
           (map-empty-area
            cache first-line 0 last-line line-length space-function))
-        (progn (when (<= (end-line (first remaining)) last-line)
-                 (map-empty-area
-                  cache
-                  (end-line (first remaining))
-                  (end-column (first remaining))
-                  last-line
-                  (line-length cache last-line)
-                  space-function))
-               (loop for (wad2 wad1) on remaining
-                     do (funcall wad-function wad2)
-                     until (or (null wad1)
-                               (< (end-line wad1) first-line))
-                     do (map-empty-area
-                         cache
-                         (end-line wad1)
-                         (end-column wad1)
-                         (start-line wad2)
-                         (start-column wad2)
-                         space-function)
-                     finally
-                        (if (null wad1)
-                            (map-empty-area
-                             cache
-                             0 0
-                             (start-line wad2)
-                             (start-column wad2)
-                             space-function)
-                            (map-empty-area
-                             cache
-                             (end-line wad1)
-                             (end-column wad1)
-                             (start-line wad2)
-                             (start-column wad2)
-                             space-function)))))))
+        (let ((first (first remaining)))
+          (when (<= (end-line first) last-line)
+            (map-empty-area
+             cache
+             (end-line first) (end-column first)
+             last-line (line-length cache last-line)
+             space-function))
+          (loop for (wad2 wad1) on remaining
+                do (funcall wad-function wad2)
+                until (or (null wad1)
+                          (< (end-line wad1) first-line))
+                do (map-empty-area
+                    cache
+                    (end-line wad1) (end-column wad1)
+                    (start-line wad2) (start-column wad2)
+                    space-function)
+                finally (multiple-value-bind (start-line start-column)
+                            (if (null wad1)
+                                (values 0 0)
+                                (values (end-line wad1) (end-column wad1)))
+                          (map-empty-area
+                           cache
+                           start-line start-column
+                           (start-line wad2) (start-column wad2)
+                           space-function)))))))

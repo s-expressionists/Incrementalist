@@ -361,7 +361,7 @@
 
 ;;; Apply EDIT using CURSOR. EDIT is of the form
 ;;;
-;;;   EDIT ::= | (progn EDIT*)
+;;;   EDIT ::=   (progn EDIT*)
 ;;;            | (:move (line-number column-number))
 ;;;            | (:delete number-of-items)
 ;;;            | string

@@ -19,9 +19,6 @@
    (%time-stamp           :accessor time-stamp
                           :type     (or null alexandria:non-negative-integer)
                           :initform nil)
-   ;; This slot contains a list that parallels the prefix and it
-   ;; contains the width of the prefix starting with the first element
-   ;; of the prefix.
    (%lines                :reader   lines
                           :initform (make-instance 'flx:standard-flexichain))
    (%cluffer-lines        :reader   cluffer-lines
@@ -32,6 +29,9 @@
    (%prefix               :accessor prefix
                           :type     list
                           :initform '())
+   ;; This slot contains a list that parallels the prefix and it
+   ;; contains the width of the prefix starting with the first element
+   ;; of the prefix.
    (%prefix-width         :accessor prefix-width
                           :initform '())
    ;; The suffix contains top-level wads in the right order.  The
@@ -106,7 +106,7 @@
          (max-line-length cache (gap-start cache) (gap-end cache))
          (if (null suffix-width) 0 (first suffix-width)))))
 
-;;; Given a cache and an interval of lines, return the maxium length
+;;; Given a cache and an interval of lines, return the maximum length
 ;;; of any lines in the interval.
 (defun max-line-length (cache first-line-number last-line-number)
   (loop for line-number from first-line-number to last-line-number

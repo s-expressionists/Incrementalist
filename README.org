@@ -25,9 +25,9 @@
 * Usage Overview
 
   A central concept of the Incrementalist library is the "analyzer"
-  which, given a Cluffer buffer, creates and maintains a concrete
-  syntax tree that represents the content of the buffer. We therefore
-  start by creating and populating a buffer:
+  which, given a text.editor-buffer buffer, creates and maintains a
+  concrete syntax tree that represents the content of the buffer. We
+  therefore start by creating and populating a buffer:
 
   #+BEGIN_SRC lisp :exports both :results value :wrap example
     (defun example-buffer (&key (content "(((1)))"))

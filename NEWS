@@ -1,0 +1,65 @@
+Release 0.2 (not yet released)
+
+* The biggest change is that Incrementalist now tracks dependencies between
+  WADs that arise due to changes of the reader state.
+
+  For example, a ` WAD causes , WADs to be valid in the following
+  sub-expression. However, when the ` WAD is changed to, say, ' the , WADs have
+  to be re-read with the changed reader state to "witness" that they are no
+  longer valid. A similar situation arises for sub-expressions which follow the
+  consing dot.
+
+  A different kind of dependency that is less localized arises from non-lexical
+  changes to the reader state such as changing the current package via
+  in-package or changing the read base via #.(setf *read-base* 16). These
+  dependencies are now also tracked by Incrementalist although the mechanism
+  for detecting them in expressions that are evaluated at read-time is just a
+  proof-of-concept for now.
+
+* Initial unit tests have been added and subsequently extended to cover many
+  specific cases and regressions. One test reads the whole source code of
+  Incrementalist in an incremental way and ensures that various invariants hold
+  at all times.
+
+* Many parts of the system have been optimized:
+
+  The code surrounding the BUFFER-STREAM class has been rewritten to be more
+  efficient.
+
+  Construction and linking of WADs has been optimized.
+
+* The class hierarchies rooted at TOKEN and WAD have been revised multiple
+  times to better represent the kinds and properties of the relevant concrete
+  syntax objects. Examples are tokens for numbers and symbols as well as WADs
+  for labeled objects and read-time conditional expressions.
+
+  One particular addition are WORD-WAD and PUNCTUATION-WAD which are used to
+  represent the components of the strings in symbol names and comments in
+  detail.
+
+* Under certain conditions, WORD-WAD instances are marked as being spelled
+  correctly or incorrectly using the spell library. As a consequence,
+  Incrementalist now depends on spell.
+
+* The concept of some WADs having a dual nature in the sense of conforming to
+  the WAD protocol as well as the CST protocol has been introduced. This
+  concept will be important when WADs will be passed to the s-expression-syntax
+  library in order to be parsed as s-expressions.
+
+* Assertions which check fundamental invariants of Incrementalist's
+  data-structures as well as debugging tools are now available in separate
+  files which can be loaded when needed.
+
+* Some of the functions which query the cache based on a given buffer location
+  now accept additional arguments which control whether the bounds of WADs
+  should match the given location inclusively or exclusively.
+
+* The manual has been extensively but not yet fully rewritten and extended.
+
+Release 0.1 (not released)
+
+* Initial version extracted from Second Climacs repository with core
+  architecture: analyzer, cache, WADs and parsing via Eclector. This version
+  includes a Texinfo-based manual which has been extracted and converted from
+  the LaTeX-based manual of Second Climacs.
+

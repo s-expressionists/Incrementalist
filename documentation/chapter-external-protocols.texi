@@ -11,12 +11,45 @@ chapter describe protocols for working with wads while the remaining
 sections focus on updating and querying the cache.
 
 @menu
+* Package Structure::
+* Thread Safety::
 * Token Protocol and Classes::
 * WAD Protocols and Classes::
 * The Associated Buffer Protocol::
 * The Cache Protocol::
 * The Analyzer Protocol::
 @end menu
+
+@node Package Structure
+@section Package Structure
+
+All symbols that are relevant to external protocols are in the package
+named @t{@toppackage{}}.  We recommend against client code @emph{using}
+this package in the sense of the @code{:use} option to
+@speclink{f,defpackage} or in the sense of calling
+@speclink{f,use-package}.  The reason for this recommendation is that we
+can not guarantee that future additions to this library will not define
+external symbols that conflict with symbols in the @t{common-lisp}
+package or symbols used by the client for other purposes.
+
+Instead, we recommend that client code use explicit package prefixes,
+possibly in combination with package-local nicknames.  In addition to
+avoiding future conflicts, this practice will make the origin of the
+respective symbol obvious from the source code.
+
+@node Thread Safety
+@section Thread Safety
+
+Operations in @sysname{} are in general not safe to perform concurrently
+when the operations either directly involve a common object or the
+involved objects are (directly or indirectly) attached to a common
+object.  An example of the latter case would be concurrent operations on
+a buffer and the cache associated with the buffer via an analyzer (See
+@ref{fig:analyzer} for the concepts and their relations).  Put
+differently, concurrent operations are safe on unrelated
+buffer--analyzer--cache triples.  When the client obeys certain
+restrictions, it is possible to operate on a buffer and the associated
+cache concurrently.
 
 @node Token Protocol and Classes
 @section Token Protocol and Classes

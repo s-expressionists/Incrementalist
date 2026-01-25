@@ -117,7 +117,7 @@ but that is not a requirement.  @ref{fig:prefix-suffix} illustrates the
 prefix and the suffix of a buffer with five top-level expressions.
 
 @float Figure,fig:prefix-suffix
-@center @image{fig-prefix-suffix}
+@center @image{fig-prefix-suffix,10cm}
 @caption{Prefix and suffix containing top-level wads.}
 @end float
 

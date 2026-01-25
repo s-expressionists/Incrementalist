@@ -16,7 +16,7 @@ clients can query.  @ref{fig:analyzer} presents an overview of the
 concepts which will be explained in the following sections.
 
 @float Figure,fig:analyzer
-@center @image{fig-analyzer}
+@center @image{fig-analyzer,14cm}
 @caption{Important concepts from the @cluffer{} and @sysname{} libraries
 and their relations. Dashed arrows with circled numbers and labels
 indicate the use of protocols and the typical sequence of events.}
@@ -186,7 +186,7 @@ feature expressions.
 The representation of a wad is illustrated in @ref{fig:wad}.
 
 @float Figure,fig:wad
-@center @image{fig-wad}
+@center @image{fig-wad,14cm}
 @caption{Representation of a wad. The major components are highlighted:
 location information in green, tree structure information in blue and
 ``raw'' information in orange. Not all wad classes contain children and
@@ -343,7 +343,7 @@ The following figure illustrates both representations at once for the
 above example:
 
 @float Figure,fig:wad-vs-cst
-@center @image{fig-wad-vs-cst}
+@center @image{fig-wad-vs-cst,14cm}
 @caption{Dual representation of wads and CST nodes.  WAD aspects are
 indicated by a blue color, CST aspects are indicated by an orange
 color.}

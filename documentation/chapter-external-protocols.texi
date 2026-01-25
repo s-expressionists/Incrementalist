@@ -598,6 +598,8 @@ which implement the cache protocol.
 
 @defgena{time-stamp,@toppackage{}} cache
 
+@cindex time stamp (of buffer)
+@cindex time stamp (of cache)
 Return @t{nil} or an integer time stamp which indicates the most recent
 time stamp of the associated buffer for which the cache has been
 synchronized to the contents of the buffer.
@@ -645,14 +647,14 @@ or @t{nil}.
 Return a list of pairs of the form @t{(@var{n} . @var{wad})} where
 @var{wad} is a wad, and @var{n} is the absolute start line number of
 @var{wad}, such that all the wads are in @var{cache} and contain the
-position defined by @var{line-number} and @var{column-number}.  The list
-is ordered from the innermost wad containing the position to the
-top-level wad containing the position.  The empty list is returned if
-the position is inside no wad.
+location defined by @var{line-number} and @var{column-number}.  The list
+is ordered from the innermost wad containing the location to the
+top-level wad containing the location.  The empty list is returned if
+the position is not inside any wad.
 
-Each of @var{start-relation} and @var{end-relation} which must be
-either the symbol @t{<} or the symbol @t{<=} and select the respective
-relation for comparisons of location.  @var{start-relation} controls
+Each of @var{start-relation} and @var{end-relation} which must be either
+the symbol @t{cl:<} or the symbol @t{cl:<=} select the respective
+relation for comparisons of locations.  @var{start-relation} controls
 how the start location of candidate wads is compared to the location
 defined by @var{line-number} and @var{column-number}.
 @var{end-relation} controls the comparison for the end location of
@@ -667,9 +669,9 @@ location defined by @var{line-number} and @var{column-number}.  The
 function calls happen in the order from the innermost wad containing
 the location to the top-level wad containing the location.
 
-Each of @var{start-relation} and @var{end-relation} which must be
-either the symbol @t{<} or the symbol @t{<=} and select the respective
-relation for comparisons of location.  @var{start-relation} controls
+Each of @var{start-relation} and @var{end-relation} which must be either
+the symbol @t{cl:<} or the symbol @t{cl:<=} select the respective
+relation for comparisons of locations.  @var{start-relation} controls
 how the start location of candidate wads is compared to the location
 defined by @var{line-number} and @var{column-number}.
 @var{end-relation} controls the comparison for the end location of

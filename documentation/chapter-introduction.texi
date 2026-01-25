@@ -24,7 +24,7 @@ definitions of the two helper functions @t{make-buffer-with-content} and
 
 (defun print-parse-result (stream root)
   (utilities.print-tree:print-tree *standard-output*
-                                   first-result
+                                   root
                                    (utilities.print-tree:make-node-printer
                                     (lambda (stream depth node)
                                       (princ node stream))
@@ -43,7 +43,7 @@ definitions of the two helper functions @t{make-buffer-with-content} and
     (print-parse-result *standard-output* first-result)))
 @end lisp
 
-This code uses @sysname{} to parse (in the @t{incrementalist:update}
+This code uses @sysname{} to parse (in the @genref{update,@toppackage{}}
 call) the provided buffer content and present the first entry of the
 resulting cache of parse results as a tree which looks similar to the
 following:
@@ -61,9 +61,9 @@ following:
 
 Historically, initial aspects of @sysname{} have been developed in the
 context of the @climacs{} editor for @commonlisp{} code.  @sysname is
-the result extracting some of that code into a separate system while
+the result of extracting some of that code into a separate system while
 enhancing many aspects (in fact, not much of the original ideas or code
-remains at this point).
+remains at this point):
 
 @itemize
 

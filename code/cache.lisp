@@ -254,9 +254,11 @@
 
 (defun finish-scavenge (cache)
   ;; Move entire worklist to residue
-  (loop until (null (worklist cache))
-        do (push-to-residue cache (pop-from-worklist cache)))
-  (setf (residue cache) (nreverse (residue cache))))
+  (loop :with residue = (residue cache)
+        :for entry :in (worklist cache)
+        :do (push entry residue)
+        :finally (setf (residue  cache) (nreverse residue)
+                       (worklist cache) '())))
 
 ;;; This function is called by the three operations that handle
 ;;; modifications.  The first time this function is called, we must

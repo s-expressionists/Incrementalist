@@ -181,8 +181,8 @@ from the order in which the corresponding expressions appear in the
 expression resulting from the call to the reader.  Furthermore, the
 descendants of a given wad can contain wads which correspond to source
 elements that would not be present in the s-expression tree returned by
-@t{cl:read} at all such as comments or expressions guarded by feature
-expressions.
+@speclink{f,read} at all such as comments or expressions guarded by
+feature expressions.
 
 @end itemize
 
@@ -201,11 +201,12 @@ on-demand and are thus always present but not always bound. }
 @cindex top-level wad
 A location in the buffer is considered a
 @anchor{term-top-level-location}@dfn{top-level location} if and only if,
-when the buffer is parsed by a number of consecutive calls to @t{read},
-when this location is reached, the reader is in its initial state with
-no recursive pending invocations.  Similarly, a wad is considered a
-@anchor{term-top-level-wad}@dfn{top-level wad} if it is the result of an
-immediate call to @t{read}, as opposed to a recursive call.
+when the buffer is parsed by a number of consecutive calls to
+@speclink{f,read}, when this location is reached, the reader is in its
+initial state with no recursive pending invocations.  Similarly, a wad
+is considered a @anchor{term-top-level-wad}@dfn{top-level wad} if it is
+the result of an immediate call to @t{read}, as opposed to a recursive
+call.
 
 Let the @anchor{term-initial-character}@dfn{initial character} of some
 wad be the first non-whitespace character encountered during the call to
@@ -282,7 +283,7 @@ nodes.  This sub-section focuses on this dual nature.  The reason for
 having two different views on parse results is that they are used in
 different ways: On the one hand, uses such as syntax highlighting are
 concerned only with nodes that correspond directly to item sequences in
-the buffer, including comments and other ``skipped material'.  On the
+the buffer, including comments and other ``skipped material''.  On the
 other hand, uses such as semantic analyses of the buffer content as a
 @commonlisp{} program are not concerned with ``skipped material'' and
 instead require an s-expression tree that can be processed using

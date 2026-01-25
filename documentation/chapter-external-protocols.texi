@@ -476,7 +476,7 @@ reader encountered an unknown or invalid reader macro.
 @defclassa{read-suppress-wad,@toppackage{}}
 
 Instances of this class represent material that was skipped because
-@t{*read-suppress*} was true.
+@speclinkl{v,read-suppress,cl:*read-suppress*} was true.
 @end deftp
 
 @defclassa{skipped-conditional-wad,@toppackage{}}
@@ -570,8 +570,8 @@ encapsulated error conditions.
 
 Return the encapsulated condition of @var{error-wad}.
 
-The returned object is of type @t{cl:condition}, usually of type
-@t{cl:error} or @t{cl:warning}.
+The returned object is of type @speclink{t,condition}, usually of type
+@speclink{t,error} or @speclink{t,warning}.
 @end deffn
 
 @node The Associated Buffer Protocol
@@ -627,7 +627,7 @@ time returned by the @genref{time-stamp,@toppackage{}} reader for
 @defgena{line-contents,@toppackage{}} cache line-number
 
 Return the contents of the line with number @var{line-number} within
-@var{cache} as a @t{cl:vector} if items.
+@var{cache} as a @speclink{t,vector} if items.
 
 The returned items reflect the state of the associated buffer at the
 time returned by the @genref{time-stamp,@toppackage{}} reader for

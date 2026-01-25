@@ -76,10 +76,16 @@ Concrete Syntax Tree
 @anchor{Variable \PACKAGE\|\NAME\}
 @defvar {@symbol{\NAME\,\PACKAGE\}}
 @end macro
+@macro varref{NAME,PACKAGE}
+@link{Variable \PACKAGE\|\NAME\,@t{\PACKAGE\:\NAME\}}
+@end macro
 
 @macro deffuna{NAME,PACKAGE}
 @anchor{Function \PACKAGE\|\NAME\}
 @deffn {Function} {@symbol{\NAME\,\PACKAGE\}}
+@end macro
+@macro funref{NAME,PACKAGE}
+@link{Function \PACKAGE\|\NAME\,@t{\PACKAGE\:\NAME\}}
 @end macro
 
 @macro defgena{NAME,PACKAGE}
@@ -87,12 +93,15 @@ Concrete Syntax Tree
 @deffn {Generic Function} {@symbol{\NAME\,\PACKAGE\}}
 @end macro
 @macro genref{NAME,PACKAGE}
-@link{Generic-Function \PACKAGE\|\NAME\,\PACKAGE\:\NAME\}
+@link{Generic-Function \PACKAGE\|\NAME\,@t{\PACKAGE\:\NAME\}}
 @end macro
 
 @macro defmaca{NAME,PACKAGE}
 @anchor{Macro \PACKAGE\|\NAME\}
 @deffn {Macro} {@symbol{\NAME\,\PACKAGE\}}
+@end macro
+@macro macref{NAME,PACKAGE}
+@link{Macro \PACKAGE\|\NAME\,@t{\PACKAGE\:\NAME\}}
 @end macro
 
 @macro defclassa{NAME,PACKAGE}
@@ -100,5 +109,14 @@ Concrete Syntax Tree
 @deftp {Class} {@symbol{\NAME\,\PACKAGE\}}
 @end macro
 @macro classref{NAME,PACKAGE}
-@link{Class \PACKAGE\|\NAME\,\PACKAGE\:\NAME\}
+@link{Class \PACKAGE\|\NAME\,@t{\PACKAGE\:\NAME\}}
+@end macro
+
+@c Link to Common Lisp specification
+
+@macro speclink{CATEGORY,NAME}
+@url{https://novaspec.org/cl/\CATEGORY\_\NAME\,@t{cl:\NAME\}}
+@end macro
+@macro speclinkl{CATEGORY,NAME,LABEL}
+@url{https://novaspec.org/cl/\CATEGORY\_\NAME\,@t{\LABEL\}}
 @end macro

@@ -7,6 +7,7 @@ NAME = incrementalist
 SOURCES = $(wildcard *.texi)
 
 GENERATED = generated-version.texi               \
+            generated-chapter-changelog.texi     \
             generated-token-class-hierarchy.texi \
             generated-wad-class-hierarchy.texi
 
@@ -32,6 +33,14 @@ generated-version.texi: ../data/version-string.sexp
           --eval '(format t "@macro sysversion~%~A~%@end macro" (uiop:read-file-form "$<"))' \
           --quit                                                                             \
           > $@
+
+generated-chapter-changelog.texi: ../data/changes.sexp          \
+                                  ../tools/texinfo.lisp         \
+                                  ../tools/write-changelog.lisp
+	$(SBCL) --noinform                                     \
+                --load ../tools/read-changes.lisp              \
+                --load ../tools/texinfo.lisp                   \
+                --script ../tools/write-changelog.lisp $< > $@
 
 generated-token-class-hierarchy.texi generated-wad-class-hierarchy.texi &: \
   ../tools/generate-documentation.lisp \

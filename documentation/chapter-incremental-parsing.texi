@@ -104,18 +104,17 @@ computation as incremental as possible.
 @sysname{} maintains a sequence @footnote{It is not a @commonlisp{}
 sequence, but just a suite represented in a different way.}  of
 @emph{top-level wads}.  This sequence is organized as two ordinary
-@commonlisp{} lists, called the @anchor{term-prefix}@dfn{prefix} and the
-@anchor{term-suffix}@dfn{suffix}.  Given a top-level location @math{L}
-in the buffer, the prefix contains a list of the top-level wad that
-precede @math{L} and the suffix contains a list of the top-level wads
-that follow @math{L}.  The top-level wads in the prefix occur in reverse
-order compared to order in which they appear in the buffer.  The
-top-level wads in the suffix occur in the same order as they appear in
-the buffer.  the location @math{L} is typically immediately before or
-immediately after the top-level expression in which the @emph{cursor} of
-the current view is located, but that is not a requirement.
-@ref{fig:prefix-suffix} illustrates the prefix and the suffix of a
-buffer with five top-level expressions.
+@commonlisp{} lists, called the @term{prefix} and the @term{suffix}.
+Given a top-level location @math{L} in the buffer, the prefix contains a
+list of the top-level wad that precede @math{L} and the suffix contains
+a list of the top-level wads that follow @math{L}.  The top-level wads
+in the prefix occur in reverse order compared to order in which they
+appear in the buffer.  The top-level wads in the suffix occur in the
+same order as they appear in the buffer.  the location @math{L} is
+typically immediately before or immediately after the top-level
+expression in which the @emph{cursor} of the current view is located,
+but that is not a requirement.  @ref{fig:prefix-suffix} illustrates the
+prefix and the suffix of a buffer with five top-level expressions.
 
 @float Figure,fig:prefix-suffix
 @center @image{fig-prefix-suffix}

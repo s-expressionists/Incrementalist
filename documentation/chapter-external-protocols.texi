@@ -4,12 +4,11 @@
 This chapter describes protocols that clients of @sysname{} can use.  As
 described in the introduction of section @ref{Concepts} and
 @ref{fig:analyzer}, the main activities of clients are on the one hand
-updating the @link{term-cache,cache} via the
-@link{term-analyzer,analyzer} and on the other hand querying and working
-with parse results, that is @link{term-wad,wads}.  Accordingly, the
-first two sections of this chapter describe protocols for working with
-wads while the remaining sections focus on updating and querying the
-cache.
+updating the @termref{cache} via the @termref{analyzer} and on the other
+hand querying and working with parse results, that is
+@termrefl{wad,wads}.  Accordingly, the first two sections of this
+chapter describe protocols for working with wads while the remaining
+sections focus on updating and querying the cache.
 
 @menu
 * Token Protocol and Classes::
@@ -129,7 +128,7 @@ environment.
 
 @cindex wad
 @sysname{} provides various generic functions for working with
-@ref{term-wad,wads}.  Those generic functions are organized into
+@termrefl{wad,wads}.  Those generic functions are organized into
 multiple separate protocols for better coherence.  Each of the
 subsections of this section describes one such protocol.  The @ref{Wad
 Classes,final subsection} describes the wad classes to which the
@@ -147,7 +146,7 @@ protocols can be applied.
 @subsection Children Protocol
 
 This protocol allows the client to process or obtain the children of a
-given @ref{term-wad,wad}.  The children of a wad are also wads.
+given @termref{wad}.  The children of a wad are also wads.
 
 Note that the sequence of (wad) children considered by the functions in
 this section is often different from the (CST) children obtained via the
@@ -203,7 +202,7 @@ children of @var{wad} appear in the source text.
 @defgena{parent,@toppackage{}} wad
 
 Return the parent wad of @var{wad} or @t{nil} if @var{wad} is a
-@ref{term-top-level-wad,top-level wad}.
+@termref{top-level wad}.
 @end deffn
 
 @defgena{left-sibling,@toppackage{}} wad
@@ -220,8 +219,8 @@ sibling:
 If @var{wad} is the first child of its parent.
 
 @item
-If @var{wad} is a @ref{term-top-level-wad, top-level wad} and is the
-first element of the @ref{term-prefix, prefix}.
+If @var{wad} is a @termref{top-level wad} and is the first element of
+the @termref{prefix}.
 
 @end itemize
 @end deffn
@@ -240,8 +239,8 @@ sibling:
 If @var{wad} is the last child of its parent.
 
 @item
-If @var{wad} is a @ref{term-top-level-wad, top-level wad} and is the
-last element of the @ref{term-suffix, suffix}.
+If @var{wad} is a @termref{top-level wad} and is the last element of the
+@termref{suffix}.
 
 @end itemize
 @end deffn
@@ -261,8 +260,7 @@ Return a non-negative integer that is the absolute start line number of
 
 @quotation warning
 An absolute start line number may not be available, for example if
-@var{wad} is a member of the @ref{term-suffix,suffix} of the
-@ref{term-cache,cache}.
+@var{wad} is a member of the @termref{suffix} of the @termref{cache}.
 @end quotation
 @end deffn
 
@@ -279,22 +277,20 @@ Return a non-negative integer that is the absolute end line number of
 
 @quotation warning
 The absolute end line number is available only if @var{wad} is
-@ref{term-absolute,absolute}.
+@termref{absolute}.
 @end quotation
 @end deffn
 
 @defgena{start-column,@toppackage{}} wad
 
 Return a non-negative integer that is the position of the
-@ref{term-initial-character,initial character} within the start line of
-@var{wad}.
+@termref{initial character} within the start line of @var{wad}.
 @end deffn
 
 @defgena{end-column,@toppackage{}} wad
 
-Return a non-negative integer that is the position of the
-@ref{term-final-character,final character} within the end line of
-@var{wad}.
+Return a non-negative integer that is the position of the @termref{final
+character} within the end line of @var{wad}.
 @end deffn
 
 @defgena{items,@toppackage{}} wad
@@ -636,9 +632,8 @@ time returned by the @genref{time-stamp,@toppackage{}} reader for
 
 @defgena{find-wad-beginning-line,@toppackage{}} cache line-number
 
-Return the wad in @var{cache} the @ref{term-initial-character,initial
-character} of which has the minimal item number within @var{line-number}
-or @t{nil}.
+Return the wad in @var{cache} the @termref{initial character} of which
+has the minimal item number within @var{line-number} or @t{nil}.
 @end deffn
 
 @defgena{find-wads-containing-position,@toppackage{}} cache@

@@ -69,8 +69,7 @@ protocol} and the @emph{update protocol}.
 
 @item
 @cindex edit protocol
-@anchor{term-edit-protocol}
-The @dfn{edit protocol} provides operations for editing the buffer
+The @term{edit protocol} provides operations for editing the buffer
 contents.  It has been designed to be both simple and very efficient.
 As such, it does not provide operations on larger chunks of contents
 such as @emph{regions}.  It provides operations only on single items,
@@ -84,15 +83,14 @@ keyboard macros.
 @cindex update protocol
 @cindex buffer time stamp
 @cindex time stamp (of buffer)
-The @anchor{term-update-protocol}@dfn{update protocol} is designed to be
-run at the frequency of the event loop.  It is based on the concept of
-@anchor{term-buffer-time-stamp}@dfn{time stamps}.  Any number of edit
-operations can be performed between two invocations of the update
-protocol, and the update protocol can be invoked at different times for
-different views, including very rarely for views that are not currently
-on display.  Given that the amount of data displayed in a view is
-relatively modest, no attempt is made to minimize the modifications to
-the view.  The smallest unit of an update is a @emph{line} of items.
+The @term{update protocol} is designed to be run at the frequency of the
+event loop.  It is based on the concept of @term{time stamps}.  Any
+number of edit operations can be performed between two invocations of
+the update protocol, and the update protocol can be invoked at different
+times for different views, including very rarely for views that are not
+currently on display.  Given that the amount of data displayed in a view
+is relatively modest, no attempt is made to minimize the modifications
+to the view.  The smallest unit of an update is a @emph{line} of items.
 
 @end itemize
 
@@ -143,14 +141,14 @@ encountered in the middle of a call.
 @cindex concrete syntax tree
 We call the data structure for storing parse results which are the
 (modified) return value of the reader together with start and end
-location a @anchor{term-wad}@dfn{wad}.  The following sub-sections
-describe the structure of a wad and the interpretation of wads as
-Concrete Syntax Tree nodes respectively.  We realize that the
-nomenclature is slightly confusing since wads are nodes in two different
-syntax trees which are both @emph{concrete} syntax trees according to
-standard terminology.  When we capitalize the term as ``Concrete Syntax
-Tree'', we refer to the particular concrete syntax tree representation
-of the @cstlink{} library.
+location a @term{wad}.  The following sub-sections describe the
+structure of a wad and the interpretation of wads as Concrete Syntax
+Tree nodes respectively.  We realize that the nomenclature is slightly
+confusing since wads are nodes in two different syntax trees which are
+both @emph{concrete} syntax trees according to standard terminology.
+When we capitalize the term as ``Concrete Syntax Tree'', we refer to the
+particular concrete syntax tree representation of the @cstlink{}
+library.
 
 @node WAD Structure
 @subsection WAD Structure
@@ -162,11 +160,10 @@ A wad contains the following slots:
 
 @item
 The start and the end location of the wad in the buffer.  The start line
-number within this location information is either
-@anchor{term-absolute}@dfn{absolute} which means that it directly
-corresponds to a line number of the underlying buffer or
-@anchor{term-relative}@dfn{relative} which means that it represents an
-offset from the start line number of a parent or sibling wad.
+number within this location information is either @term{absolute} which
+means that it directly corresponds to a line number of the underlying
+buffer or @term{relative} which means that it represents an offset from
+the start line number of a parent or sibling wad.
 
 @item
 The ``raw'' expression that was read, with some possible modifications.
@@ -199,22 +196,19 @@ on-demand and are thus always present but not always bound. }
 
 @cindex top-level location
 @cindex top-level wad
-A location in the buffer is considered a
-@anchor{term-top-level-location}@dfn{top-level location} if and only if,
-when the buffer is parsed by a number of consecutive calls to
-@speclink{f,read}, when this location is reached, the reader is in its
-initial state with no recursive pending invocations.  Similarly, a wad
-is considered a @anchor{term-top-level-wad}@dfn{top-level wad} if it is
-the result of an immediate call to @t{read}, as opposed to a recursive
-call.
+A location in the buffer is considered a @term{top-level location} if
+and only if, when the buffer is parsed by a number of consecutive calls
+to @speclink{f,read}, when this location is reached, the reader is in
+its initial state with no recursive pending invocations.  Similarly, a
+wad is considered a @term{top-level wad} if it is the result of an
+immediate call to @t{read}, as opposed to a recursive call.
 
-Let the @anchor{term-initial-character}@dfn{initial character} of some
-wad be the first non-whitespace character encountered during the call to
-the reader that produced this wad.  Similarly, let the
-@anchor{term-final-character}@dfn{final character} of some wad be the
-last character encountered during the call to the reader that produced
-this wad, excluding any look-ahead character that could be un-read
-before the wad was returned.
+Let the @term{initial character} of some wad be the first non-whitespace
+character encountered during the call to the reader that produced this
+wad.  Similarly, let the @term{final character} of some wad be the last
+character encountered during the call to the reader that produced this
+wad, excluding any look-ahead character that could be un-read before the
+wad was returned.
 
 The value of the @t{start-line} slot for a wad @var{w} is computed as
 follows:
@@ -222,17 +216,16 @@ follows:
 @itemize
 
 @item
-If @var{w} is @ref{term-absolute,absolute}, which is the case if and
-only if @var{w} is one of the top-level wads in the prefix
-(@pxref{Prefix and Suffix}) or the first top-level wad in the suffix,
-then the value of this slot is the absolute line number of the initial
-character of @var{w}.  The first line of the buffer is numbered
-@math{0}.
+If @var{w} is @termref{absolute}, which is the case if and only if
+@var{w} is one of the top-level wads in the prefix (@pxref{Prefix and
+Suffix}) or the first top-level wad in the suffix, then the value of
+this slot is the absolute line number of the initial character of
+@var{w}.  The first line of the buffer is numbered @math{0}.
 
 @item
-Otherwise @var{w} is @ref{term-relative,relative} which is the case for
-different kinds of placements of @var{w} in the overall hierarchical
-structure of wads:
+Otherwise @var{w} is @termref{relative} which is the case for different
+kinds of placements of @var{w} in the overall hierarchical structure of
+wads:
 
 @itemize
 
@@ -277,7 +270,7 @@ the final character of the wad.
 
 @cindex concrete syntax tree
 While the previous section explained the representation of parse results
-as @ref{term-wad,wads}, the introduction to the @ref{Parse Results}
+as @termrefl{wad,wads}, the introduction to the @ref{Parse Results}
 section mentioned that some wads are also Concrete Syntax Tree (CST)
 nodes.  This sub-section focuses on this dual nature.  The reason for
 having two different views on parse results is that they are used in
@@ -362,10 +355,9 @@ color.}
 @cindex cache
 When @sysname{} produces parse results for a given snapshot (which is
 identified by a buffer time stamp) of the contents of a buffer in the
-way described above, @sysname{} stores those results in a
-@anchor{term-cache}@dfn{cache} and updates a
-@anchor{term-cache-time-stamp}@dfn{time stamp} within the cache to the
-buffer time stamp (@pxref{Parse Results} for details of the parse result
+way described above, @sysname{} stores those results in a @term{cache}
+and updates a @term{time stamp} within the cache to the buffer time
+stamp (@pxref{Parse Results} for details of the parse result
 representation).  Once the cache is up-to-date, clients can query it,
 for example to obtain parse results which correspond to a particular
 range of lines in the buffer.
@@ -374,9 +366,9 @@ range of lines in the buffer.
 @section The Analyzer
 
 @cindex analyzer
-A final concept, the @anchor{term-analyzer}@dfn{analyzer}, ties together
-the previously mentioned components (See @ref{fig:analyzer} for a
-graphical illustration of all components and their relations):
+A final concept, the @term{analyzer}, ties together the previously
+mentioned components (See @ref{fig:analyzer} for a graphical
+illustration of all components and their relations):
 
 @table @asis
 

@@ -57,6 +57,19 @@ Concrete Syntax Tree
 
 @c Semantic markup and references
 
+@macro term{TERM}
+@anchor{Term \TERM\}@dfn{\TERM\}
+@end macro
+@macro terml{TERM,LABEL}
+@anchor{Term \TERM\}@dfn{\LABEL\}
+@end macro
+@macro termref{TERM}
+@link{Term \TERM\,@emph{\TERM\}}
+@end macro
+@macro termrefl{TERM,LABEL}
+@link{Term \TERM\,@emph{\LABEL\}}
+@end macro
+
 @macro setf{NAME}
 (setf \NAME\)
 @end macro

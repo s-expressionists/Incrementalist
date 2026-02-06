@@ -1,5 +1,5 @@
 (:changes
- (:release "0.2" nil
+ (:release "0.2" "2026-02-06"
   (:item
    (:paragraph
     "The" "biggest" "change" "is" "that" "Incrementalist" "now" "tracks"

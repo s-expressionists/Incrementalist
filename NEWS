@@ -1,4 +1,4 @@
-Release 0.2 (not yet released)
+Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between
   WADs that arise due to changes of the reader state.

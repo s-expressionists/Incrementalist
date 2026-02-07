@@ -4,28 +4,19 @@
 
 (defpackage incrementalist.test.test-package (:use))
 
-(defun insert-string (cursor string)
-  (loop :for c :across string
-        :do (case c
-              (#\Newline (cluffer:split-line cursor))
-              (t         (cluffer:insert-item cursor c)))))
-
+;;; TODO (c:items buffer)
 (defun buffer-string (buffer)
   (with-output-to-string (stream)
-    (loop :for line-number :below (cluffer:line-count buffer)
-          :for line        =      (cluffer:find-line buffer line-number)
-          :for content     =      (cluffer:items line)
+    (loop :for line-number :below (b:line-count buffer)
+          :for line        =      (b:find-line buffer line-number)
+          :for content     =      (b:items line)
           :unless (zerop line-number)
             :do (terpri stream)
           :do (map nil (a:rcurry #'write-char stream) content))))
 
 (defun prepared-buffer (content)
-  (let* ((line   (make-instance 'cluffer-standard-line:open-line))
-         (buffer (make-instance 'cluffer-standard-buffer:buffer
-                                :initial-line line))
-         (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
-    (cluffer:attach-cursor cursor line 0)
-    (insert-string cursor content)
+  (multiple-value-bind (buffer cursor) (b:make-buffer)
+    (b:insert-items-at cursor content :line-separator #\Newline)
     (values buffer cursor)))
 
 (defun prepared-analyzer (buffer-content
@@ -382,23 +373,23 @@
                 (mapcar #'apply-one (rest edit)))
                ((cons (eql :move))
                 (destructuring-bind ((line-number column-number)) (rest edit)
-                  (let* ((buffer (cluffer:buffer cursor))
-                         (line   (cluffer:find-line buffer line-number)))
-                    (cluffer:detach-cursor cursor)
-                    (cluffer:attach-cursor cursor line column-number)
+                  (let* ((buffer (b:buffer cursor))
+                         (line   (b:find-line buffer line-number)))
+                    (b:detach cursor)
+                    (b:attach cursor line column-number)
                     (maybe-notify))))
                ((cons (eql :delete))
                 (destructuring-bind (amount) (rest edit)
                   (loop :repeat amount
-                        :do (if (cluffer:end-of-line-p cursor)
-                                (cluffer:join-line cursor)
-                                (cluffer:delete-item cursor))
+                        :do (if (b:end-of-line-p cursor)
+                                (b:join-line cursor)
+                                (b:delete-item-after cursor))
                             (maybe-notify))))
                (string
                 (loop :for c :across edit
                       :do (case c
-                            (#\Newline (cluffer:split-line cursor))
-                            (t         (cluffer:insert-item cursor c)))
+                            (#\Newline (b:split-line cursor))
+                            (t         (b:insert-item-at cursor c)))
                           (maybe-notify)))
                ((cons (eql :insert))
                 (destructuring-bind (location string) (rest edit)

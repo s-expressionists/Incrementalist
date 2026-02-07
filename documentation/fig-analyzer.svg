@@ -7,7 +7,7 @@
    viewBox="0 0 219.18838 132.40092"
    version="1.1"
    id="svg5"
-   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    sodipodi:docname="fig-analyzer.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -24,9 +24,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="1.4130508"
-     inkscape:cx="629.48903"
-     inkscape:cy="339.33669"
+     inkscape:zoom="1.6773295"
+     inkscape:cx="510.93122"
+     inkscape:cy="307.92996"
      inkscape:window-width="1920"
      inkscape:window-height="1149"
      inkscape:window-x="1920"
@@ -473,15 +473,15 @@
     <text
        xml:space="preserve"
        style="font-size:352.425px;line-height:0.066212px;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="89.106041"
-       y="-8.3805628"
+       x="71.974907"
+       y="-7.6343064"
        id="text2810"
        transform="rotate(30.473782)"><tspan
          sodipodi:role="line"
          id="tspan2808"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:sans-serif;-inkscape-font-specification:sans-serif;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
-         x="89.106041"
-         y="-8.3805628">Cluffer update protocol</tspan></text>
+         x="71.974907"
+         y="-7.6343064">text.editor-buffer update protocol</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.265;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:3.18, 3.18;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 171.1578,14.501425 c 18.2992,0.425095 -0.56029,58.007853 -16.49725,64.899446"
@@ -538,16 +538,16 @@
        sodipodi:nodetypes="cc" />
     <text
        xml:space="preserve"
-       style="font-size:352.425px;line-height:0.066212px;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="-41.258778"
-       y="37.565331"
+       style="font-size:352.425px;line-height:0px;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="-45.664379"
+       y="39.598705"
        id="text3049"
-       transform="rotate(-62.527189)"><tspan
+       transform="rotate(-57.72913)"><tspan
          sodipodi:role="line"
-         id="tspan3047"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:sans-serif;-inkscape-font-specification:sans-serif;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
-         x="-41.258778"
-         y="37.565331">Cluffer edit protocol</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;line-height:0px;font-family:sans-serif;-inkscape-font-specification:sans-serif;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
+         x="-45.664379"
+         y="39.598705"
+         id="tspan2">text.editor-buffer edit protocol</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:352.425px;line-height:0.066212px;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -594,14 +594,14 @@
     <text
        xml:space="preserve"
        style="font-size:4.23333px;line-height:6.61458px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="59.090698"
+       x="47.838509"
        y="-4.1231055"
        id="text1564"><tspan
          sodipodi:role="line"
          id="tspan1562"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
-         x="59.090698"
-         y="-4.1231055">Cluffer</tspan></text>
+         x="47.838509"
+         y="-4.1231055">text.editor-buffer</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:4.23333px;line-height:6.61458px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -616,14 +616,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;line-height:8.81945px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="7.6641712"
-       y="50.398136"
+       x="4.1938729"
+       y="55.603584"
        id="text1888"><tspan
          sodipodi:role="line"
          id="tspan1886"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
-         x="7.6641712"
-         y="50.398136">①</tspan></text>
+         x="4.1938729"
+         y="55.603584">①</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:4.23333px;line-height:6.61458px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:0px;word-spacing:0px;fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -649,14 +649,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;line-height:8.81945px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="83.027977"
-       y="36.041748"
+       x="67.569374"
+       y="28.470188"
        id="text1908"><tspan
          sodipodi:role="line"
          id="tspan1906"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px"
-         x="83.027977"
-         y="36.041748">③</tspan></text>
+         x="67.569374"
+         y="28.470188">③</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;line-height:8.81945px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"

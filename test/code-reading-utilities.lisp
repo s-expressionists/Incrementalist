@@ -47,22 +47,22 @@
             :for character across content
             :do (funcall reporter)
             :do (case character
-                  (#\Newline (cluffer:split-line cursor))
-                  (t         (cluffer:insert-item cursor character)))
+                  (#\Newline (b:split-line cursor))
+                  (t         (b:insert-item-at cursor character)))
                 (let ((result (update-cache analyzer cache)))
                   (check-parse-result result))
             :finally (setf (values insert-time count) (funcall reporter t)))
       ;; Delete
-      (cluffer:detach-cursor cursor)
-      (cluffer:attach-cursor cursor (cluffer:find-line buffer 0))
+      (b:detach cursor)
+      (b:attach cursor (b:find-line buffer 0))
       (loop :with reporter = (progress-reporter :indicator #\- :stream stream)
-            :while (or (> (cluffer:line-count buffer) 1) ; fast check
-                       (plusp (cluffer:item-count buffer)))
+            :while (or (> (b:line-count buffer) 1) ; fast check
+                       (plusp (b:item-count buffer)))
             :for i :from 0
             :do (funcall reporter)
-            :do (if (cluffer:end-of-line-p cursor)
-                    (cluffer:join-line cursor)
-                    (cluffer:delete-item cursor))
+            :do (if (b:end-of-line-p cursor)
+                    (b:join-line cursor)
+                    (b:delete-item-after cursor))
                 (let ((result (update-cache analyzer cache)))
                   (check-parse-result result))
             :finally (setf delete-time (funcall reporter t)))

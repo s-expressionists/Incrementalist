@@ -1,5 +1,5 @@
 (defsystem "incrementalist"
-  :description "Incremental parsing of Common Lisp code represented as a Cluffer buffer."
+  :description "Incremental parsing of Common Lisp code represented as an (editor) buffer."
   :license     "BSD" ; see COPYING file
   :author      ("Robert Strandh"
                 #1="Jan Moringen <jmoringe@techfak.uni-bielefeld.de>")
@@ -7,7 +7,7 @@
 
   :version     (:read-file-form "data/version-string.sexp")
   :depends-on  ("trivial-gray-streams"
-                "cluffer"
+                (:version "text.editor-buffer"            "0.1")
                 "flexichain"
                 "concrete-syntax-tree"
                 (:version "eclector"                      #2="0.11")

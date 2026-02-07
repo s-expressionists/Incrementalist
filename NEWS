@@ -1,5 +1,14 @@
 Release 0.3 (not yet released)
 
+* Incrementalist now uses the text.editor-buffer library instead of the Cluffer
+  library as its implementation of line-oriented buffers. The new library has
+  slightly improved protocols and much improved performance compared to
+  Cluffer. The protocol improvements make the new library mostly but not fully
+  compatible with Cluffer.
+
+  Clients of Incrementalist can benefit from improved buffer and line creation
+  functions which text.editor-buffer provides.
+
 Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between

@@ -8,10 +8,10 @@
 * Introduction
 
   The purpose of the Incrementalist library is incremental parsing of
-  Common Lisp code that is contained in a [[https://github.com/robert-strandh/cluffer][Cluffer]] buffer into a syntax
-  tree. The parsing is incremental in the sense that after a small
-  change in the buffer text, the syntax tree can usually be updated
-  with a small amount of parsing work.
+  Common Lisp code that is contained in a [[https://codeberg.org/scymtym/text.editor-buffer][text.editor-buffer]] buffer
+  into a syntax tree. The parsing is incremental in the sense that
+  after a small change in the buffer text, the syntax tree can usually
+  be updated with a small amount of parsing work.
 
   *This library is under active development. Its ASDF system
   structure, package structure, exported symbols and protocols may
@@ -25,20 +25,14 @@
 * Usage Overview
 
   A central concept of the Incrementalist library is the "analyzer"
-  which, given a Cluffer buffer, creates and maintains a concrete
-  syntax tree that represents the content of the buffer. We therefore
-  start by creating and populating a buffer:
+  which, given a text.editor-buffer buffer, creates and maintains a
+  concrete syntax tree that represents the content of the buffer. We
+  therefore start by creating and populating a buffer:
 
   #+BEGIN_SRC lisp :exports both :results value :wrap example
     (defun example-buffer (&key (content "(((1)))"))
-      (let* ((line (make-instance 'cluffer-standard-line:open-line))
-             (buffer (make-instance 'cluffer-standard-buffer:buffer :initial-line line))
-             (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
-        (cluffer:attach-cursor cursor line 0)
-        (loop for c across content
-              do (case c
-                   (#\Newline (cluffer:split-line cursor))
-                   (t         (cluffer:insert-item cursor c))))
+      (multiple-value-bind (buffer cursor) (text.editor-buffer:make-buffer)
+        (text.editor-buffer:insert-items-at cursor content)
         (values buffer cursor)))
 
     (example-buffer)
@@ -46,8 +40,8 @@
 
   #+RESULTS:
   #+begin_example
-  #<CLUFFER-STANDARD-BUFFER:BUFFER 1 line 7 items {10055953A3}>
-  #<CLUFFER-STANDARD-LINE:RIGHT-STICKY-CURSOR 0:7 {1005595453}>
+  #<TEXT.EDITOR-BUFFER.STANDARD-BUFFER:BUFFER {120D7F5FC3}>
+  #<TEXT.EDITOR-BUFFER.STANDARD-LINE:RIGHT-STICKY-CURSOR {120D6970A3}>
   #+end_example
 
   We can now attach an analyzer to a buffer:
@@ -61,7 +55,7 @@
 
   #+RESULTS:
   #+begin_example
-  #<INCREMENTALIST:ANALYZER N/A,N/A {1005642B73}>
+  #<INCREMENTALIST:ANALYZER N/A,N/A {120DCE6BD3}>
   #+end_example
 
   To obtain the concrete syntax tree, we must update the analyzer
@@ -77,9 +71,9 @@
           (mapc #'print (incrementalist:find-wads-containing-position
                          cache 0 4))
           ;; Delete first and last buffer item and update analyzer
-          (cluffer:erase-item cursor)
-          (setf (cluffer:cursor-position cursor) 0)
-          (cluffer:delete-item cursor)
+          (text.editor-buffer:delete-item-before cursor)
+          (setf (text.editor-buffer:index cursor) 0)
+          (text.editor-buffer:delete-item-after cursor)
           (incrementalist:update analyzer)
           (format t "~&After change")
           (mapc #'print (incrementalist:find-wads-containing-position
@@ -124,5 +118,5 @@
   #+end_example
 
 # Local Variables:
-# eval: (load-library 'ob-lisp)
+# eval: (load-library "ob-lisp")
 # End:

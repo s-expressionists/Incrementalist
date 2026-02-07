@@ -27,10 +27,10 @@ Eclector
 @end macro
 
 @macro bufferlibrary
-Cluffer
+text.editor-buffer
 @end macro
 @macro bufferlibrarylink
-@url{https://github.com/robert-strandh/Cluffer,@bufferlibrary{}}
+@url{https://codeberg.org/scymtym/text.editor-buffer,@bufferlibrary{}}
 @end macro
 
 @macro cst

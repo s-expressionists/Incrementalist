@@ -1,5 +1,21 @@
 (:changes
- (:release "0.3" nil)
+ (:release "0.3" nil
+  (:item
+   (:paragraph
+    "Incrementalist" "now" "uses" "the" "text.editor-buffer" "library"
+    "instead" "of" "the" "Cluffer" "library" "as" "its" "implementation" "of"
+    "line-oriented" "buffers" "." "The" "new" "library" "has" "slightly"
+    "improved" "protocols" "and" "much" "improved" "performance" "compared"
+    "to" "Cluffer" "." "The" "protocol" "improvements" "make" "the" "new"
+    "library" "mostly" "but" "not" "fully" "compatible" "with" "Cluffer" ".")
+   (:paragraph
+    "Clients" "of" "Incrementalist" "can" "benefit" "from" "improved" "buffer"
+    "and" "line" "creation" "functions" "which" "text.editor-buffer" "provides"
+    (:when "manual"
+     "(" (:ref :section "Introduction") "," "the" "first" "listing" "for" "an"
+     "example"  "of" "the" "new" "function"
+     (:tt "text.editor-buffer:make-buffer") ")")
+    "." )))
 
  (:release "0.2" "2026-02-06"
   (:item

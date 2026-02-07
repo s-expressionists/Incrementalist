@@ -29,17 +29,17 @@ correctly."
 ;;; Return the line number and the column number of CURSOR as two
 ;;; values.
               (defun cursor-positions (cursor)
-                (values (cluffer:line-number cursor)
-                        (cluffer:cursor-position cursor)))
+                (values (c:line-number cursor)
+                        (c:cursor-position cursor)))
 
 ;;; Set the line number and the column number of CURSOR.
               (defun set-cursor-positions (cursor line-number column-number)
-                (let ((buffer (cluffer:buffer cursor)))
-                  (when (cluffer:cursor-attached-p cursor)
-                    (cluffer:detach-cursor cursor))
-                  (cluffer:attach-cursor
+                (let ((buffer (c:buffer cursor)))
+                  (when (c:cursor-attached-p cursor)
+                    (c:detach-cursor cursor))
+                  (c:attach-cursor
                    cursor
-                   (cluffer:find-line buffer line-number)
+                   (c:find-line buffer line-number)
                    column-number)))
 "))))
 

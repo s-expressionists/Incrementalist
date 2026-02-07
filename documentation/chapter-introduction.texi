@@ -6,22 +6,11 @@
 code editor, into concrete and abstract syntax trees.  As a first
 concrete illustration, consider the following simplified example of that
 process
-@footnote{While they are not the focus of the example, we provide the
-definitions of the two helper functions @t{make-buffer-with-content} and
-@t{print-parse-result} for completeness:
+@footnote{While it is not the focus of the example, we provide the
+definition of the helper function @t{print-parse-result} for
+completeness:
 
 @lisp
-(defun make-buffer-with-content (content)
-  (let* ((line (make-instance 'cluffer-standard-line:open-line))
-         (buffer (make-instance 'cluffer-standard-buffer:buffer :initial-line line))
-         (cursor (make-instance 'cluffer-standard-line:right-sticky-cursor)))
-    (cluffer:attach-cursor cursor line 0)
-    (loop for c across content
-          do (case c
-               (#\Newline (cluffer:split-line cursor))
-               (t         (cluffer:insert-item cursor c))))
-    (values buffer cursor)))
-
 (defun print-parse-result (stream root)
   (utilities.print-tree:print-tree *standard-output*
                                    root
@@ -34,7 +23,8 @@ definitions of the two helper functions @t{make-buffer-with-content} and
 }:
 
 @lisp
-(let* ((buffer (make-buffer-with-content "(#|foo|# 1 (2 . 3))"))
+(let* ((buffer (text.editor-buffer:make-buffer
+                :initial-contents "(#|foo|# 1 (2 . 3))"))
        (analyzer (make-instance 'incrementalist:analyzer :buffer buffer))
        (cache (incrementalist:cache analyzer)))
   (incrementalist:update analyzer)

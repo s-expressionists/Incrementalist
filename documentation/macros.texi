@@ -15,6 +15,10 @@ Common Lisp
 Emacs
 @end macro
 
+@macro climacs
+Climacs
+@end macro
+
 @macro eclector
 Eclector
 @end macro
@@ -22,15 +26,11 @@ Eclector
 @url{https://github.com/s-expressionists/eclector,@eclector{}}
 @end macro
 
-@macro climacs
-Climacs
-@end macro
-
-@macro cluffer
+@macro bufferlibrary
 Cluffer
 @end macro
-@macro clufferlink
-@url{https://github.com/robert-strandh/Cluffer,@cluffer{}}
+@macro bufferlibrarylink
+@url{https://github.com/robert-strandh/Cluffer,@bufferlibrary{}}
 @end macro
 
 @macro cst

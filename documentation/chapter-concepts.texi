@@ -17,22 +17,23 @@ concepts which will be explained in the following sections.
 
 @float Figure,fig:analyzer
 @center @image{fig-analyzer,14cm}
-@caption{Important concepts from the @cluffer{} and @sysname{} libraries
-and their relations. Dashed arrows with circled numbers and labels
-indicate the use of protocols and the typical sequence of events.}
+@caption{Important concepts from the @bufferlibrary{} and @sysname{}
+libraries and their relations. Dashed arrows with circled numbers and
+labels indicate the use of protocols and the typical sequence of
+events.}
 @end float
 
-As shown in the figure, a client works with a @cluffer{} buffer and an
-associated @sysname{} analyzer including the respective sub-structures.
-The buffer represents some content as sequence of lines each of which is
-a sequence of items (often characters).  In typical usage, the sequence
-of actions is something like this:
+As shown in the figure, a client works with a @bufferlibrary{} buffer
+and an associated @sysname{} analyzer including the respective
+sub-structures.  The buffer represents some content as sequence of lines
+each of which is a sequence of items (often characters).  In typical
+usage, the sequence of actions is something like this:
 
 @itemize @w{}
 
 @item
-(1) The client manipulates the buffer content via the @cluffer{} edit
-protocol.
+(1) The client manipulates the buffer content via the @bufferlibrary{}
+edit protocol.
 
 @item
 (2) When the client wishes to work with syntax trees that represent the
@@ -40,9 +41,9 @@ buffer content, the client invokes the @sysname{} analyzer update
 protocol to bring the analyzer and its cache up-to-date.
 
 @item
-(3) @sysname{} then uses the @cluffer{} update protocol to determine the
-buffer lines that have changed since the previous update and invalidates
-cache data accordingly.
+(3) @sysname{} then uses the @bufferlibrary{} update protocol to
+determine the buffer lines that have changed since the previous update
+and invalidates cache data accordingly.
 
 @item
 (4) After that @sysname{} uses @eclector{} to read (or re-read) in
@@ -58,11 +59,11 @@ invalid due to the changes.
 @node Representation of the Editor Buffer
 @section Representation of the Editor Buffer
 
-@sysname{} uses the @clufferlink{} library to represent its buffers.  We
-briefly describe the essential aspects of that library below.  For
+@sysname{} uses the @bufferlibrary{} library to represent its buffers.
+We briefly describe the essential aspects of that library below.  For
 detailed information on how it works, see the dedicated documentation.
 
-@cluffer{} provides two distinct protocols, namely the @emph{edit
+@bufferlibrary{} provides two distinct protocols, namely the @emph{edit
 protocol} and the @emph{update protocol}.
 
 @itemize

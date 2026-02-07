@@ -607,13 +607,13 @@ The returned object is of type @speclink{t,condition}, usually of type
 @section The Associated Buffer Protocol
 
 This tiny protocol consists of a single generic function which looks up
-the @cluffer{} buffer associated with a given object.  Clients can use
-this protocol for looking up the buffers associated with @t{cache} and
-@classref{analyzer,@toppackage{}} objects.
+the @bufferlibrary{} buffer associated with a given object.  Clients can
+use this protocol for looking up the buffers associated with @t{cache}
+and @classref{analyzer,@toppackage{}} objects.
 
 @defgena{buffer,@toppackage{}} object
 
-Return the @cluffer{} buffer associated with @var{object}.
+Return the @bufferlibrary{} buffer associated with @var{object}.
 @end deffn
 
 @node The Cache Protocol
@@ -738,8 +738,8 @@ protocol by tying together three aspects:
 @itemize
 
 @item
-The analyzer instance consumes the content of an associated @cluffer{}
-buffer.
+The analyzer instance consumes the content of an associated
+@bufferlibrary{} buffer.
 
 @item
 The analyzer implements the behavior of a @commonlisp{} stream which

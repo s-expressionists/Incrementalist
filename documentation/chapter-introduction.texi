@@ -68,10 +68,10 @@ remains at this point):
 @itemize
 
 @item
-@sysname{} uses the @clufferlink{} library for its buffer representation
-which has better performance characteristic, especially on large
-buffers, and makes it easier to write sophisticated parsers for buffer
-contents compared to the @climacs{} version.
+@sysname{} uses the @bufferlibrarylink{} library for its buffer
+representation which has better performance characteristic, especially
+on large buffers, and makes it easier to write sophisticated parsers for
+buffer contents compared to the @climacs{} version.
 
 @item
 In a similar fashion, @sysname{} uses the @eclectorlink{} library for

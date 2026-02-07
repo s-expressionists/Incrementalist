@@ -41,13 +41,13 @@
       (update-cache analyzer cache))
     ;; Delete buffer content.
     (note-time ("Delete ~:D lines" line-count)
-      (cluffer:detach-cursor cursor)
-      (cluffer:attach-cursor cursor (cluffer:find-line buffer 0))
-      (loop :while (or (> (cluffer:line-count buffer) 1) ; fast check
-                       (plusp (cluffer:item-count buffer)))
-            :do (if (cluffer:end-of-line-p cursor)
-                    (cluffer:join-line cursor)
-                    (cluffer:delete-item cursor))))
+      (b:detach cursor)
+      (b:attach cursor (b:find-line buffer 0))
+      (loop :while (or (> (b:line-count buffer) 1) ; fast check
+                       (plusp (b:item-count buffer)))
+            :do (if (b:end-of-line-p cursor)
+                    (b:join-line cursor)
+                    (b:delete-item-after cursor))))
     ;; Update with empty buffer.
     (note-time ("Update time after deleting ~:D lines" line-count)
       (update-cache analyzer cache))

@@ -21,7 +21,7 @@
                           :initform nil)
    (%lines                :reader   lines
                           :initform (make-instance 'flx:standard-flexichain))
-   (%cluffer-lines        :reader   cluffer-lines
+   (%buffer-lines         :reader   buffer-lines
                           :initform (make-instance 'flx:standard-flexichain))
    ;; The prefix contains top-level wads in reverse order, so that the
    ;; last wad in the prefix is the first wad in the buffer.  Every
@@ -331,8 +331,8 @@
         (push-to-residue cache wad))))
 
 (defun handle-modified-line (cache line-number)
-  (let* ((cluffer-line (flx:element* (cluffer-lines cache) line-number))
-         (string       (coerce (cluffer:items cluffer-line) 'string)))
+  (let* ((buffer-line (flx:element* (buffer-lines cache) line-number))
+         (string      (coerce (b:items buffer-line) 'string)))
     (setf (flx:element* (lines cache) line-number) string))
   (loop until (next-wad-is-beyond-line-p cache line-number)
         do (process-next-wad cache line-number)))
@@ -354,7 +354,7 @@
 (defun scavenge (cache)
   (let ((buffer              (buffer cache))
         (lines               (lines cache))
-        (cluffer-lines       (cluffer-lines cache))
+        (buffer-lines        (buffer-lines cache))
         (cache-initialized-p nil)
         (line-counter        0))
     (labels ((ensure-cache-initialized ()
@@ -366,22 +366,22 @@
                (let ((count (- end-line-number start-line-number)))
                  (loop :repeat count
                        :do (flx:delete* lines start-line-number)
-                           (flx:delete* cluffer-lines start-line-number))
+                           (flx:delete* buffer-lines start-line-number))
                  (handle-deleted-lines cache (1- end-line-number) count)))
              (remove-deleted-lines (line)
                ;; Look at cache lines starting at LINE-COUNTER. Delete
                ;; all cache lines that do not have LINE as their
-               ;; associated cluffer line. Those lines correspond to
-               ;; deleted lines between the previously processed line
-               ;; and LINE.
+               ;; associated text.editor-buffer line. Those lines
+               ;; correspond to deleted lines between the previously
+               ;; processed line and LINE.
                (loop :for end-line-number :from line-counter
-                     :for cluffer-line
-                        = (flx:element* cluffer-lines end-line-number)
-                     :until (eq line cluffer-line)
+                     :for buffer-line
+                        = (flx:element* buffer-lines end-line-number)
+                     :until (eq line buffer-line)
                      :finally (when (< line-counter end-line-number)
                                 (delete-cache-lines
                                  line-counter end-line-number))))
-             ;; Handlers for Cluffer's update protocol events.
+             ;; Handlers for text.editor-buffer's update protocol events.
              (skip (count)
                (incf line-counter count))
              (modify (line)
@@ -391,9 +391,9 @@
                (incf line-counter))
              (create (line)
                (ensure-cache-initialized)
-               (let ((string (coerce (cluffer:items line) 'string)))
+               (let ((string (coerce (b:items line) 'string)))
                  (flx:insert* lines line-counter string)
-                 (flx:insert* cluffer-lines line-counter line))
+                 (flx:insert* buffer-lines line-counter line))
                (handle-inserted-line cache line-counter)
                (incf line-counter))
              (sync (line)
@@ -403,12 +403,11 @@
       ;; change the cache lines and the worklist so that they
       ;; correspond to the new buffer state.
       (setf (time-stamp cache)
-            (cluffer:update buffer
-                            (time-stamp cache)
-                            #'sync #'skip #'modify #'create))
+            (b:update
+             buffer (time-stamp cache) #'sync #'skip #'modify #'create))
       ;; Remove trailing cache lines after the last
       ;; skipped/modified/... cache line, that no longer correspond to
-      ;; existing lines in the cluffer buffer.
+      ;; existing lines in the text.editor-buffer buffer.
       (let ((cache-line-count (flx:nb-elements lines)))
         (when (< line-counter cache-line-count)
           (delete-cache-lines line-counter cache-line-count)))))

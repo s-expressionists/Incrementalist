@@ -5,6 +5,8 @@
   (:local-nicknames
    (#:a   #:alexandria)
 
+   (#:b   #:text.editor-buffer)
+
    (#:inc #:incrementalist)
    (#:dep #:incrementalist.dependencies))
 

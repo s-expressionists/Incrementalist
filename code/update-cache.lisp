@@ -2,7 +2,7 @@
 
 (defmethod update ((analyzer analyzer))
   (let* ((buffer      (buffer analyzer))
-         (buffer-time (cluffer-standard-buffer::current-time buffer))
+         (buffer-time (b:current-time buffer))
          (cache       (cache analyzer))
          (cache-time  (time-stamp cache)))
     ;; Skip `scavenge' and `read-forms' if the buffer content has not

@@ -1,5 +1,7 @@
 (cl:in-package #:incrementalist)
 
+;;; TODO: text.editor-buffer should provide this; will that remove trivial-gray-stream dependency?
+
 (deftype stream-line-designator ()
   '(or null stream-line-number))
 
@@ -12,18 +14,18 @@
 (deftype stream-item-number ()
   'alexandria:array-index)
 
-;;; A class for presenting a snapshot of the contents of a Cluffer
-;;; buffer as a (character input) stream.
+;;; A class for presenting a snapshot of the contents of a
+;;; text.editor-buffer buffer as a (character input) stream.
 ;;;
 ;;; The operations `cl:file-position' (reading and writing) are not
 ;;; supported at the moment.
 ;;;
 ;;; An instance of this class stores the item sequences of the lines
-;;; of a Cluffer buffer in its `%lines' slot.  The other crucial piece
-;;; of state is current location which stored in the `%line-number'
-;;; and `%item-number' slots.  The remaining slots cache information
-;;; that would be too costly to compute or retrieve in every stream
-;;; operation.
+;;; of a text.editor-buffer buffer in its `%lines' slot.  The other
+;;; crucial piece of state is current location which stored in the
+;;; `%line-number' and `%item-number' slots.  The remaining slots
+;;; cache information that would be too costly to compute or retrieve
+;;; in every stream operation.
 (defclass buffer-stream (stream:fundamental-character-input-stream)
   ((%lines       :initarg  :lines
                  :reader   lines)

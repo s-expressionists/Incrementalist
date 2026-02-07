@@ -3,9 +3,13 @@
    #:common-lisp)
 
   (:local-nicknames
+   (#:stream    #:trivial-gray-streams)
+
+   (#:b         #:text.editor-buffer)
+
    (#:reader    #:eclector.reader)
    (#:readtable #:eclector.readtable)
-   (#:stream    #:trivial-gray-streams)
+
    (#:flx       #:flexichain)
 
    (#:dep       #:incrementalist.dependencies)

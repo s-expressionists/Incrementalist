@@ -64,7 +64,7 @@
 
 ;;; Associated buffer protocol
 
-;;; Return the Cluffer buffer associated with OBJECT.
+;;; Return the text.editor-buffer buffer associated with OBJECT.
 (defgeneric buffer (object))
 
 ;;; Cache protocol

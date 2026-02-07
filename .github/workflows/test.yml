@@ -29,7 +29,7 @@ jobs:
       - name: Clone dependencies into local-projects
         run: |
           cd "${HOME}/quicklisp/local-projects"                                             \
-            && git clone -b master https://github.com/robert-strandh/cluffer                \
+            && git clone -b main https://codeberg.org/scymtym/text.editor-buffer            \
             && git clone -b master https://github.com/s-expressionists/concrete-syntax-tree \
             && git clone -b master https://github.com/s-expressionists/eclector             \
             && git clone -b main https://github.com/s-expressionists/spell

@@ -181,15 +181,18 @@
 (defun read-forms (analyzer)
   (let* ((client (make-instance 'client :stream* analyzer))
          (cache  (cache analyzer))
-         (prefix (prefix cache)))
+         (prefix (prefix cache))
+         initial-line initial-column)
     (update-lines-cache analyzer (lines analyzer))
     ;; Position ANALYZER (which is a stream) after the last prefix wad
     ;; (remember the cache prefix is stored in reverse order) if any.
-    (setf (values (line-number analyzer) (item-number analyzer))
+    (setf (values initial-line initial-column)
           (if (null prefix)
               (values 0 0)
               (let ((first (first prefix)))
-                (values (end-line first) (end-column first)))))
+                (values (end-line first) (end-column first))))
+          (values (line-number analyzer) (item-number analyzer))
+          (values initial-line           initial-column))
     ;; Set up the reader state for the following `read' calls.  If no
     ;; wad in CACHE precedes the buffer location of ANALYZER, install
     ;; the initial reader state which is stored in ANALYZER (and was
@@ -251,4 +254,6 @@
     (when (null (prefix cache))
       (alexandria:when-let ((suffix-top (first (suffix cache))))
         (when (eq (dep:inherited suffix-top) :invalid)
-          (setf (dep:inherited suffix-top) (initial-reader-state analyzer)))))))
+          (setf (dep:inherited suffix-top) (initial-reader-state analyzer)))))
+    ;; TODO: we could report a larger initial-line if no wad *on* INITIAL-LINE was modified
+    (values initial-line (line-number analyzer))))

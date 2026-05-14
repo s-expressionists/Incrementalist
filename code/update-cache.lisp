@@ -9,4 +9,6 @@
     ;; changed since the most recent update.
     (when (or (null cache-time) (> buffer-time cache-time))
       (scavenge cache)
+      ;; `read-forms' returns two values; 1) line number of first
+      ;; processed line 2) line number of last modified line
       (read-forms analyzer))))

@@ -723,11 +723,20 @@ Return the cache associated with @var{analyzer}.
 @defgena{update,@toppackage{}} analyzer
 
 Update the cache associated with @var{analyzer} according to changes in
-the buffer associated with @var{analyzer}.
+the buffer associated with @var{analyzer} and return information about
+the processed lines.
 
-The function does not return a meaningful result.  Instead, the client
-queries the updated cache associated with @var{analyzer} after the
-update is complete.
+This function returns two values: the line number of the first processed
+line and the line number of the last processed line.  These line numbers
+provide a rough indication of the buffer region and cache items affected
+by the update.  Note that the buffer region indicated by this function
+may be larger than the region reported by the update protocol of the
+buffer since a change in one buffer line can cause other buffer lines
+(an arbitrary number of buffer lines in fact) to be processed.
+
+To retrieve more detailed information produced by this operation, the
+client queries the updated cache associated with @var{analyzer} after
+the update is complete.
 @end deffn
 
 @defclassa{analyzer,@toppackage{}}

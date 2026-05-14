@@ -15,7 +15,11 @@
      "(" (:ref :section "Introduction") "," "the" "first" "listing" "for" "an"
      "example"  "of" "the" "new" "function"
      (:tt "text.editor-buffer:make-buffer") ")")
-    "." )))
+    "." ))
+  (:item
+   (:paragraph
+    "The" "function" (:symbol "incrementalist:update") "now" "returns" "the"
+    "line" "numbers" "of" "the" "first" "and" "last" "processed" "lines" ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

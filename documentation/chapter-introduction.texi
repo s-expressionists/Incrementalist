@@ -59,7 +59,7 @@ remains at this point):
 
 @item
 @sysname{} uses the @bufferlibrarylink{} library for its buffer
-representation which has better performance characteristic, especially
+representation which has better performance characteristics, especially
 on large buffers, and makes it easier to write sophisticated parsers for
 buffer contents compared to the @climacs{} version.
 
@@ -75,7 +75,7 @@ recovering from syntax errors both of which are essential for a code
 editor.
 
 @item
-@sysname{} is independent of any particular library for making graphic
+@sysname{} is independent of any particular library for making graphical
 user interfaces, allowing it to be configured with different such
 libraries.
 

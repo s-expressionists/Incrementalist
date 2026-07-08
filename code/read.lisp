@@ -11,6 +11,59 @@
                               :end-column          end-column
                               :condition           condition)))
 
+;;; Return a line number and a column number derived from START-LINE
+;;; and START-COLUMN by moving over OFFSET items - either forward or
+;;; backward depending on the sign of OFFSET.  If the LOCATION
+;;; designated by OFFSET is not on START-LINE, move to lines before or
+;;; after START-LINE.
+(defun error-location (cache start-line start-column offset)
+  (loop :with column      = (+ start-column offset)
+        :with line-number = start-line
+        :with line-length = nil
+        :do (cond ((minusp column)
+                   (decf line-number)
+                   (incf column (+ (line-length cache line-number) 1)))
+                  ((> column (setf line-length (line-length cache line-number)))
+                   (incf line-number)
+                   (decf column (+ line-length 1)))
+                  (t
+                   (return (values line-number column))))))
+
+;;; The `read-maybe-nothing' method collects Eclector errors in
+;;; *ERRORS* during reading.
+(defvar *errors*)
+
+(defun call-with-error-recording (continuation cache)
+  (handler-bind
+      ((reader-error
+         (lambda (condition)
+           (destructuring-bind (line . column)
+               (eclector.base:stream-position condition)
+             (dbg:log :read "Handling condition at ~D:~D: ~A~%"
+                      line column condition)
+             ;; Compute start and end locations expression in line and
+             ;; column numbers from the linear offset and length
+             ;; contained in CONDITION.
+             (let* ((offset (eclector.base:position-offset condition))
+                    (length (eclector.base:range-length condition)))
+               (multiple-value-bind (start-line start-column)
+                   (error-location cache line column offset)
+                 (multiple-value-bind (end-line end-column)
+                     (error-location cache start-line start-column length)
+                   (let ((error-wad (make-error-wad
+                                     condition
+                                     start-line start-column
+                                     end-line   end-column)))
+                     (push error-wad *errors*))))))
+           (dbg:log :read "Invoking ~A restart~%" 'eclector.reader:recover)
+           (eclector.reader:recover))))
+    (funcall continuation)))
+
+;;; Establish a handler which collects `reader-error's into `*errors*' and
+;;; recovers around BODY.
+(defmacro with-error-recording ((cache) &body body)
+  `(call-with-error-recording (lambda () ,@body) ,cache))
+
 (defun make-dummy-result-for-errors (stream errors)
   ;; If errors occurred but no result was produced (an isolated . is
   ;; an example of this since Eclector's `recover' restart will skip
@@ -33,35 +86,6 @@
     (basic-wad* 'reader-macro-wad stream
                 start-line start-column
                 end-line   end-column)))
-
-;;; The `read-maybe-nothing' method collects Eclector errors in
-;;; *ERRORS* during reading.
-(defvar *errors*)
-
-(defun call-with-error-recording (continuation)
-  (handler-bind
-      ((reader-error
-         (lambda (condition)
-           (destructuring-bind (line . column)
-               (eclector.base:stream-position condition)
-             (dbg:log :read "Handling condition at ~D:~D: ~A~%"
-                      line column condition)
-             (let* ((offset       (eclector.base:position-offset condition))
-                    (length       (eclector.base:range-length condition))
-                    (start-column (max 0 (+ column offset)))
-                    (end-column   (+ start-column length))
-                    (error-wad    (make-error-wad
-                                   condition
-                                   line start-column line end-column)))
-               (push error-wad *errors*)))
-           (dbg:log :read "Invoking ~A restart~%" 'eclector.reader:recover)
-           (eclector.reader:recover))))
-    (funcall continuation)))
-
-;;; Establish a handler which collects `reader-error's into `*errors*' and
-;;; recovers around BODY.
-(defmacro with-error-recording (() &body body)
-  `(call-with-error-recording (lambda () ,@body)))
 
 (defmethod reader:read-maybe-nothing :around
     ((client client) (stream analyzer) (eof-error-p t) (eof-value t))
@@ -144,20 +168,21 @@
   ;; perform the appropriate recovery.  The `read-maybe-nothing'
   ;; method takes care of integrating the collected `error-wad's into
   ;; the wad tree.
-  (multiple-value-bind (object kind wad)
-      (with-error-recording ()
-        (eclector.reader:read-maybe-nothing client analyzer nil nil))
-    (declare (ignore object))
-    ;; After reading a top-level expression, pop state cells that have
-    ;; top-level-expression scope but not global scope.
-    (dep:pop-local-cells)
-    (case kind
-      (:eof)          ; nothing to do for end of input
-      (:whitespace)   ; nothing to do for whitespace
-      (t              ; got a top-level, absolute wad
-       (if (null wad) ; or possibly nothing, but only if KIND is `:skip'
-           (assert (eq kind :skip))
-           (let ((cache (cache analyzer)))
+  (let ((cache (cache analyzer)))
+    (multiple-value-bind (object kind wad)
+        (with-error-recording (cache)
+          (eclector.reader:read-maybe-nothing client analyzer nil nil))
+      (declare (ignore object))
+      ;; After reading a top-level expression, pop state cells that
+      ;; have top-level-expression scope but not global scope.
+      (dep:pop-local-cells)
+      (cond ((eq kind :eof))        ; nothing to do for end of input
+            ((eq kind :whitespace)) ; nothing to do for whitespace
+            ;; Otherwise, a top-level, absolute wad or possibly
+            ;; nothing, but only if KIND is `:skip'.
+            ((null wad)
+             (assert (eq kind :skip)))
+            (t
              ;; For the "escaping" cells of WAD, disregard those that
              ;; have top-level-expression scope since WAD represents a
              ;; toplevel expression and there is no further escaping
@@ -178,8 +203,8 @@
              ;; location has to be computed.
              (when (null (prefix cache))
                (setf (dep:inherited wad) (initial-reader-state analyzer)))
-             (push-to-prefix cache wad)))))
-    (values kind wad)))
+             (push-to-prefix cache wad)))
+      (values kind wad))))
 
 (defun read-forms (analyzer)
   (let* ((client (make-instance 'client :stream* analyzer))

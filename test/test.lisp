@@ -288,6 +288,17 @@ a b"
     ("#.(cl:setf cl:*read-base* (cl:error \"foo\"))"
      '((inc:atom-wad ((0 0) (0 43))
         (:errors ((((0 42) (0 43)) eclector.reader:read-time-evaluation-error)))
+        :ignore-children)))
+    ;; Eclector errors can cross line boundaries: Eclector reads #\#
+    ;; and #\Newline, then signals an error with offset -1 and length
+    ;; 1 to indicate that the error is at the invalid dispatch
+    ;; character #\Newline.  Ensure that the `error-wad' derived from
+    ;; the Eclector error spans the two lines in order to indicate the
+    ;; character.
+    ("#
+"
+     '((inc:atom-wad ((0 0) (1 0))
+        (:errors ((((0 1) (1 0)) eclector.reader:sharpsign-invalid)))
         :ignore-children)))))
 
 (test spell-checking.smoke

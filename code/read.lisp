@@ -38,27 +38,30 @@
 ;;; *ERRORS* during reading.
 (defvar *errors*)
 
+(defun call-with-error-recording (continuation)
+  (handler-bind
+      ((reader-error
+         (lambda (condition)
+           (destructuring-bind (line . column)
+               (eclector.base:stream-position condition)
+             (dbg:log :read "Handling condition at ~D:~D: ~A~%"
+                      line column condition)
+             (let* ((offset       (eclector.base:position-offset condition))
+                    (length       (eclector.base:range-length condition))
+                    (start-column (max 0 (+ column offset)))
+                    (end-column   (+ start-column length))
+                    (error-wad    (make-error-wad
+                                   condition
+                                   line start-column line end-column)))
+               (push error-wad *errors*)))
+           (dbg:log :read "Invoking ~A restart~%" 'eclector.reader:recover)
+           (eclector.reader:recover))))
+    (funcall continuation)))
+
 ;;; Establish a handler which collects `reader-error's into `*errors*' and
 ;;; recovers around BODY.
 (defmacro with-error-recording (() &body body)
-  `(handler-bind
-       ((reader-error
-          (lambda (condition)
-            (destructuring-bind (line . column)
-                (eclector.base:stream-position condition)
-              (dbg:log :read "Handling condition at ~D:~D: ~A~%"
-                       line column condition)
-              (let* ((offset       (eclector.base:position-offset condition))
-                     (length       (eclector.base:range-length condition))
-                     (start-column (max 0 (+ column offset)))
-                     (end-column   (+ start-column length))
-                     (error-wad    (make-error-wad
-                                    condition
-                                    line start-column line end-column)))
-                (push error-wad *errors*)))
-            (dbg:log :read "Invoking ~A restart~%" 'eclector.reader:recover)
-            (eclector.reader:recover))))
-     ,@body))
+  `(call-with-error-recording (lambda () ,@body)))
 
 (defmethod reader:read-maybe-nothing :around
     ((client client) (stream analyzer) (eof-error-p t) (eof-value t))

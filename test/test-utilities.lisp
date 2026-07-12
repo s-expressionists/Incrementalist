@@ -40,6 +40,24 @@
       (apply #'prepared-analyzer buffer-content args)
     (update-cache analyzer cache)))
 
+(defun map-prefix-suffix-splits (function cache)
+  ;; Go through all possible divisions of CACHE into prefix and
+  ;; suffix.
+  (loop :for i :from 0 :to (+ (length (inc::prefix cache))
+                              (length (inc::suffix cache)))
+        :do ;; Set up the cache to contain I WADs in the prefix.  Do a
+            ;; full adjustment with potentially multiple iterations
+            ;; each time since FUNCTION is allowed to mutate CACHE.
+            (loop :for count = (length (inc::prefix cache))
+                  :do (cond ((< count i)
+                             (inc::suffix-to-prefix cache))
+                            ((> count i)
+                             (inc::prefix-to-suffix cache))
+                            (t
+                             (loop-finish))))
+            ;; Call FUNCTION with the prepared cache split.
+            (funcall function cache i)))
+
 ;;; Reporting utilities
 
 (defun format-node (stream root-and-node &optional colon? at?)
@@ -254,7 +272,13 @@
                (is-sequence #'rec expected-children (inc:children result)
                             result-info "~:*child~[ren~;~:;ren~]"
                             :input input))))))
-    (rec expected root-result)))
+    (if (typep root-result #1='inc:wad)
+        (rec expected root-result)
+        (fiveam:fail "~@<~@[For input~@:_~@:_~
+                      ~S~
+                      ~@:_~@:_,~] ~
+                      expected ~S to be of type ~S but it is of type ~S.~@:>"
+                     input root-result #1# (type-of root-result)))))
 
 (defun is-result= (expected-result actual-result &key input)
   (is (a:type= (type-of expected-result) (type-of actual-result)))
@@ -278,13 +302,16 @@
                             :input input))))
     (rec expected-result actual-result)))
 
-(defun is-result-count= (expected-results actual-results &key input)
+(defun is-result-count= (expected-results actual-results
+                         &key input (arguments nil arguments-supplied?))
   (is (= (length expected-results) (length actual-results))
       "~@<~@[For input~@:_~@:_~
        ~S~
-       ~@:_~@:_,~] ~
-       expected ~D result~:P but there ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
-      input (length expected-results) (length actual-results)))
+       ~@:_~@:_~]~
+       ~:[~*~;and arguments ~:S~], expected ~D result~:P but there ~
+       ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
+      input arguments-supplied? arguments
+      (length expected-results) (length actual-results)))
 
 (defun are-results (expected-results actual-results &key input)
   (is-result-count= expected-results actual-results :input input)

@@ -54,8 +54,7 @@
                               (:file "process")
                               (:file "update-cache")
                               ;; Queries
-                              (:file "find-wad-beginning-line")
-                              (:file "find-wad-containing-position")
+                              (:file "cache-queries")
                               (:file "mapwad")
                               ;; Debugging
                               (:file "extra-assertions"
@@ -86,7 +85,7 @@
                               ;; Cache
                               (:file "dependencies")
                               ;; Queries
-                              (:file "find-wad-containing-position")
+                              (:file "cache-queries")
                               ;; Other tests
                               (:file "test")
                               (:file "random")

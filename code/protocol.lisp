@@ -85,6 +85,9 @@
 
 (defgeneric find-wad-beginning-line (cache line-number))
 
+(defgeneric map-wads-containing-position
+    (function cache line-number column-number &key start-relation end-relation))
+
 ;;; Return a list of pairs of the form (N . W) where W is a wad, and N
 ;;; is the absolute start line number of W, of wads containing the
 ;;; position defined by LINE-NUMBER and COLUMN-NUMBER.  The list is
@@ -93,9 +96,6 @@
 ;;; if the position is inside no wad.
 (defgeneric find-wads-containing-position (cache line-number column-number
                                            &key start-relation end-relation))
-
-(defgeneric map-wads-containing-position
-    (function cache line-number column-number &key start-relation end-relation))
 
 ;;; Analyzer protocol
 ;;; Extends associated buffer protocol

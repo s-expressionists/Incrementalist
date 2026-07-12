@@ -3,6 +3,14 @@
 (def-suite* :incrementalist.cache
   :in :incrementalist)
 
+;;; EXPECTED-RESULT is a list of elements of the form
+;;;
+;;;   (EXPECTED-LINE . EXPECTED-WAD)
+;;;
+;;; where EXPECTED-WAD is a specification of the form consumed by
+;;; `is-result', that is
+;;;
+;;;   (CLASS ((START-LINE START-COLUMN) (END-LINE END-COLUMN)) PLIST)
 (defun is-query-result (expected-result actual-result &key input)
   (is (= (length expected-result) (length actual-result)))
   (flet ((is-expected-entry (expected-entry actual-entry)
@@ -29,29 +37,31 @@
            (query-variant (cache line column relation-variants)
              ;; Go through the provided start/end relation variants
              ;; with their respective expected results.
-             (loop for (relations expected-results) in relation-variants
-                   do (loop for (start-relation end-relation) in relations
-                            do (relation-variant cache line column
-                                                 start-relation end-relation
-                                                 expected-results))))
+             (loop :for (relations expected-results) :in relation-variants
+                   :do (loop :for (start-relation end-relation) :in relations
+                             :do (relation-variant cache line column
+                                                   start-relation end-relation
+                                                   expected-results))))
            (cache-configuration (cache query-variants)
              ;; Go through query locations with their respective
              ;; expected results.
-             (loop for (line column . relation-variants) in query-variants
-                   do (query-variant cache line column relation-variants)))
+             (loop :for (line column . relation-variants) :in query-variants
+                   :do (query-variant cache line column relation-variants)))
            (test-case (input &rest query-variants)
              (multiple-value-bind (analyzer cache) (prepared-analyzer input)
                (update-cache analyzer cache)
                ;; Go through all possible divisions of CACHE into
                ;; prefix and suffix.
-               (loop for i to (length (inc::prefix cache))
-                     unless (zerop i)
-                     do (inc::prefix-to-suffix cache)
-                     do (cache-configuration cache query-variants)))))
+               (loop :for i :to (length (inc::prefix cache))
+                     :unless (zerop i)
+                       :do (inc::prefix-to-suffix cache)
+                     :do (cache-configuration cache query-variants)))))
+    ;; Empty
     (test-case ""
                '(0 0
                  (((< <) (< <=) (<= <) (<= <=))
                   ())))
+    ;; Single line
     (test-case "((1 2 3))"
                '(0 4
                  (((< <))
@@ -76,8 +86,7 @@
                   ())))))
 
 (test map-wads-containing-position.smoke
-  "Smoke test for the `map-wads-containing-position' and
-`find-wad-containing-position' functions."
+  "Smoke test for the `map-wads-containing-position' function."
   (query-test-cases
    (lambda (cache line column start-relation end-relation)
      (let ((result '()))

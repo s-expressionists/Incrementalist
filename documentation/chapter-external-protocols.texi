@@ -669,16 +669,13 @@ Return the wad in @var{cache} the @termref{initial character} of which
 has the minimal item number within @var{line-number} or @t{nil}.
 @end deffn
 
-@defgena{find-wads-containing-position,@toppackage{}} cache@
-  line-number column-number @pkey{} start-relation end-relation
+@defgena{map-wads-containing-position,@toppackage{}} function@
+  cache line-number column-number @pkey{} start-relation end-relation
 
-Return a list of pairs of the form @t{(@var{n} . @var{wad})} where
-@var{wad} is a wad, and @var{n} is the absolute start line number of
-@var{wad}, such that all the wads are in @var{cache} and contain the
-location defined by @var{line-number} and @var{column-number}.  The list
-is ordered from the innermost wad containing the location to the
-top-level wad containing the location.  The empty list is returned if
-the position is not inside any wad.
+Call @var{function} once for each wad in @var{cache} that contains the
+location defined by @var{line-number} and @var{column-number}.  The
+function calls happen in the order from the innermost wad containing
+the location to the top-level wad containing the location.
 
 Each of @var{start-relation} and @var{end-relation} which must be either
 the symbol @t{cl:<} or the symbol @t{cl:<=} select the respective
@@ -689,13 +686,16 @@ defined by @var{line-number} and @var{column-number}.
 candidate wads.
 @end deffn
 
-@defgena{map-wads-containing-position,@toppackage{}} function@
-  cache line-number column-number @pkey{} start-relation end-relation
+@defgena{find-wads-containing-position,@toppackage{}} cache@
+  line-number column-number @pkey{} start-relation end-relation
 
-Call @var{function} once for each wad in @var{cache} that contains the
-location defined by @var{line-number} and @var{column-number}.  The
-function calls happen in the order from the innermost wad containing
-the location to the top-level wad containing the location.
+Return a list of pairs of the form @t{(@var{n} . @var{wad})} where
+@var{wad} is a wad, and @var{n} is the absolute start line number of
+@var{wad}, such that all the wads are in @var{cache} and contain the
+location defined by @var{line-number} and @var{column-number}.  The list
+is ordered from the innermost wad containing the location to the
+top-level wad containing the location.  The empty list is returned if
+the position is not inside any wad.
 
 Each of @var{start-relation} and @var{end-relation} which must be either
 the symbol @t{cl:<} or the symbol @t{cl:<=} select the respective

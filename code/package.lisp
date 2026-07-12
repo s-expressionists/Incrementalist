@@ -108,11 +108,11 @@
    #:line-length
    #:line-contents
    #:total-width
-
-   #:map-wads-and-spaces ; query functions
+   ;; Query functions
    #:find-wad-beginning-line
+   #:map-wads-containing-position
    #:find-wads-containing-position
-   #:map-wads-containing-position)
+   #:map-wads-and-spaces)
 
   ;; Analyzer protocol
   ;; Extends associated buffer protocol

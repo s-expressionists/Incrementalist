@@ -78,7 +78,7 @@
                  :serial     t
                  :components ((:file "package")
                               ;; Test utilities
-                              (:file "utilities")
+                              (:file "test-utilities")
                               (:file "code-reading-utilities")
                               ;; Model
                               (:file "wad")

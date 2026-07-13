@@ -170,15 +170,17 @@
              (end-line first) (end-column first)
              last-line (line-length cache last-line)
              space-function))
-          (loop for (wad2 wad1) on remaining
+          (loop for (wad2 wad1)   on remaining
+                for end-line      =  (end-line wad2) then next-end-line
+                for next-end-line =  (unless (null wad1) (end-line wad1))
+                until (or (null wad2) (< end-line first-line))
                 do (funcall wad-function wad2)
-                until (or (null wad1)
-                          (< (end-line wad1) first-line))
-                do (map-empty-area
-                    cache
-                    (end-line wad1) (end-column wad1)
-                    (start-line wad2) (start-column wad2)
-                    space-function)
+                unless (or (null wad1) (< next-end-line first-line))
+                  do (map-empty-area
+                      cache
+                      (end-line wad1) (end-column wad1)
+                      (start-line wad2) (start-column wad2)
+                      space-function)
                 finally (multiple-value-bind (start-line start-column)
                             (if (null wad1)
                                 (values 0 0)

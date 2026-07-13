@@ -19,7 +19,12 @@
   (:item
    (:paragraph
     "The" "function" (:symbol "incrementalist:update") "now" "returns" "the"
-    "line" "numbers" "of" "the" "first" "and" "last" "processed" "lines" ".")))
+    "line" "numbers" "of" "the" "first" "and" "last" "processed" "lines" "."))
+  (:item
+   (:paragraph
+    "The" "function" (:symbol "incrementalist:map-wads-and-spaces") "no"
+    "longer" "incorrectly" "reports" "WADs" "that" "start" "before" "the"
+    "specified" "sequence" "of" "lines" ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

@@ -12,6 +12,9 @@ Release 0.3 (not yet released)
 * The function INCREMENTALIST:UPDATE now returns the line numbers of the first
   and last processed lines.
 
+* The function INCREMENTALIST:MAP-WADS-AND-SPACES no longer incorrectly reports
+  WADs that start before the specified sequence of lines.
+
 Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between

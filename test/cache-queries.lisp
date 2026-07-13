@@ -180,9 +180,8 @@
        bar"
       ((0 2)
        ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
-      ;; Fails because the wad in line 0 get incorrectly reported.
-      #++ ((1 2)
-           ())
+      ((1 2)
+       ())
       ((2 3)
        ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
       ((3 3)

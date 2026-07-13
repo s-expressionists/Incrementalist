@@ -111,3 +111,82 @@
 (test find-wads-containing-position.smoke
   "Smoke test for the `find-wads-containing-position' function."
   (location-query-test-cases #'inc:find-wads-containing-position))
+
+(test maps-wads-and-spaces.smoke
+  "Smoke test for the `map-wads-and-spaces' function."
+  (map-query-test-cases
+   (lambda (input cache split-number arguments expected)
+     (declare (ignore split-number))
+     (destructuring-bind (start-line end-line) arguments
+       ;; We accumulate in RESULT in reverse order but
+       ;; `map-wads-and-spaces' also reports in reverse order so
+       ;; actual order in RESULT corresponds to the order in the input
+       ;; string.
+       (let ((result '()))
+         (is (equal
+              (values nil)
+              (inc:map-wads-and-spaces
+               cache start-line end-line
+               (lambda (wad)
+                 (push (cons (inc:absolute-start-line wad) wad) result))
+               (lambda (line-number start-column end-column)
+                 (declare (ignore line-number start-column end-column))
+                 ;; We will check reported spaces later.
+                 #++ (push (cons line-number (cons start-column end-column))
+                           result)))))
+         (is-query-result expected result :input input :arguments arguments))))
+   '(;; Empty
+     (""
+      ((0 0) ()))
+     ;; Smoke test
+     ("   (1 2 3)    ~@
+       ;foo~@
+       ;bar~@
+       ~2@T:foo"
+      ((0 0)
+       ((0 . (inc:cons-wad ((0 3) (0 10)) ()))))
+      ((1 1)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))))
+      ((2 2)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))))
+      ((3 3)
+       ((2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ()))))
+      ((1 3)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ())))))
+     ;; Multi-line `cons-wad'
+     ("(1~@
+       2~@
+       3)~@
+       :foo"
+      ((0 0)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((1 1)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((2 2)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((3 3)
+       ((3 . (inc:atom-wad ((3 0) (3 4)) ()))))
+      ((1 3)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 4)) ())))))
+     ;; Empty lines between cache elements.
+     ("foo~@
+       ~@
+       ~@
+       bar"
+      ((0 2)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
+      ;; Fails because the wad in line 0 get incorrectly reported.
+      #++ ((1 2)
+           ())
+      ((2 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((3 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((0 3)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ()))))))))

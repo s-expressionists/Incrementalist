@@ -459,8 +459,8 @@
                            (results (update-cache analyzer cache)))
                        (when map-wads-and-spaces?
                          (inc:map-wads-and-spaces
-                          cache 0 (1- (inc:line-count cache))
-                          #1=(lambda (&rest args) (declare (ignore args))) #1#))
+                          #1=(lambda (&rest args) (declare (ignore args))) #1#
+                          cache))
                        (unless (eq expected-results :ignore)
                          (are-results expected-results results :input input))))))
     (do-it :small-step nil) ; update cache after each item change

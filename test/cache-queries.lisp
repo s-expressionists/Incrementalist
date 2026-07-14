@@ -133,81 +133,99 @@
   (map-query-test-cases
    (lambda (input cache split-number arguments expected)
      (declare (ignore split-number))
-     (destructuring-bind (start-line end-line) arguments
-       ;; We accumulate in RESULT in reverse order but
-       ;; `map-wads-and-spaces' also reports in reverse order so
-       ;; actual order in RESULT corresponds to the order in the input
-       ;; string.
-       (let ((result '()))
-         (is (equal
-              (values nil)
-              (inc:map-wads-and-spaces
-               cache start-line end-line
-               (lambda (wad)
-                 (push (cons (inc:absolute-start-line wad) wad) result))
-               (lambda (line-number start-column end-column)
-                 (push (cons line-number (cons start-column end-column))
-                       result)))))
-         (is-query-result expected result :input input :arguments arguments))))
+     ;; We accumulate in RESULT in reverse order but
+     ;; `map-wads-and-spaces' also reports in reverse order so actual
+     ;; order in RESULT corresponds to the order in the input string.
+     (let ((result '()))
+       (is (equal
+            (values nil)
+            (apply #'inc:map-wads-and-spaces
+                   (lambda (wad)
+                     (push (cons (inc:absolute-start-line wad) wad) result))
+                   (lambda (line-number start-column end-column)
+                     (push (cons line-number (cons start-column end-column))
+                           result))
+                   cache arguments)))
+       (is-query-result expected result :input input :arguments arguments)))
    '(;; Empty
      (""
-      ((0 0) ()))
+      ((:start-line 0 :end-line 0) ()))
      ;; Smoke test
      ("   (1 2 3)    ~@
        ;foo~@
        ;bar~@
        ~2@T:foo"
-      ((0 0) ((0 . (0 . 3))
-              (0 . (inc:cons-wad ((0 3) (0 10)) ()))
-              (0 . (10 . 14))))
-      ((1 1) ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))))
-      ((2 2) ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
-              (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))))
-      ((3 3) ((2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
-              (3 . (0 . 2))
-              (3 . (inc:atom-wad ((3 2) (3 6)) ()))))
-      ((1 3) ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
-              (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
-              (3 . (0 . 2))
-              (3 . (inc:atom-wad ((3 2) (3 6)) ())))))
+      ((:start-line 0 :end-line 0)
+       ((0 . (0 . 3))
+        (0 . (inc:cons-wad ((0 3) (0 10)) ()))
+        (0 . (10 . 14))))
+      ((:start-line 1 :end-line 1)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))))
+      ((:start-line 2 :end-line 2)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))))
+      ((:start-line 3 :end-line nil)
+       ((2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (0 . 2))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ()))))
+      ((:start-line 1)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (0 . 2))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ())))))
      ;; Multi-line `cons-wad'
      ("(1~@
        2~@
        3)~@
        :foo"
-      ((0 0) ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
-      ((1 1) ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
-      ((2 2) ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
-      ((3 3) ((3 . (inc:atom-wad ((3 0) (3 4)) ()))))
-      ((1 3) ((0 . (inc:cons-wad ((0 0) (2 2)) ()))
-              (3 . (inc:atom-wad ((3 0) (3 4)) ())))))
+      ((:start-line 0 :end-line 0)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 1 :end-line 1)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 2 :end-line 2)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 3 :end-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 4)) ()))))
+      ((:start-line 1)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 4)) ())))))
      ;; Empty lines between cache elements.
      ("foo~@
        ~@
        ~@
        bar"
-      ((0 2) ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
-      ((1 2) ())
-      ((2 3) ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
-      ((3 3) ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
-      ((0 3) ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
-              (3 . (inc:atom-wad ((3 0) (3 3)) ())))))
+      ((:start-line 0 :end-line 2)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
+      ((:start-line 1 :end-line 2)
+       ())
+      ((:start-line 2 :end-line nil)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((:start-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      (()
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ())))))
      ;; Lines with only whitespace between cache elements.
      ("foo ~@
        ~@T~@
        ~@T~@
        bar"
-      ((0 2) ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
-              (0 . (3 . 4))
-              (1 . (0 . 1))
-              (2 . (0 . 1))))
-      ((1 2) ((1 . (0 . 1))
-              (2 . (0 . 1))))
-      ((2 3) ((2 . (0 . 1))
-              (3 . (inc:atom-wad ((3 0) (3 3)) ()))))
-      ((3 3) ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
-      ((0 3) ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
-              (0 . (3 . 4))
-              (1 . (0 . 1))
-              (2 . (0 . 1))
-              (3 . (inc:atom-wad ((3 0) (3 3)) ()))))))))
+      ((:start-line 0 :end-line 2)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (0 . (3 . 4))
+        (1 . (0 . 1))
+        (2 . (0 . 1))))
+      ((:start-line 1 :end-line 2)
+       ((1 . (0 . 1))
+        (2 . (0 . 1))))
+      ((:start-line 2 :end-line 3)
+       ((2 . (0 . 1))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((:start-line 3 :end-line nil)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      (()
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (0 . (3 . 4))
+        (1 . (0 . 1))
+        (2 . (0 . 1))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ()))))))))

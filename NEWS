@@ -22,6 +22,10 @@ Release 0.3 (not yet released)
   In addition, reported empty lines are now correctly restricted to the
   specified sequence of lines.
 
+* INCREMENTALIST:MAP-WADS-AND-SPACES is now a generic function and accepts the
+  boundaries of the sequence of lines to be processed as keyword parameters
+  :start-line and :end-line.
+
 Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between

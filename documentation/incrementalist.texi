@@ -20,7 +20,7 @@ This manual is for @sysname{} version @sysversion{}.
 
 Copyright @copyright{} 2013 Robert Strandh
 
-Copyright @copyright{} 2024, 2025 Jan Moringen
+Copyright @copyright{} 2024, 2025, 2026 Jan Moringen
 @end copying
 
 @dircategory Common Lisp

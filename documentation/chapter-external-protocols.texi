@@ -706,6 +706,42 @@ defined by @var{line-number} and @var{column-number}.
 candidate wads.
 @end deffn
 
+@defgena{map-wads-and-spaces,@toppackage{}} wad-function @
+  space-function cache @pkey{} start-line end-line
+
+Call @var{wad-function} with each @termref{top-level wad} that overlaps
+the buffer region between @var{start-line} and @var{end-line} in
+@var{cache} and call @var{space-function} with each whitespace region
+between the region boundaries and wads and return @code{nil}.
+
+@var{wad-function} is a function that accepts as its only argument the
+respective wad.  Any values returned by @var{wad-function} are ignored.
+
+@var{space-function} is a function with a lambda list compatible with
+@code{(@var{line-number} @var{line-start-column} @var{line-end-column})}
+where @var{line-number}, @var{line-start-column} and
+@var{line-end-column} specify a region of whitespace within the line
+@var{line-number}.  Any values returned by @var{space-function} are
+ignored.
+
+@var{cache} is a cache.
+
+If supplied, @var{start-line} is a line number that is valid for
+@var{cache}.  If @var{start-line} is not supplied, a region starting at
+line @math{0} is processed.
+
+If supplied, @var{end-line} is either @code{nil} or a line number that
+is valid for @var{cache} and greater than or equal to @var{start-line}.
+If @var{end-line} is not supplied or @code{nil}, a region ending at the
+end of the buffer is processed.
+
+The order in which @var{wad-function} and @var{space-function} are
+called for the wads and whitespace regions in the selected buffer region
+is reversed compared to the order of the wads and whitespace regions in
+the containing buffer.  The calls to @var{wad-function} and
+@var{space-function} are interleaved according to this order.
+@end deffn
+
 @node The Analyzer Protocol
 @section The Analyzer Protocol
 

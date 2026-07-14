@@ -145,46 +145,56 @@
             (when (> line-length start-column)
               (funcall space-function first-line start-column line-length)))))))
 
-(defun map-wads-and-spaces
-    (cache first-line last-line wad-function space-function)
-  ;; Make sure no wad on the suffix starts at or before LAST-LINE.
-  (repeat-suffix-to-prefix cache last-line)
+(defmethod map-wads-and-spaces ((wad-function   t)
+                                (space-function t)
+                                (cache          cache)
+                                &key (start-line 0)
+                                     (end-line   nil))
+  ;; Make sure no wad on the suffix starts at or before END-LINE.
+  (repeat-suffix-to-prefix cache end-line)
   ;; Find a suffix of the prefix (i.e., a prefix of wads in the
   ;; buffer) such that it is not the case that the first wad of the
   ;; prefix (i.e., the last wad of the buffer prefix) starts entirely
-  ;; after LAST-LINE.
-  (let ((remaining (loop for remaining on (prefix cache)
-                         when (<= (start-line (first remaining)) last-line)
-                           return remaining)))
+  ;; after END-LINE.
+  (let ((remaining (loop :for remaining :on (prefix cache)
+                         :when (or (null end-line)
+                                   (<= (start-line (first remaining)) end-line))
+                           :return remaining))
+        (end-line  (if (null end-line)
+                       (1- (line-count cache))
+                       end-line)))
     (if (null remaining)
-        (let ((line-length (line-length cache last-line)))
-          (map-empty-area
-           cache first-line 0 last-line line-length space-function))
-        (let* ((first          (first remaining))
-               (first-end-line (end-line first)))
-          ;; Cover the empty area (if any) between the LAST-LINE and
+        (map-empty-area cache start-line 0
+                        end-line (line-length cache end-line)
+                        space-function)
+        (let* ((first              (first remaining))
+               (first-wad-end-line (end-line first)))
+          ;; Cover the empty area (if any) between the END-LINE and
           ;; the end of the first (in reverse order of the prefix)
-          ;; wad.  If this first wad ends before FIRST-LINE, clamp the
-          ;; empty area to FIRST-LINE.
-          (when (<= first-end-line last-line)
+          ;; wad.  If this first wad ends before START-LINE, clamp the
+          ;; empty area to START-LINE.
+          (when (<= first-wad-end-line end-line)
             (multiple-value-bind (start-line start-column)
-                (if (< first-end-line first-line)
-                    (values first-line     0)
-                    (values first-end-line (end-column first)))
+                (if (< first-wad-end-line start-line)
+                    (values start-line         0)
+                    (values first-wad-end-line (end-column first)))
               (map-empty-area cache
                               start-line start-column
-                              last-line  (line-length cache last-line)
+                              end-line (line-length cache end-line)
                               space-function)))
-          (loop for (wad2 wad1)   on remaining
-                for end-line      =  first-end-line then next-end-line
-                for next-end-line =  (unless (null wad1) (end-line wad1))
-                until (or (null wad2) (< end-line first-line))
-                do (funcall wad-function wad2)
-                   (multiple-value-bind (start-line start-column)
-                       (if (or (null wad1) (< next-end-line first-line))
-                           (values first-line    0)
-                           (values next-end-line (end-column wad1)))
-                     (map-empty-area cache
-                                     start-line        start-column
-                                     (start-line wad2) (start-column wad2)
-                                     space-function)))))))
+          (loop :with wad-function      =   (alexandria:ensure-function
+                                             wad-function)
+                :for  (wad2 wad1)       :on remaining
+                :for  wad-end-line      =   first-wad-end-line
+                  :then next-wad-end-line
+                :for  next-wad-end-line =   (unless (null wad1) (end-line wad1))
+                :until (or (null wad2) (< wad-end-line start-line))
+                :do (funcall wad-function wad2)
+                    (multiple-value-bind (start-line start-column)
+                        (if (or (null wad1) (< next-wad-end-line start-line))
+                            (values start-line        0)
+                            (values next-wad-end-line (end-column wad1)))
+                      (map-empty-area cache
+                                      start-line start-column
+                                      (start-line wad2) (start-column wad2)
+                                      space-function)))))))

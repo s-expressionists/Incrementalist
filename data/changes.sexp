@@ -33,7 +33,13 @@
     "in" "which" "it" "reports" "WADs" "and" "empty" "regions" ".")
    (:paragraph
     "In" "addition" "," "reported" "empty" "lines" "are" "now" "correctly"
-    "restricted" "to" "the" "specified" "sequence" "of" "lines" ".")))
+    "restricted" "to" "the" "specified" "sequence" "of" "lines" "."))
+  (:item
+   (:paragraph
+    (:symbol "incrementalist:map-wads-and-spaces") "is" "now" "a" "generic"
+    "function" "and" "accepts" "the" "boundaries" "of" "the" "sequence" "of"
+    "lines" "to" "be" "processed" "as" "keyword" "parameters"
+    (:tt ":start-line") "and" (:tt ":end-line") ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

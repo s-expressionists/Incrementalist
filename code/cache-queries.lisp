@@ -126,24 +126,23 @@
 
 ;;;; Functions for mapping over cache regions
 
-(defun map-empty-area
-    (cache first-line start-column last-line end-column space-function)
-  (when (%position> last-line end-column first-line start-column)
-    (if (= first-line last-line)
-        (funcall space-function first-line start-column end-column)
-        (progn
-          ;; Handle the last line.
-          (when (> end-column 0)
-            (funcall space-function last-line 0 end-column))
-          ;; Handle all remaining lines except the first one.
-          (loop for line-number from (1- last-line) downto (1+ first-line)
-                for line-length = (line-length cache line-number)
-                when (> line-length 0)
-                  do (funcall space-function line-number 0 line-length))
-          ;; Handle the first line.
-          (let ((line-length (line-length cache first-line)))
-            (when (> line-length start-column)
-              (funcall space-function first-line start-column line-length)))))))
+(defmethod map-empty-area ((function t) (cache cache)
+                           &key (start-line   0)
+                                (start-column 0)
+                                (end-line     (1- (line-count cache)))
+                                (end-column   (line-length cache end-line)))
+  (when (%position< start-line start-column end-line end-column)
+    (loop :with function          = (alexandria:ensure-function function)
+          :for  line-number       :from end-line :downto start-line
+          :for  line-length       =     (line-length cache line-number)
+          :for  line-start-column =     (if (= line-number start-line)
+                                            start-column
+                                            0)
+          :for  line-end-column   =     (if (= line-number end-line)
+                                            end-column
+                                            line-length)
+          :when (< line-start-column line-end-column)
+            :do (funcall function line-number line-start-column line-end-column))))
 
 (defmethod map-wads-and-spaces ((wad-function   t)
                                 (space-function t)
@@ -164,9 +163,8 @@
                        (1- (line-count cache))
                        end-line)))
     (if (null remaining)
-        (map-empty-area cache start-line 0
-                        end-line (line-length cache end-line)
-                        space-function)
+        (map-empty-area space-function cache :start-line start-line
+                                             :end-line   end-line)
         (let* ((first              (first remaining))
                (first-wad-end-line (end-line first)))
           ;; Cover the empty area (if any) between the END-LINE and
@@ -178,10 +176,9 @@
                 (if (< first-wad-end-line start-line)
                     (values start-line         0)
                     (values first-wad-end-line (end-column first)))
-              (map-empty-area cache
-                              start-line start-column
-                              end-line (line-length cache end-line)
-                              space-function)))
+              (map-empty-area space-function cache :start-line   start-line
+                                                   :start-column start-column
+                                                   :end-line     end-line)))
           (loop :with wad-function      =   (alexandria:ensure-function
                                              wad-function)
                 :for  (wad2 wad1)       :on remaining
@@ -194,7 +191,8 @@
                         (if (or (null wad1) (< next-wad-end-line start-line))
                             (values start-line        0)
                             (values next-wad-end-line (end-column wad1)))
-                      (map-empty-area cache
-                                      start-line start-column
-                                      (start-line wad2) (start-column wad2)
-                                      space-function)))))))
+                      (map-empty-area space-function cache
+                                      :start-line   start-line
+                                      :start-column start-column
+                                      :end-line     (start-line wad2)
+                                      :end-column   (start-column wad2))))))))

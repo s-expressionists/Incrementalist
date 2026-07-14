@@ -39,7 +39,14 @@
     (:symbol "incrementalist:map-wads-and-spaces") "is" "now" "a" "generic"
     "function" "and" "accepts" "the" "boundaries" "of" "the" "sequence" "of"
     "lines" "to" "be" "processed" "as" "keyword" "parameters"
-    (:tt ":start-line") "and" (:tt ":end-line") ".")))
+    (:tt ":start-line") "and" (:tt ":end-line") "."))
+  (:item
+   (:paragraph
+    (:symbol "incrementalist:map-empty-spaces") "is" "now" "a" "generic"
+    "function" "whose" "name" "is" "exported" "." "The" "function" "now"
+    "accepts" "the" "boundaries" "of" "the" "region" "to" "be" "processed" "as"
+    "keyword" "parameters" (:tt ":start-line") "," (:tt ":start-column") ","
+    (:tt ":end-line") "and" (:tt ":end-column") ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

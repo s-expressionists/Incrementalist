@@ -26,6 +26,11 @@ Release 0.3 (not yet released)
   boundaries of the sequence of lines to be processed as keyword parameters
   :start-line and :end-line.
 
+* INCREMENTALIST:MAP-EMPTY-SPACES is now a generic function whose name is
+  exported. The function now accepts the boundaries of the region to be
+  processed as keyword parameters :start-line, :start-column, :end-line and
+  :end-column.
+
 Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between

@@ -21,8 +21,7 @@
               return (search-wad child absolute-line-number line-number))))
 
 (defmethod find-wad-beginning-line ((cache cache) (line-number integer))
-  (loop until (null (suffix cache))
-        do (suffix-to-prefix cache))
+  (repeat-suffix-to-prefix cache)
   (loop for wad in (reverse (prefix cache))
         for start-line = (start-line wad)
         when (<= start-line line-number (+ start-line (height wad)))
@@ -149,9 +148,7 @@
 (defun map-wads-and-spaces
     (cache first-line last-line wad-function space-function)
   ;; Make sure no wad on the suffix starts at or before LAST-LINE.
-  (loop until (null (suffix cache))
-        while (<= (start-line (first (suffix cache))) last-line)
-        do (suffix-to-prefix cache))
+  (repeat-suffix-to-prefix cache last-line)
   ;; Find a suffix of the prefix (i.e., a prefix of wads in the
   ;; buffer) such that it is not the case that the first wad of the
   ;; prefix (i.e., the last wad of the buffer prefix) starts entirely

@@ -230,6 +230,22 @@
         (setf (dep:inherited wad) :invalid))
       (push-to-suffix cache wad))))
 
+(macrolet ((define (name cache-reader one-step-mover (comparator wad-line-reader))
+             `(progn
+                (declaim (inline ,name))
+
+                (defun ,name (cache &optional until-line-number)
+                  (loop :for elements = (,cache-reader cache)
+                        :while (and (not (null elements))
+                                    (or (null until-line-number)
+                                        (,comparator
+                                         (,wad-line-reader (first elements))
+                                         until-line-number)))
+                        :do (,one-step-mover cache))))))
+  (define repeat-prefix-to-suffix          prefix prefix-to-suffix (>= end-line))
+  (define repeat-suffix-to-prefix          suffix suffix-to-prefix (<= start-line))
+  (define repeat-suffix-to-prefix/end-line suffix suffix-to-prefix (<= end-line)))
+
 (defun pop-from-worklist (cache)
   (pop (worklist cache)))
 
@@ -267,16 +283,10 @@
 (defun ensure-update-initialized (cache line-counter)
   ;; As long as there are wads on the prefix that do not completely
   ;; precede the number of skipped lines, move them to the suffix.
-  (loop for prefix = (prefix cache)
-        while (and (not (null prefix))
-                   (>= (end-line (first prefix)) line-counter))
-        do (prefix-to-suffix cache))
+  (repeat-prefix-to-suffix cache line-counter)
   ;; As long as there are wads on the suffix that completely precede
   ;; the number of skipped lines, move them to the prefix.
-  (loop for suffix = (suffix cache)
-        while (and (not (null suffix))
-                   (< (end-line (first suffix)) line-counter))
-        do (suffix-to-prefix cache)))
+  (repeat-suffix-to-prefix/end-line cache (1- line-counter)))
 
 ;;; Return true if and only if either there are no more wads, or the
 ;;; first wad starts at a line that is strictly greater than

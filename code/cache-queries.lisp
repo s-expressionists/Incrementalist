@@ -133,18 +133,18 @@
     (if (= first-line last-line)
         (funcall space-function first-line start-column end-column)
         (progn
-          ;; Handle the first line.
-          (let ((line-length (line-length cache first-line)))
-            (when (> line-length start-column)
-              (funcall space-function first-line start-column line-length)))
-          ;; Handle all remaining lines except the last one.
-          (loop for line-number from (1+ first-line) below last-line
+          ;; Handle the last line.
+          (when (> end-column 0)
+            (funcall space-function last-line 0 end-column))
+          ;; Handle all remaining lines except the first one.
+          (loop for line-number from (1- last-line) downto (1+ first-line)
                 for line-length = (line-length cache line-number)
                 when (> line-length 0)
                   do (funcall space-function line-number 0 line-length))
-          ;; Handle the last line.
-          (when (> end-column 0)
-            (funcall space-function last-line 0 end-column))))))
+          ;; Handle the first line.
+          (let ((line-length (line-length cache first-line)))
+            (when (> line-length start-column)
+              (funcall space-function first-line start-column line-length)))))))
 
 (defun map-wads-and-spaces
     (cache first-line last-line wad-function space-function)
@@ -163,30 +163,31 @@
         (let ((line-length (line-length cache last-line)))
           (map-empty-area
            cache first-line 0 last-line line-length space-function))
-        (let ((first (first remaining)))
-          (when (<= (end-line first) last-line)
-            (map-empty-area
-             cache
-             (end-line first) (end-column first)
-             last-line (line-length cache last-line)
-             space-function))
+        (let* ((first          (first remaining))
+               (first-end-line (end-line first)))
+          ;; Cover the empty area (if any) between the LAST-LINE and
+          ;; the end of the first (in reverse order of the prefix)
+          ;; wad.  If this first wad ends before FIRST-LINE, clamp the
+          ;; empty area to FIRST-LINE.
+          (when (<= first-end-line last-line)
+            (multiple-value-bind (start-line start-column)
+                (if (< first-end-line first-line)
+                    (values first-line     0)
+                    (values first-end-line (end-column first)))
+              (map-empty-area cache
+                              start-line start-column
+                              last-line  (line-length cache last-line)
+                              space-function)))
           (loop for (wad2 wad1)   on remaining
-                for end-line      =  (end-line wad2) then next-end-line
+                for end-line      =  first-end-line then next-end-line
                 for next-end-line =  (unless (null wad1) (end-line wad1))
                 until (or (null wad2) (< end-line first-line))
                 do (funcall wad-function wad2)
-                unless (or (null wad1) (< next-end-line first-line))
-                  do (map-empty-area
-                      cache
-                      (end-line wad1) (end-column wad1)
-                      (start-line wad2) (start-column wad2)
-                      space-function)
-                finally (multiple-value-bind (start-line start-column)
-                            (if (null wad1)
-                                (values 0 0)
-                                (values (end-line wad1) (end-column wad1)))
-                          (map-empty-area
-                           cache
-                           start-line start-column
-                           (start-line wad2) (start-column wad2)
-                           space-function)))))))
+                   (multiple-value-bind (start-line start-column)
+                       (if (or (null wad1) (< next-end-line first-line))
+                           (values first-line    0)
+                           (values next-end-line (end-column wad1)))
+                     (map-empty-area cache
+                                     start-line        start-column
+                                     (start-line wad2) (start-column wad2)
+                                     space-function)))))))

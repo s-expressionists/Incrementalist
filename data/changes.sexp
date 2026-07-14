@@ -24,7 +24,16 @@
    (:paragraph
     "The" "function" (:symbol "incrementalist:map-wads-and-spaces") "no"
     "longer" "incorrectly" "reports" "WADs" "that" "start" "before" "the"
-    "specified" "sequence" "of" "lines" ".")))
+    "specified" "sequence" "of" "lines" "."))
+  (:item
+   (:paragraph
+    "The" "function" (:symbol "incrementalist:map-wads-and-spaces") "now"
+    "reports" "empty" "lines" "within" "a" "region" "in" "the" "same" "reverse"
+    "order" "(" "compared" "to" "their" "occurrence" "in" "the" "buffer" ")"
+    "in" "which" "it" "reports" "WADs" "and" "empty" "regions" ".")
+   (:paragraph
+    "In" "addition" "," "reported" "empty" "lines" "are" "now" "correctly"
+    "restricted" "to" "the" "specified" "sequence" "of" "lines" ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

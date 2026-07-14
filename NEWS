@@ -15,6 +15,13 @@ Release 0.3 (not yet released)
 * The function INCREMENTALIST:MAP-WADS-AND-SPACES no longer incorrectly reports
   WADs that start before the specified sequence of lines.
 
+* The function INCREMENTALIST:MAP-WADS-AND-SPACES now reports empty lines
+  within a region in the same reverse order (compared to their occurrence in
+  the buffer) in which it reports WADs and empty regions.
+
+  In addition, reported empty lines are now correctly restricted to the
+  specified sequence of lines.
+
 Release 0.2 (2026-02-06)
 
 * The biggest change is that Incrementalist now tracks dependencies between

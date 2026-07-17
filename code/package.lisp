@@ -112,6 +112,7 @@
    #:find-wad-beginning-line
    #:map-wads-containing-position
    #:find-wads-containing-position
+   #:map-wads
    #:map-empty-area
    #:map-wads-and-spaces)
 

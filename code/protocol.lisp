@@ -97,6 +97,8 @@
 (defgeneric find-wads-containing-position (cache line-number column-number
                                            &key start-relation end-relation))
 
+(defgeneric map-wads (function cache &key start-line end-line))
+
 (defgeneric map-empty-area (function cache
                             &key start-line start-column end-line end-column))
 

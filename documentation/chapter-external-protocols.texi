@@ -706,6 +706,29 @@ defined by @var{line-number} and @var{column-number}.
 candidate wads.
 @end deffn
 
+@defgena{map-wads,@toppackage{}} function cache@
+  @pkey{} start-line end-line
+
+@cindex top-level wad
+Call @var{function} with each @termref{top-level wad} that overlaps the
+buffer region between @var{start-line} and @var{end-line} in @var{cache}
+and return @code{nil}.
+
+@var{function} is a function that accepts as its only argument the
+respective wad.  Any values returned by @var{function} are ignored.
+@var{cache} is a cache.  If supplied, @var{start-line} is a line number
+that is valid for @var{cache}.  If @var{start-line} is not supplied, a
+region starting at line @math{0} is processed.  If supplied,
+@var{end-line} is either @code{nil} or a line number that is valid for
+@var{cache} and greater than or equal to @var{start-line}.  If
+@var{end-line} is not supplied or @code{nil}, a region ending at the end
+of the buffer is processed.
+
+The order in which @var{function} is called for the wads in the selected
+buffer region is reversed compared to the order of the wads in the
+containing buffer.
+@end deffn
+
 @defgena{map-empty-area,@toppackage{}} function cache @
   @pkey{} start-line start-column end-line end-column
 

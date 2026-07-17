@@ -46,7 +46,14 @@
     "function" "whose" "name" "is" "exported" "." "The" "function" "now"
     "accepts" "the" "boundaries" "of" "the" "region" "to" "be" "processed" "as"
     "keyword" "parameters" (:tt ":start-line") "," (:tt ":start-column") ","
-    (:tt ":end-line") "and" (:tt ":end-column") ".")))
+    (:tt ":end-line") "and" (:tt ":end-column") "."))
+  (:item
+   (:paragraph
+    "The" "new" "generic" "function" (:symbol "incrementalist:map-wads")
+    "accepts" "only" "a" "single" "function" "and" "considers" "only" "WADs"
+    "," "not" "empty" "space" "." "It" "thus" "provides" "half" "of" "the"
+    "functionality" "of" (:symbol "incrementalist:map-wads-and-spaces") "with"
+    "a" "simpler" "interface" "and" "better" "efficiency" ".")))
 
  (:release "0.2" "2026-02-06"
   (:item

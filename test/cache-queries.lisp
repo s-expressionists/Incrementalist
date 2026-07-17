@@ -128,6 +128,93 @@
   "Smoke test for the `find-wads-containing-position' function."
   (location-query-test-cases #'inc:find-wads-containing-position))
 
+(test maps-wads.smoke
+  "Smoke test for the `map-wads' function."
+  (map-query-test-cases
+   (lambda (input cache split-number arguments expected)
+     (declare (ignore split-number))
+     ;; We accumulate in RESULT in reverse order but `map-wads' also
+     ;; reports in reverse order so actual order in RESULT corresponds
+     ;; to the order in the input string.
+     (let ((result '()))
+       (is (equal (values nil)
+                  (apply #'inc:map-wads
+                         (lambda (wad)
+                           (push (cons (inc:absolute-start-line wad) wad)
+                                 result))
+                         cache arguments)))
+       (is-query-result expected result :input input :arguments arguments)))
+   '(;; Empty
+     (""
+      ((:start-line 0 :end-line 0) ()))
+     ;;
+     ("   (1 2 3)    ~@
+       ;foo~@
+       ;bar~@
+       ~2@T:foo"
+      ((:start-line 0 :end-line 0)
+       ((0 . (inc:cons-wad ((0 3) (0 10)) ()))))
+      ((:start-line 1 :end-line 1)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))))
+      ((:start-line 2 :end-line 2)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))))
+      ((:start-line 3 :end-line nil)
+       ((2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ()))))
+      ((:start-line 1)
+       ((1 . (inc:semicolon-comment-wad ((1 0) (2 0)) ()))
+        (2 . (inc:semicolon-comment-wad ((2 0) (3 0)) ()))
+        (3 . (inc:atom-wad ((3 2) (3 6)) ())))))
+     ;; Multi-line `cons-wad'
+     ("(1~@
+       2~@
+       3)~@
+       :foo"
+      ((:start-line 0 :end-line 0)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 1 :end-line 1)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 2 :end-line 2)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))))
+      ((:start-line 3 :end-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 4)) ()))))
+      ((:start-line 1)
+       ((0 . (inc:cons-wad ((0 0) (2 2)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 4)) ())))))
+     ;; Empty lines between cache elements.
+     ("foo~@
+       ~@
+       ~@
+       bar"
+      ((:start-line 0 :end-line 2)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
+      ((:start-line 1 :end-line 2)
+       ())
+      ((:start-line 2 :end-line nil)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((:start-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      (()
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ())))))
+     ;; Lines with only whitespace between cache elements.
+     ("foo ~@
+       ~@T~@
+       ~@T~@
+       bar"
+      ((:start-line 0 :end-line 2)
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))))
+      ((:start-line 1 :end-line 2)
+       ())
+      ((:start-line 2 :end-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      ((:start-line 3 :end-line 3)
+       ((3 . (inc:atom-wad ((3 0) (3 3)) ()))))
+      (()
+       ((0 . (inc:atom-wad ((0 0) (0 3)) ()))
+        (3 . (inc:atom-wad ((3 0) (3 3)) ()))))))))
+
 (test maps-wads-and-spaces.smoke
   "Smoke test for the `map-wads-and-spaces' function."
   (map-query-test-cases

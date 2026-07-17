@@ -126,6 +126,24 @@
 
 ;;;; Functions for mapping over cache regions
 
+(defmethod map-wads ((function t) (cache cache) &key (start-line 0)
+                                                     (end-line nil))
+  ;; Make sure no wad on the suffix starts at or before END-LINE.
+  (repeat-suffix-to-prefix cache end-line)
+  ;; Find a suffix of the prefix (i.e., a prefix of wads in the
+  ;; buffer) such that it is not the case that the first wad of the
+  ;; prefix (i.e., the last wad of the buffer prefix) starts entirely
+  ;; after END-LINE.
+  (let ((remaining (loop :for remaining :on (prefix cache)
+                         :when (or (null end-line)
+                                   (<= (start-line (first remaining)) end-line))
+                           :return remaining)))
+    (unless (null remaining)
+      (loop :with function = (alexandria:ensure-function function)
+            :for wad :in remaining
+            :until (or (null wad) (< (end-line wad) start-line))
+            :do (funcall function wad)))))
+
 (defmethod map-empty-area ((function t) (cache cache)
                            &key (start-line   0)
                                 (start-column 0)

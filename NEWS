@@ -1,3 +1,5 @@
+Release 0.4 (not yet released)
+
 Release 0.3 (2026-08-08)
 
 * Incrementalist now uses the text.editor-buffer library instead of the Cluffer

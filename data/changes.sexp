@@ -1,5 +1,5 @@
 (:changes
- (:release "0.3" nil
+ (:release "0.3" "2026-08-08"
   (:item
    (:paragraph
     "Incrementalist" "now" "uses" "the" "text.editor-buffer" "library"

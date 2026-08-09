@@ -50,7 +50,7 @@ following:
 @end example
 
 Historically, initial aspects of @sysname{} have been developed in the
-context of the @climacs{} editor for @commonlisp{} code.  @sysname is
+context of the @climacs{} editor for @commonlisp{} code.  @sysname{} is
 the result of extracting some of that code into a separate system while
 enhancing many aspects (in fact, not much of the original ideas or code
 remains at this point):

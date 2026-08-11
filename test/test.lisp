@@ -308,7 +308,12 @@ a b"
      '((inc:cons-wad ((0 0) (0 5)) ()
         (inc:reader-macro-wad ((0 1) (0 2))
          (:errors ((((0 1) (0 2)) eclector.reader:invalid-context-for-consing-dot))))
-        (inc:atom-wad ((0 3) (0 4)) (:raw 1)))))))
+        (inc:atom-wad ((0 3) (0 4)) (:raw 1)))))
+    ("#1=."
+     '((inc:atom-wad ((0 0) (0 4))
+          (:errors ((((0 4) (0 4)) eclector.reader:end-of-input-after-sharpsign-equals)))
+        (inc:reader-macro-wad ((0 3) (0 4))
+         (:errors ((((0 3) (0 4)) eclector.reader:invalid-context-for-consing-dot)))))))))
 
 (test spell-checking.smoke
   "Test for spell-checking in symbols, strings and comments."

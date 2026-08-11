@@ -112,7 +112,8 @@
                              (make-dummy-result-for-errors stream errors)
                              result)))
             (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
-              (dbg:log :state "Got fresh wad ~A and errors ~:A~%" result errors)
+              (dbg:log :state "Got kind ~A, fresh wad ~A and errors ~:A~%"
+                       kind result errors)
               (when (member kind '(:object :skip))
                 (set-errors result errors))
               ;; Put defined and escaping cells into escaping cells for
@@ -248,7 +249,7 @@
                                         (read-and-cache-top-level-expression
                                          analyzer client))
                                analyzer t nil nil)
-                            (dbg:log :read "~A~%  wad    ~A~%  orphan ~:A~%"
+                            (dbg:log :read "Top-level result ~A~%  wad    ~A~%  orphan ~:A~%"
                                      kind wad orphan-result)
                             (when (eq kind :object)
                               (apply-semantics client wad))

@@ -128,7 +128,7 @@
                                       :start-column-offset 2
                                       :end-column-offset   -2)))
        (wad-with-children 'block-comment-wad stream source text-wads)))
-    ((eql :reader-macro)
+    ((member :reader-macro eclector.base:recover)
      (basic-wad 'reader-macro-wad stream source))
     ((eql *read-suppress*)
      (wad-with-children 'read-suppress-wad stream source children))

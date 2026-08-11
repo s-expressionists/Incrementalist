@@ -64,29 +64,6 @@
 (defmacro with-error-recording ((cache) &body body)
   `(call-with-error-recording (lambda () ,@body) ,cache))
 
-(defun make-dummy-result-for-errors (stream errors)
-  ;; If errors occurred but no result was produced (an isolated . is
-  ;; an example of this since Eclector's `recover' restart will skip
-  ;; the invalid token without producing a result), make a dummy
-  ;; result to attach the errors to.
-  (let (start-line start-column end-line end-column)
-    (mapc (lambda (error)
-            (assert (not (relative-p error)))
-            (when (or (null start-line)
-                      (%position< (start-line error) (start-column error)
-                                  start-line         start-column))
-              (setf start-line   (start-line   error)
-                    start-column (start-column error)))
-            (when (or (null end-line)
-                      (%position> (end-line error) (end-column error)
-                                  end-line         end-column))
-              (setf end-line   (end-line   error)
-                    end-column (end-column error))))
-          errors)
-    (basic-wad* 'reader-macro-wad stream
-                start-line start-column
-                end-line   end-column)))
-
 (defmethod reader:read-maybe-nothing :around
     ((client client) (stream analyzer) (eof-error-p t) (eof-value t))
   (let ((cached (cached-wad stream)))
@@ -107,10 +84,7 @@
             (setf (values object kind result) (call-next-method))
             (when (not (null result))
               (add-dependencies result)))
-          (let* ((errors *errors*)
-                 (result (if (and (not (null errors)) (null result))
-                             (make-dummy-result-for-errors stream errors)
-                             result)))
+          (let* ((errors *errors*))
             (when (not (null result)) ; RESULT can be `null' for KIND `:skip'
               (dbg:log :state "Got kind ~A, fresh wad ~A and errors ~:A~%"
                        kind result errors)

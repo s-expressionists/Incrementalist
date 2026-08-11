@@ -299,7 +299,16 @@ a b"
 "
      '((inc:atom-wad ((0 0) (1 0))
         (:errors ((((0 1) (1 0)) eclector.reader:sharpsign-invalid)))
-        :ignore-children)))))
+        :ignore-children)))
+    ;; Eclector used to not report a consing dot in an invalid context
+    ;; as skipped material after recovering form the error.  Make sure
+    ;; the skipped material is represented (as a `reader-macro-wad')
+    ;; and that the error is attached correctly.
+    ("(. 1)"
+     '((inc:cons-wad ((0 0) (0 5)) ()
+        (inc:reader-macro-wad ((0 1) (0 2))
+         (:errors ((((0 1) (0 2)) eclector.reader:invalid-context-for-consing-dot))))
+        (inc:atom-wad ((0 3) (0 4)) (:raw 1)))))))
 
 (test spell-checking.smoke
   "Test for spell-checking in symbols, strings and comments."

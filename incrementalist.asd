@@ -10,7 +10,7 @@
                 (:version "text.editor-buffer"            "0.1")
                 "flexichain"
                 "concrete-syntax-tree"
-                (:version "eclector"                      #2="0.11")
+                (:version "eclector"                      #2="0.12")
                 (:version "eclector-concrete-syntax-tree" #2#)
                 "spell")
 

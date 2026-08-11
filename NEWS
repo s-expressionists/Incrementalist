@@ -1,5 +1,9 @@
 Release 0.4 (not yet released)
 
+* Due to a fix in Eclector, Incrementalist now produces better syntax tree
+  nodes when processing input involving a consing dot in an invalid context
+  like . 1 or (. foo).
+
 Release 0.3 (2026-08-08)
 
 * Incrementalist now uses the text.editor-buffer library instead of the Cluffer

@@ -1,5 +1,11 @@
 (:changes
- (:release "0.4" nil)
+ (:release "0.4" nil
+  (:item
+   (:paragraph
+    "Due" "to" "a" "fix" "in" "Eclector" "," "Incrementalist" "now" "produces"
+    "better" "syntax" "tree" "nodes" "when" "processing" "input" "involving"
+    "a" "consing" "dot" "in" "an" "invalid" "context" "like" (:tt ". 1") "or"
+    (:tt "(. foo)") ".")))
 
  (:release "0.3" "2026-08-08"
   (:item

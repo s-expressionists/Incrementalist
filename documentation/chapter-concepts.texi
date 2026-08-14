@@ -169,7 +169,7 @@ the start line number of a parent or sibling wad.
 @item
 The ``raw'' expression that was read, with some possible modifications.
 Some tokens, in particular symbols, are not represented as themselves
-for reasons mentioned in @ref{Parsing using the Common Lisp Reader}.
+for reasons mentioned in @ref{Parsing using the @commonlisp{} Reader}.
 
 @item
 A list of @dfn{children}.  These are wads that were returned by

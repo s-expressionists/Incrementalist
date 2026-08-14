@@ -54,7 +54,7 @@ cache concurrently.
 @node Token Protocol and Classes
 @section Token Protocol and Classes
 
-As mentioned in @ref{Parsing using the Common Lisp Reader}, for some
+As mentioned in @ref{Parsing using the @commonlisp{} Reader}, for some
 tokens in the buffer content such as symbols, the corresponding
 representation in the @t{raw} slot of the containing wad is not simply a
 @commonlisp{} object of the appropriate type but instead an instance of

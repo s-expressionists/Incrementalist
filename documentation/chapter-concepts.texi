@@ -10,7 +10,7 @@
 @end menu
 
 This chapter describes the approaches and abstract data types which
-@sysname{} uses to incrementally and only when necessary parse buffer
+@sysname{} uses to incrementally, and only when necessary, parse buffer
 contents in order to fill and update a cache of parse results that
 clients can query.  @ref{fig:analyzer} presents an overview of the
 concepts which will be explained in the following sections.

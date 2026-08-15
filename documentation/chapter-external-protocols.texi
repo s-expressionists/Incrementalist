@@ -387,8 +387,9 @@ Superclass for wad classes.
 @defclassa{conditional-wad,@toppackage{}}
 
 Instances of subclasses of this class represent four different kinds of
-read-time conditional expressions which consist of a ``positive'' or
-``negative'' feature expression followed by a guarded expression.
+read-time conditional expressions which consist of a ``positive''
+(@t{#+}) or ``negative'' (@t{#-}) feature expression followed by a
+guarded expression.
 
 The direct subclass @classref{read-conditional-wad,@toppackage{}} is
 also a subclass of @classref{cst-wad,@toppackage{}}.  Instances of its
@@ -399,6 +400,9 @@ The direct subclass @classref{skipped-conditional-wad,@toppackage{}} is
 also a subclass of @classref{skipped-wad,@toppackage{}}.  Instances of
 its subclasses represent read-time conditionals that were @emph{skipped}
 (as opposed to read) due to the respective feature expression.
+
+Each of the two direct subclasses has two direct subclasses of its own
+to represent positive and negative feature expressions.
 
 Note that @t{conditional-wad} is not present in the
 @link{fig:wad-class-hierarchy,wad hierarchy diagram} because the diagram

@@ -361,7 +361,12 @@ The elements of the returned list are instances of
 The following diagram illustrates the hierarchy of wad classes which
 @sysname{} provides:
 
+@float Figure,fig:wad-class-hierarchy
 @include generated-wad-class-hierarchy.texi
+@caption{Hierarchy of wad classes.  Note the restriction to a single
+superclass per class due to the structure of the diagram.  Certain wad
+classes have multiple superclasses of which only one can be depicted.}
+@end float
 
 Instances of subclasses of @classref{basic-wad,@toppackage{}} can be
 used with the @ref{Children Protocol}, the @ref{Family Relations
@@ -394,6 +399,11 @@ The direct subclass @classref{skipped-conditional-wad,@toppackage{}} is
 also a subclass of @classref{skipped-wad,@toppackage{}}.  Instances of
 its subclasses represent read-time conditionals that were @emph{skipped}
 (as opposed to read) due to the respective feature expression.
+
+Note that @t{conditional-wad} is not present in the
+@link{fig:wad-class-hierarchy,wad hierarchy diagram} because the diagram
+cannot show multiple superclasses and prioritizes the CST vs. non-CST
+distinction.
 @end deftp
 
 @defgena{feature-expression,@toppackage{}} conditional-wad

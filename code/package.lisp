@@ -55,7 +55,6 @@
    #:state-value
 
    #:errors
-   #:indentation ; wad protocol
 
    #:wad ; class
 

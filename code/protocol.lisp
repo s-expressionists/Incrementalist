@@ -50,8 +50,6 @@
 
 (defgeneric errors (wad))
 
-(defgeneric indentation (wad))
-
 ;;; Specialized wads
 
 (defgeneric semicolon-count (semicolon-comment-wad))

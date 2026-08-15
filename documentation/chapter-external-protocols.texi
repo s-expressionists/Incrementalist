@@ -351,9 +351,6 @@ The elements of the returned list of instances of
 @classref{error-wad,@toppackage{}}.
 @end deffn
 
-@defgena{indentation,@toppackage{}} wad
-@end deffn
-
 @node Wad Classes
 @subsection Wad Classes
 

@@ -142,14 +142,7 @@
    ;; surrounding list. A value of `t' is used for misspelled words.
    (%errors         :type     (or (eql t) basic-wad list)
                     :accessor %errors
-                    :initform '())
-   ;; This slot contains the absolute column that the first character
-   ;; of this wad should be positioned in, as computed by the rules of
-   ;; indentation.  If this wad is not the first one on the line, then
-   ;; this slot contains NIL.
-   (%indentation    :initarg  :indentation
-                    :accessor indentation
-                    :initform nil)))
+                    :initform '())))
 
 (defmethod print-object ((object wad) stream)
   (print-unreadable-object (object stream :type t)
@@ -637,8 +630,7 @@
 ;;; material (for example a semicolon comment or a block comment).  A
 ;;; `text-wad' does not have any children.
 
-(defclass text-wad (no-children-mixin
-                    non-cst-wad) ; TODO should not inherit indentation
+(defclass text-wad (no-children-mixin non-cst-wad)
   ())
 
 (defclass punctuation-wad (text-wad)

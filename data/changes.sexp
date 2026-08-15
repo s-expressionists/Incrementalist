@@ -5,7 +5,15 @@
     "Due" "to" "a" "fix" "in" "Eclector" "," "Incrementalist" "now" "produces"
     "better" "syntax" "tree" "nodes" "when" "processing" "input" "involving"
     "a" "consing" "dot" "in" "an" "invalid" "context" "like" (:tt ". 1") "or"
-    (:tt "(. foo)") ".")))
+    (:tt "(. foo)") "."))
+  (:item
+   (:paragraph
+    "Minor" "incompatible" "change:" "The" "generic" "function"
+    (:symbol "incrementalist:indentation") "has" "been" "removed" "and" "the"
+    "name" "is" "no" "longer" "exported" "." "Since" "the" "function" "was"
+    "not" "called" "by" "Incrementalist" "and" "no" "methods" "were" "defined"
+    "on" "it" "," "it" "is" "unlikely" "that" "the" "removal" "impacts"
+    "clients" "in" "any" "way" ".")))
 
  (:release "0.3" "2026-08-08"
   (:item

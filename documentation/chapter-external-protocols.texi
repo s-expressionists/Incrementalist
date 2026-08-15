@@ -369,9 +369,10 @@ classes have multiple superclasses of which only one can be depicted.}
 @end float
 
 Instances of subclasses of @classref{basic-wad,@toppackage{}} can be
-used with the @ref{Children Protocol}, the @ref{Family Relations
-Protocol} and the @ref{Basic Wad Protocol}.  Instances of subclasses of
-@t{wad} can additionally be used with the @ref{Wad Protocol}.
+used with the @link{Children Protocol,children}, @link{Family Relations
+Protocol,family relations}, and @link{Basic Wad Protocol,basic wad}
+protocols.  Instances of subclasses of @t{wad} can additionally be used
+with the @link{Wad Protocol,wad protocol}.
 
 @defclassa{basic-wad,@toppackage{}}
 

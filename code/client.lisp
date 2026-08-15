@@ -49,39 +49,73 @@
       (t
        (values-list values)))))
 
+;;; This structure is used to pass information about the spelling of
+;;; the package indicator from `reader:interpret-symbol-token' to
+;;; `reader:interpret-symbol'.
+(declaim (inline package-info))
+(defstruct (package-info
+            (:constructor package-info (name marker1 marker2))
+            (:predicate nil)
+            (:copier nil))
+  (name    :current :type (or string (member :keyword :current)) :read-only t)
+  (marker1 nil      :type (or null alexandria:array-index)       :read-only t)
+  (marker2 nil      :type (or null alexandria:array-index)       :read-only t))
+
 (defmethod reader:interpret-symbol-token ((client                    client)
                                           (input-stream              t)
                                           (token                     string)
                                           (position-package-marker-1 t)
                                           (position-package-marker-2 t))
-  (multiple-value-bind (package-designator symbol-name)
-      (cond ((null position-package-marker-1)
-             (values (reader:state-value client '*package*)
-                     (intern-symbol-name token)))
-            ((null position-package-marker-2)
-             (values (if (= position-package-marker-1 0)
-                         **keyword-package-name**
-                         (intern-package-name
-                          (subseq token 0 position-package-marker-1)))
-                     (intern-symbol-name
-                      (subseq token (1+ position-package-marker-1)))))
-            (t
-             (values (intern-package-name
-                      (subseq token 0 position-package-marker-1))
-                     (intern-symbol-name
-                      (subseq token (1+ position-package-marker-2))))))
-    (let ((package (find-package package-designator)))
-      (macrolet ((make-token (class package-name symbol-name)
+  (flet ((interpret (package-name symbol-name internp)
+           (let ((package-info (package-info package-name
+                                             position-package-marker-1
+                                             position-package-marker-2)))
+             (declare (dynamic-extent package-info))
+             (reader:interpret-symbol
+              client input-stream package-info symbol-name internp))))
+    (cond ((null position-package-marker-1)
+           (interpret :current token t))
+          ((zerop position-package-marker-1)
+           ;; We use PACKAGE-MARKERS-END so we can handle ::foo which
+           ;; can happen when recovering from errors.
+           (let ((package-markers-end (or position-package-marker-2
+                                          position-package-marker-1)))
+             (interpret :keyword
+                        (subseq token (1+ package-markers-end))
+                        t)))
+          ((not (null position-package-marker-2))
+           (interpret (subseq token 0 position-package-marker-1)
+                      (subseq token (1+ position-package-marker-2))
+                      t))
+          (t
+           (interpret (subseq token 0 position-package-marker-1)
+                      (subseq token (1+ position-package-marker-1))
+                      nil)))))
+
+(defmethod reader:interpret-symbol ((client            client)
+                                    (input-stream      t)
+                                    (package-indicator package-info)
+                                    (symbol-name       t)
+                                    (internp           t))
+  (let ((package-indicator (package-info-name package-indicator))
+        (marker1           (package-info-marker1 package-indicator))
+        (marker2           (package-info-marker2 package-indicator)))
+    (multiple-value-bind (package package-name)
+        (case package-indicator
+          (:current (let ((package-name (reader:state-value client '*package*)))
+                      (values (find-package package-name) package-name)))
+          (:keyword (load-time-value (find-package '#:keyword)))
+          (t        (values (find-package package-indicator) package-indicator)))
+      (macrolet ((make-token (token-class package-name symbol-name)
                    `(let ((package-name (intern-package-name ,package-name))
                           (symbol-name  (intern-symbol-name ,symbol-name)))
-                      (make-instance
-                       ',class :package-name     package-name
-                               :package-marker-1 position-package-marker-1
-                               :package-marker-2 position-package-marker-2
-                               :name             symbol-name))))
+                      (make-instance ',token-class :package-name     package-name
+                                                   :package-marker-1 marker1
+                                                   :package-marker-2 marker2
+                                                   :name             symbol-name))))
         (if (null package)
             (make-token non-existing-package-symbol-token
-                        package-designator
+                        package-name
                         symbol-name)
             (multiple-value-bind (symbol status)
                 (find-symbol symbol-name package)

@@ -271,14 +271,14 @@ the final character of the wad.
 
 @cindex concrete syntax tree
 While the previous section explained the representation of parse results
-as @termrefl{wad,wads}, the introduction to the @ref{Parse Results}
-section mentioned that some wads are also Concrete Syntax Tree (CST)
-nodes.  This sub-section focuses on this dual nature.  The reason for
-having two different views on parse results is that they are used in
-different ways: On the one hand, uses such as syntax highlighting are
-concerned only with nodes that correspond directly to item sequences in
-the buffer, including comments and other ``skipped material''.  On the
-other hand, uses such as semantic analyses of the buffer content as a
+as @termrefl{wad,wads}, the introduction to @ref{Parse Results}
+mentioned that some wads are also Concrete Syntax Tree (CST) nodes.
+This sub-section focuses on this dual nature.  The reason for having two
+different views on parse results is that they are used in different
+ways: On the one hand, uses such as syntax highlighting are concerned
+only with nodes that correspond directly to item sequences in the
+buffer, including comments and other ``skipped material''.  On the other
+hand, uses such as semantic analyses of the buffer content as a
 @commonlisp{} program are not concerned with ``skipped material'' and
 instead require an s-expression tree that can be processed using
 @t{atom}, @t{null}, @t{first} and @t{rest}.
@@ -368,7 +368,7 @@ range of lines in the buffer.
 
 @cindex analyzer
 A final concept, the @term{analyzer}, ties together the previously
-mentioned components (See @ref{fig:analyzer} for a graphical
+mentioned components (@pxref{fig:analyzer} for a graphical
 illustration of all components and their relations):
 
 @table @asis

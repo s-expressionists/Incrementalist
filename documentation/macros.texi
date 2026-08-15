@@ -57,6 +57,23 @@ Concrete Syntax Tree
 
 @c Semantic markup and references
 
+@ifnottex
+@macro flowref{NODE}
+@link{\NODE\}
+@end macro
+@macro flowrefl{NODE,LABEL}
+@link{\NODE\,\LABEL\}
+@end macro
+@end ifnottex
+@iftex
+@macro flowref{NODE}
+\NODE\ (@pxref{\NODE\})
+@end macro
+@macro flowrefl{NODE,LABEL}
+\LABEL\ (@pxref{\NODE\})
+@end macro
+@end iftex
+
 @macro term{TERM}
 @anchor{Term \TERM\}@dfn{\TERM\}
 @end macro

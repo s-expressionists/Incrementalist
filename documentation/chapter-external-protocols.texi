@@ -2,13 +2,13 @@
 @chapter External Protocols
 
 This chapter describes protocols that clients of @sysname{} can use.  As
-described in the introduction of section @ref{Concepts} and
-@ref{fig:analyzer}, the main activities of clients are on the one hand
-updating the @termref{cache} via the @termref{analyzer} and on the other
-hand querying and working with parse results, that is
-@termrefl{wad,wads}.  Accordingly, the first two sections of this
-chapter describe protocols for working with wads while the remaining
-sections focus on updating and querying the cache.
+described in the introduction of @ref{Concepts} and @ref{fig:analyzer},
+the main activities of clients are on the one hand updating the
+@termref{cache} via the @termref{analyzer} and on the other hand
+querying and working with parse results, that is @termrefl{wad,wads}.
+Accordingly, the first two sections of this chapter describe protocols
+for working with wads while the remaining sections focus on updating and
+querying the cache.
 
 @menu
 * Package Structure::
@@ -44,8 +44,8 @@ Operations in @sysname{} are in general not safe to perform concurrently
 when the operations either directly involve a common object or the
 involved objects are (directly or indirectly) attached to a common
 object.  An example of the latter case would be concurrent operations on
-a buffer and the cache associated with the buffer via an analyzer (See
-@ref{fig:analyzer} for the concepts and their relations).  Put
+a buffer and the cache associated with the buffer via an analyzer
+(@pxref{fig:analyzer} for the concepts and their relations).  Put
 differently, concurrent operations are safe on unrelated
 buffer--analyzer--cache triples.  When the client obeys certain
 restrictions, it is possible to operate on a buffer and the associated
@@ -163,9 +163,9 @@ environment.
 @sysname{} provides various generic functions for working with
 @termrefl{wad,wads}.  Those generic functions are organized into
 multiple separate protocols for better coherence.  Each of the
-subsections of this section describes one such protocol.  The @ref{Wad
-Classes,final subsection} describes the wad classes to which the
-protocols can be applied.
+subsections of this section describes one such protocol.  The
+@flowrefl{Wad Classes,final subsection} describes the wad classes to
+which the protocols can be applied.
 
 @menu
 * Children Protocol::
@@ -343,8 +343,8 @@ The section describes the wad protocol which is applicable to all proper
 wad objects but not wad-like objects such as instances of
 @classref{error-wad,@toppackage{}} and
 @classref{word-wad,@toppackage{}}.  This protocol extends the
-@link{Basic Wad Protocol,children}, @link{Family Relations
-Protocol,family relations}, and @link{Basic Wad Protocol,basic wad}
+@flowrefl{Basic Wad Protocol,children}, @flowrefl{Family Relations
+Protocol,family relations}, and @flowrefl{Basic Wad Protocol,basic wad}
 protocols.
 
 @defgena{errors,@toppackage{}} wad
@@ -369,10 +369,10 @@ classes have multiple superclasses of which only one can be depicted.}
 @end float
 
 Instances of subclasses of @classref{basic-wad,@toppackage{}} can be
-used with the @link{Children Protocol,children}, @link{Family Relations
-Protocol,family relations}, and @link{Basic Wad Protocol,basic wad}
-protocols.  Instances of subclasses of @t{wad} can additionally be used
-with the @link{Wad Protocol,wad protocol}.
+used with the @flowrefl{Children Protocol,children}, @flowrefl{Family
+Relations Protocol,family relations}, and @flowrefl{Basic Wad
+Protocol,basic wad} protocols.  Instances of subclasses of @t{wad} can
+additionally be used with the @flowrefl{Wad Protocol,wad protocol}.
 
 @defclassa{basic-wad,@toppackage{}}
 
@@ -406,9 +406,9 @@ Each of the two direct subclasses has two direct subclasses of its own
 to represent positive and negative feature expressions.
 
 Note that @t{conditional-wad} is not present in the
-@link{fig:wad-class-hierarchy,wad hierarchy diagram} because the diagram
-cannot show multiple superclasses and prioritizes the CST vs. non-CST
-distinction.
+@flowrefl{fig:wad-class-hierarchy,wad hierarchy diagram} because the
+diagram cannot show multiple superclasses and prioritizes the CST
+vs. non-CST distinction.
 @end deftp
 
 @defgena{feature-expression,@toppackage{}} conditional-wad
@@ -635,10 +635,10 @@ Return the @bufferlibrary{} buffer associated with @var{object}.
 @section The Cache Protocol
 
 @cindex cache
-This protocol extends the
-@ref{The Associated Buffer Protocol,associated buffer protocol},
-that is, the @genref{buffer,@toppackage{}} is applicable to objects
-which implement the cache protocol.
+This protocol extends the @flowrefl{The Associated Buffer
+Protocol,associated buffer protocol}, that is, the
+@genref{buffer,@toppackage{}} is applicable to objects which implement
+the cache protocol.
 
 @defgena{time-stamp,@toppackage{}} cache
 
@@ -825,10 +825,10 @@ the containing buffer.  The calls to @var{wad-function} and
 @section The Analyzer Protocol
 
 @cindex analyzer
-This protocol extends the
-@ref{The Associated Buffer Protocol,associated buffer protocol}, that
-is, the @genref{buffer,@toppackage{}} is applicable to objects which
-implement the analyzer protocol.
+This protocol extends the @flowrefl{The Associated Buffer
+Protocol,associated buffer protocol}, that is, the
+@genref{buffer,@toppackage{}} is applicable to objects which implement
+the analyzer protocol.
 
 @defgena{cache,@toppackage{}} analyzer
 

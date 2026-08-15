@@ -77,6 +77,26 @@
         (unless (typep wad 'inc:error-wad)
           (append (inc:errors wad) (inc:children wad))))))))
 
+(defun format-input-and-arguments
+    (stream test-case-info &optional colon? at?)
+  (declare (ignore colon? at?))
+  (destructuring-bind (&key input arguments &allow-other-keys) test-case-info
+    (format stream "~@[input~@:_~@:_~
+                    ~S~
+                    ~@:_~@:_~]~@[and arguments ~:S~]"
+            input arguments)))
+
+(defun format-test-case-info (stream test-case-info &optional colon? at?)
+  (declare (ignore colon? at?))
+  (destructuring-bind (&key comment node root &allow-other-keys) test-case-info
+    (format stream "~/incrementalist.test::format-input-and-arguments/~
+                    ~@[ and ~A~] and result~@:_~@:_~
+                    ~/incrementalist.test::format-node/~
+                    ~@:_~@:_"
+            test-case-info comment (cons root node))))
+
+(defvar *test-case-info* nil)
+
 (defun format-results (stream results &optional colon? at?)
   (declare (ignore colon? at?))
   (loop :for result :in results
@@ -102,74 +122,58 @@
     (list (list start-line (inc:start-column wad))
           (list end-line   (inc:end-column wad)))))
 
-(defmacro is-with-node ((predicate expected actual) label result-info input)
+(defmacro is-with-node ((predicate expected actual) label)
   `(is (,predicate ,expected ,actual)
-       "~@<For~@[ input~@:_~@:_~
-        ~S~
-        ~@:_~@:_and~] result~@:_~@:_~
-        ~/incrementalist.test::format-node/~
-        ~@:_~@:_expected ~A to be ~S but ~A is ~S.~@:>"
-       ,input ,result-info ,label ,expected ,label ,actual))
+       "~@<For ~/incrementalist.test::format-test-case-info/expected ~A to ~
+        be ~S but ~A is ~S.~@:>"
+       *test-case-info* ,label ,expected ,label ,actual))
 
-(defun is-sequence (child-predicate expected-sequence actual-sequence result-info label
-                    &key input)
+(defun is-sequence (child-predicate expected-sequence actual-sequence label)
   (let ((label-control (concatenate 'string "~1:*" label "~*")))
     (is (= (length expected-sequence) (length actual-sequence))
-        "~@<For~@[ input~@:_~@:_~
-         ~S~
-         ~@:_~@:_ and~] result~@:_~@:_~
-         ~/incrementalist.test::format-node/~
-         ~@:_~@:_expected the wad to have ~D ~@? but it has ~D ~@?.~@:>"
-        input result-info
+        "~@<For ~/incrementalist.test::format-test-case-info/expected the wad ~
+         to have ~D ~@? but it has ~D ~@?.~@:>"
+        *test-case-info*
         (length expected-sequence) label-control
         (length actual-sequence)   label-control))
   (mapc child-predicate expected-sequence actual-sequence))
 
-(defun is-wad-data (expected-type expected-location wad result-info
-                    &key input)
+(defun is-wad-data (expected-type expected-location wad)
   (is (typep wad expected-type)
-      "~@<For~@[ input~@:_~@:_~
-       ~S~
-       ~@:_~@:_ and~] result~@:_~@:_~
-       ~/incrementalist.test::format-node/~
-       ~@:_~@:_expected the wad to be of type ~A but it is of type ~A.~@:>"
-      input result-info expected-type (class-name (class-of wad)))
+      "~@<For ~/incrementalist.test::format-test-case-info/expected the wad ~
+       to be of type ~A but it is of type ~A.~@:>"
+      *test-case-info* expected-type (class-name (class-of wad)))
   (is-with-node (equal expected-location (wad-location wad))
-                "location of the wad" result-info input))
+                "location of the wad"))
 
-(defun is-wad-data= (expected-wad actual-wad result-info &key input)
-  (is-with-node (a:type= (type-of expected-wad) (type-of actual-wad))
-                "type of" result-info input)
+(defun is-wad-data= (expected-wad actual-wad)
+  (is-with-node (a:type= (type-of expected-wad) (type-of actual-wad)) "type of")
   (is-with-node (equal (wad-location expected-wad) (wad-location actual-wad))
-                "location of the wad" result-info input))
+                "location of the wad"))
 
-(defun is-error (expected-error wad result-info &key input)
-  (let ((result-info (cons (car result-info) wad)))
+(defun is-error (expected-error wad)
+  (let ((*test-case-info* (list* :node wad *test-case-info*)))
     (destructuring-bind (expected-location expected-condition-type) expected-error
-      (is-wad-data 'inc:error-wad expected-location wad result-info
-                   :input input)
+      (is-wad-data 'inc:error-wad expected-location wad)
       (let ((condition (inc:condition wad)))
         (is (typep condition expected-condition-type)
-            "~@<For~@[ input~@:_~@:_~
-             ~S~
-             ~@:_~@:_ and~] result~@:_~@:_~
-             ~/incrementalist.test::format-node/~
-             ~@:_~@:_expected the condition in the error wad to be of type ~
+            "~@<For ~/incrementalist.test::format-test-case-info/~
+             expected the condition in the error wad to be of type ~
              ~A but it is of type ~A.~@:>"
-            input result-info
+            *test-case-info*
             expected-condition-type
             (class-name (class-of condition)))))))
 
-(defun is-error= (expected-error-wad actual-error-wad result-info &key input)
-  (let ((result-info (cons (car result-info) actual-error-wad)))
-    (is-wad-data= expected-error-wad actual-error-wad result-info :input input)
+(defun is-error= (expected-error-wad actual-error-wad)
+  (let ((*test-case-info* (list* :node actual-error-wad *test-case-info*)))
+    (is-wad-data= expected-error-wad actual-error-wad)
     (let ((expected-condition (inc:condition expected-error-wad))
           (actual-condition   (inc:condition actual-error-wad)))
       (is-with-node (a:type= (class-of expected-condition)
                              (class-of actual-condition))
-                    "condition type" result-info input))))
+                    "condition type"))))
 
-(defun is-raw (expected-raw raw result-info &key input)
+(defun is-raw (expected-raw raw)
   (if (consp expected-raw)
       (destructuring-bind (expected-type &key ((:symbol expected-symbol)
                                                nil
@@ -177,25 +181,20 @@
           expected-raw
         (is (typep raw expected-type))
         (when expected-symbol-supplied?
-          (destructuring-bind
-              (expected-package-name expected-name)
+          (destructuring-bind (expected-package-name expected-name)
               expected-symbol
             (let ((actual-package-name (inc:package-name raw))
                   (actual-name         (inc:name raw)))
               (is-with-node (string= expected-package-name actual-package-name)
-                            "package name of the symbol token of the node"
-                            result-info input)
+                            "package name of the symbol token of the node")
               (is-with-node (string= expected-name actual-name)
-                            "name of the symbol token of the node"
-                            result-info input)))))
-      (is-with-node (equal expected-raw raw)
-                    "raw value of the node" result-info input)))
+                            "name of the symbol token of the node")))))
+      (is-with-node (equal expected-raw raw) "raw value of the node")))
 
-(defun is-raw= (expected actual result-info &key input)
+(defun is-raw= (expected actual)
   (labels ((rec (expected actual)
              (is-with-node (a:type= (type-of expected) (type-of actual))
-                           "type of the raw value of the node"
-                           result-info input)
+                           "type of the raw value of the node")
              (when (a:type= (type-of expected) (type-of actual))
                (typecase expected
                  (cons
@@ -204,17 +203,15 @@
                  (inc:symbol-token
                   (is-with-node (string= (inc:package-name expected)
                                          (inc:package-name actual))
-                                "package name of the symbol token of the node"
-                                result-info input)
+                                "package name of the symbol token of the node")
                   (is-with-node (string= (inc:name expected) (inc:name actual))
-                                "name of the symbol token of the node"
-                                result-info input))
+                                "name of the symbol token of the node"))
                  (t
                   (is-with-node (equal expected actual)
-                                "raw value of the node" result-info input))))))
+                                "raw value of the node"))))))
     (rec expected actual)))
 
-(defun is-result (expected root-result &key input)
+(defun is-result (expected root-result)
   (labels
       ((rec (expected result)
          (is-true (dep:validp result))
@@ -235,14 +232,12 @@
                          '())
               &rest     expected-children)
              expected
-           (let ((result-info (cons root-result result)))
+           (let ((*test-case-info* (list* :node result *test-case-info*)))
              ;; Assertions for type and location
-             (is-wad-data expected-type expected-location result result-info
-                          :input input)
+             (is-wad-data expected-type expected-location result)
              ;; Assertions for errors
-             (is-sequence (a:rcurry #'is-error result-info)
-                          expected-errors (inc:errors result)
-                          result-info "error~:P" :input input)
+             (is-sequence #'is-error expected-errors (inc:errors result)
+                          "error~:P")
              ;; Assertions for raw value
              (when (and expected-raw-supplied?
                         (typep result expected-type))
@@ -251,12 +246,11 @@
                                            :symbol ("COMMON-LISP" "NIL")))
                      (is-true (cst:null result))
                      (is-false (cst:null result)))
-                 (is-raw expected-raw raw result-info :input input)))
+                 (is-raw expected-raw raw)))
              ;; Assertions for feature expression of `conditional-wad's
              (when expected-feature-expression-supplied?
                (let ((feature-expression (inc:feature-expression result)))
-                 (is-raw expected-feature-expression feature-expression result-info
-                         :input input)))
+                 (is-raw expected-feature-expression feature-expression)))
              ;; Assertions for `labeled-object-reference-wad'
              (when (typep result 'inc:labeled-object-reference-wad)
                (let* ((target     (eclector.concrete-syntax-tree:target result))
@@ -266,60 +260,52 @@
              ;; Spelling.
              (when expected-misspelled-supplied?
                (is-with-node (eq expected-misspelled (inc:misspelled result))
-                             "misspelled status" result-info input))
+                             "misspelled status"))
              ;; Recursively check children
              (unless (equal expected-children '(:ignore-children))
                (is-sequence #'rec expected-children (inc:children result)
-                            result-info "~:*child~[ren~;~:;ren~]"
-                            :input input))))))
-    (if (typep root-result #1='inc:wad)
-        (rec expected root-result)
-        (fiveam:fail "~@<~@[For input~@:_~@:_~
-                      ~S~
-                      ~@:_~@:_,~] ~
-                      expected ~S to be of type ~S but it is of type ~S.~@:>"
-                     input root-result #1# (type-of root-result)))))
+                            "~:*child~[ren~;~:;ren~]"))))))
+    (let ((*test-case-info* (list* :root root-result *test-case-info*)))
+      (if (typep root-result #1='inc:wad)
+          (rec expected root-result)
+          (fiveam:fail "~@<For ~/incrementalist.test::format-input-and-arguments/~
+                        , expected ~S to be of type ~S but it is of type ~S.~@:>"
+                       *test-case-info* root-result #1# (type-of root-result))))))
 
-(defun is-result= (expected-result actual-result &key input)
+(defun is-result= (expected-result actual-result)
   (is (a:type= (type-of expected-result) (type-of actual-result)))
   (labels ((rec (expected result)
-             (let ((result-info (cons actual-result result)))
+             (let ((*test-case-info* (list* :node result
+                                            :root actual-result
+                                            *test-case-info*)))
                (is-true (dep:validp result))
                (is (null (dep:invalid result)))
                ;; Compare type and location
-               (is-wad-data= expected result result-info :input input)
+               (is-wad-data= expected result)
                ;; Compare raw values
                (when (typep expected 'cst:cst)
-                 (is-raw= (cst:raw expected) (cst:raw result)
-                          result-info :input input))
+                 (is-raw= (cst:raw expected) (cst:raw result)))
                ;; Compare errors
-               (is-sequence (a:rcurry #'is-error= result-info :input input)
-                            (inc:errors expected) (inc:errors result)
-                            result-info "error~:P" :input input)
+               (is-sequence #'is-error= (inc:errors expected) (inc:errors result)
+                            "error~:P")
                ;; Compare children
                (is-sequence #'rec (inc:children expected) (inc:children result)
-                            result-info "~:*child~[ren~;~:;ren~]"
-                            :input input))))
+                            "~:*child~[ren~;~:;ren~]"))))
     (rec expected-result actual-result)))
 
-(defun is-result-count= (expected-results actual-results
-                         &key input (arguments nil arguments-supplied?))
+(defun is-result-count= (expected-results actual-results)
   (is (= (length expected-results) (length actual-results))
-      "~@<~@[For input~@:_~@:_~
-       ~S~
-       ~@:_~@:_~]~
-       ~:[~*~;and arguments ~:S~], expected ~D result~:P but there ~
-       ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
-      input arguments-supplied? arguments
-      (length expected-results) (length actual-results)))
+      "~@<For ~/incrementalist.test::format-input-and-arguments/~
+       , expected ~D result~:P but there ~[are~;is~:;are~] ~:*~D result~:P.~@:>"
+      *test-case-info* (length expected-results) (length actual-results)))
 
-(defun are-results (expected-results actual-results &key input)
-  (is-result-count= expected-results actual-results :input input)
-  (mapc (a:rcurry #'is-result :input input) expected-results actual-results))
+(defun are-results (expected-results actual-results)
+  (is-result-count= expected-results actual-results)
+  (mapc #'is-result expected-results actual-results))
 
-(defun are-results= (expected-results actual-results &key input)
-  (is-result-count= expected-results actual-results :input input)
-  (mapc (a:rcurry #'is-result= :input input) expected-results actual-results))
+(defun are-results= (expected-results actual-results)
+  (is-result-count= expected-results actual-results)
+  (mapc #'is-result= expected-results actual-results))
 
 ;;; Ensure that the cells in the initial reader state of ANALYZER do
 ;;; not have any users that are not contained in the wad forest
@@ -366,7 +352,9 @@
     ,@words))
 
 (defun analysis-test-case (input expected-result)
-  (are-results expected-result (parse-result input) :input input))
+  (let ((actual-result (parse-result input)))
+    (let ((*test-case-info* (list :input input)))
+      (are-results expected-result actual-result))))
 
 (defmacro analysis-cases (() &body cases)
   `(progn
@@ -453,16 +441,18 @@
                                                  (update-cache analyzer cache))))
                      (when (eq step-mode :big-step)
                        (update-cache analyzer cache))
-                     (let ((input   (cons (buffer-string buffer)
-                                          (format nil "~A mode, after edit ~D"
-                                                  step-mode (1+ i))))
-                           (results (update-cache analyzer cache)))
+                     (let ((results (update-cache analyzer cache)))
                        (when map-wads-and-spaces?
                          (inc:map-wads-and-spaces
                           #1=(lambda (&rest args) (declare (ignore args))) #1#
                           cache))
                        (unless (eq expected-results :ignore)
-                         (are-results expected-results results :input input))))))
+                         (let ((input   (buffer-string buffer))
+                               (comment (format nil "~A mode, after edit ~D"
+                                                step-mode (1+ i))))
+                           (let ((*test-case-info* (list :input   input
+                                                         :comment comment)))
+                             (are-results expected-results results))))))))
     (do-it :small-step nil) ; update cache after each item change
     (do-it :big-step   nil) ; update cache after each edit
     (do-it :small-step t)   ; like above but call `map-wads-and-spaces' after

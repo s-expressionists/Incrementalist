@@ -88,5 +88,5 @@ yields identical results."
           :for results-with-cache = (update-cache analyzer cache)
           :for results-no-cache   = (parse-result content)
           :do (no-dangling-nodes results-with-cache analyzer)
-              (are-results= results-no-cache results-with-cache
-                            :input content))))
+              (let ((*test-case-info* (list :input content)))
+                (are-results= results-no-cache results-with-cache)))))

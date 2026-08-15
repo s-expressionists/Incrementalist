@@ -20,30 +20,25 @@
 ;;;
 ;;;     (START-COLUMN . END-COLUMN)
 ;;;
-(defun is-query-result (expected-result actual-result &key input arguments)
-  (is-result-count= expected-result actual-result
-                    :input input :arguments arguments)
+(defun is-query-result (expected-result actual-result)
+  (is-result-count= expected-result actual-result)
   (flet ((is-expected-entry (expected-entry actual-entry)
            (destructuring-bind (expected-line . expected-element) expected-entry
              (destructuring-bind (actual-line . actual-element) actual-entry
                (is (= expected-line actual-line)
-                   "~@<For input~@:_~@:_~
-                    ~S~
-                    ~@:_~@:_~
-                    and arguments ~S, expected line ~D but got ~D~@:>"
-                   input arguments expected-line actual-line)
+                   "~@<For ~/incrementalist.test::format-input-and-arguments/~
+                    , expected line ~D but got ~D~@:>"
+                   *test-case-info* expected-line actual-line)
                (etypecase expected-element
                  ((cons integer integer)
                   (is (equal expected-element actual-element)
-                      "~@<For input~@:_~@:_~
-                       ~S~
-                       ~@:_~@:_~
-                       and arguments ~S, expected spaces ~S but got ~S~@:>"
-                      input arguments expected-element actual-element))
+                      "~@<For ~/incrementalist.test::format-input-and-arguments/~
+                       , expected spaces ~S but got ~S~@:>"
+                      *test-case-info* expected-element actual-element))
                  ((cons symbol)
                   (let ((expected-wad (append expected-element
                                               '(:ignore-children))))
-                    (is-result expected-wad actual-element :input input))))))))
+                    (is-result expected-wad actual-element))))))))
     (mapc #'is-expected-entry expected-result actual-result)))
 
 (defun map-query-test-cases (function test-cases)
@@ -84,7 +79,8 @@
    (lambda (input cache split-number arguments expected)
      (declare (ignore split-number))
      (let ((result (apply query-function cache arguments)))
-       (is-query-result expected result :input input :arguments arguments)))
+       (let ((*test-case-info* (list :input input :arguments arguments)))
+         (is-query-result expected result))))
    '(;; Empty
      (""
       ((0 0 :start-relation (< <=) :end-relation (< <=))
@@ -143,7 +139,8 @@
                            (push (cons (inc:absolute-start-line wad) wad)
                                  result))
                          cache arguments)))
-       (is-query-result expected result :input input :arguments arguments)))
+       (let ((*test-case-info* (list :input input :arguments arguments)))
+         (is-query-result expected result))))
    '(;; Empty
      (""
       ((:start-line 0 :end-line 0) ()))
@@ -233,7 +230,8 @@
                      (push (cons line-number (cons start-column end-column))
                            result))
                    cache arguments)))
-       (is-query-result expected result :input input :arguments arguments)))
+       (let ((*test-case-info* (list :input input :arguments arguments)))
+         (is-query-result expected result))))
    '(;; Empty
      (""
       ((:start-line 0 :end-line 0) ()))

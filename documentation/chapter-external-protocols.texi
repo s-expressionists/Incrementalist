@@ -340,8 +340,12 @@ line number of @var{wad} is available.
 @subsection Wad Protocol
 
 The section describes the wad protocol which is applicable to all proper
-wad objects but not wad-like objects such as instances of @t{error-wad}
-and @classref{word-wad,@toppackage{}}.
+wad objects but not wad-like objects such as instances of
+@classref{error-wad,@toppackage{}} and
+@classref{word-wad,@toppackage{}}.  This protocol extends the
+@link{Basic Wad Protocol,children}, @link{Family Relations
+Protocol,family relations}, and @link{Basic Wad Protocol,basic wad}
+protocols.
 
 @defgena{errors,@toppackage{}} wad
 

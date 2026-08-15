@@ -2,7 +2,8 @@
 
 ;;; Constructing buffer, analyzer and cache
 
-(defpackage incrementalist.test.test-package (:use))
+(defpackage #:incrementalist.test.test-package (:use))
+(defpackage #:incrementalist.test.using-package (:use #:cl))
 
 ;;; TODO (c:items buffer)
 (defun buffer-string (buffer)
@@ -19,10 +20,10 @@
     (b:insert-items-at cursor content :line-separator #\Newline)
     (values buffer cursor)))
 
-(defun prepared-analyzer (buffer-content
-                          &key (initial-reader-state
-                                (inc:make-initial-reader-state
-                                 :package "INCREMENTALIST.TEST.TEST-PACKAGE")))
+(defun prepared-analyzer
+    (buffer-content &key (initial-package      "INCREMENTALIST.TEST.TEST-PACKAGE")
+                         (initial-reader-state (inc:make-initial-reader-state
+                                                :package initial-package)))
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((analyzer (make-instance 'inc:analyzer
                                     :buffer               buffer
@@ -34,8 +35,9 @@
   (inc:update analyzer)
   (append (reverse (inc::prefix cache)) (inc::suffix cache)))
 
-(defun parse-result (buffer-content &rest args &key initial-reader-state)
-  (declare (ignore initial-reader-state))
+(defun parse-result (buffer-content &rest args
+                                    &key initial-package initial-reader-state)
+  (declare (ignore initial-package initial-reader-state))
   (multiple-value-bind (analyzer cache)
       (apply #'prepared-analyzer buffer-content args)
     (update-cache analyzer cache)))

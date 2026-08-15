@@ -158,9 +158,9 @@ a b"
     ("()"
      '((inc:atom-wad ((0 0) (0 2)) (:raw (inc:existing-symbol-token
                                           :symbol ("COMMON-LISP" "NIL"))))))
-    #+(or) ("nil" ; test package does not `:use' CL
-            '((inc:atom-wad ((0 0) (0 3)) (:raw (inc:existing-symbol-token
-                                                 :symbol ("COMMON-LISP" "NIL"))))))
+    ('("nil" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
+     '((inc:atom-wad ((0 0) (0 3)) (:raw (inc:existing-symbol-token
+                                          :symbol ("COMMON-LISP" "NIL"))))))
     ("cl:nil"
      '((inc:atom-wad ((0 0) (0 6)) (:raw (inc:existing-symbol-token
                                           :symbol ("COMMON-LISP" "NIL"))))))

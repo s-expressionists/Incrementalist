@@ -351,7 +351,7 @@ protocols.
 
 Return a list of errors that are associated with @var{wad}.
 
-The elements of the returned list of instances of
+The elements of the returned list are instances of
 @classref{error-wad,@toppackage{}}.
 @end deffn
 

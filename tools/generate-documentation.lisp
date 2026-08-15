@@ -25,8 +25,7 @@
               (sort (copy-list children) #'string< :key #'class-name))))))
   (format stream "~&@end example~%"))
 
-(destructuring-bind (wad-class-hierarchy-file
-                     token-class-hierarchy-file)
+(destructuring-bind (token-class-hierarchy-file wad-class-hierarchy-file)
     (rest sb-ext:*posix-argv*)
 
   (with-open-file (stream token-class-hierarchy-file

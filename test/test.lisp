@@ -132,10 +132,10 @@
         (inc:atom-wad ((0 14) (0 15)) (:raw 1)))))
     ("#+a b"
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
-         (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
-       ,(expected-symbol-wad '((0 2) (0 3)) "A"
-                             :token-class  'inc:existing-symbol-token
-                             :package-name "KEYWORD")
+          (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
+        ,(expected-symbol-wad '((0 2) (0 3)) "A"
+                              :token-class  'inc:existing-symbol-token
+                              :package-name "KEYWORD")
        (inc:read-suppress-wad ((0 4) (0 5)) ()))))
     ("#-a b"
      `((inc:read-negative-conditional-wad ((0 0) (0 5))
@@ -150,7 +150,11 @@ a b"
         ,(expected-symbol-wad '((1 0) (1 1)) "A"
                               :token-class  'inc:existing-symbol-token
                               :package-name "KEYWORD")
-        ,(expected-symbol-wad '((1 2) (1 3)) "B"))))))
+        ,(expected-symbol-wad '((1 2) (1 3)) "B"))))
+    ;; Read in a different package that uses the CL package
+    ('("floor" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
+     '((inc:atom-wad ((0 0) (0 5))
+          (:raw (inc:existing-symbol-token :symbol ("COMMON-LISP" "FLOOR"))))))))
 
 (test nil-spellings
   "Test for reading various spellings of `nil'."

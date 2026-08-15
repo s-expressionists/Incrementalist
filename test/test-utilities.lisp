@@ -351,10 +351,12 @@
     (:raw (,token-class :symbol (,package-name ,symbol-name)))
     ,@words))
 
-(defun analysis-test-case (input expected-result)
-  (let ((actual-result (parse-result input)))
-    (let ((*test-case-info* (list :input input)))
-      (are-results expected-result actual-result))))
+(defun analysis-test-case (input-and-arguments expected-result)
+  (destructuring-bind (input &rest arguments)
+      (a:ensure-list input-and-arguments)
+    (let ((actual-result (apply #'parse-result input arguments)))
+      (let ((*test-case-info* (list :input input :arguments arguments)))
+        (are-results expected-result actual-result)))))
 
 (defmacro analysis-cases (() &body cases)
   `(progn

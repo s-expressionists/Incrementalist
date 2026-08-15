@@ -13,7 +13,16 @@
     "name" "is" "no" "longer" "exported" "." "Since" "the" "function" "was"
     "not" "called" "by" "Incrementalist" "and" "no" "methods" "were" "defined"
     "on" "it" "," "it" "is" "unlikely" "that" "the" "removal" "impacts"
-    "clients" "in" "any" "way" ".")))
+    "clients" "in" "any" "way" "."))
+  (:item
+   (:paragraph
+    "Incrementalist" "no" "longer" "processes" "inherited" "symbols" "like"
+    (:symbol "cl:floor") "when" "spelled" "as" "," "for" "example" ","
+    (:tt "cl-user:floor") "as" "if" "they" "were" "exported" "." "Instead" ","
+    "Incrementalist" "now" "produces" "an" (:symbol "incrementalist:error-wad")
+    "that" "represents" "the" "corresponding" "error" "of" "type"
+    (:symbol "eclector.reader:symbol-is-not-external") "for" "inputs" "like"
+    "the" "above" ".")))
 
  (:release "0.3" "2026-08-08"
   (:item

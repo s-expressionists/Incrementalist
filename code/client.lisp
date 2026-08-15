@@ -119,13 +119,22 @@
                         symbol-name)
             (multiple-value-bind (symbol status)
                 (find-symbol symbol-name package)
-              (if (null status)
-                  (make-token non-existing-symbol-token
-                              (cl:package-name package)
-                              symbol-name)
-                  (make-token existing-symbol-token
-                              (cl:package-name (symbol-package symbol))
-                              (symbol-name symbol)))))))))
+              (cond ((null status)
+                     (make-token non-existing-symbol-token
+                                 (cl:package-name package)
+                                 symbol-name))
+                    ((and (not (null marker1))
+                          (null marker2)
+                          (not (eq status :external)))
+                     (let ((symbol (eclector.reader::symbol-is-not-external
+                                    input-stream package symbol-name symbol status)))
+                       (make-token existing-symbol-token
+                                   (cl:package-name (symbol-package symbol))
+                                   (symbol-name symbol))))
+                    (t
+                     (make-token existing-symbol-token
+                                 (cl:package-name (symbol-package symbol))
+                                 (symbol-name symbol))))))))))
 
 (defmethod reader:interpret-symbol ((client            client)
                                     (input-stream      t)

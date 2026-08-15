@@ -317,7 +317,12 @@ a b"
      '((inc:atom-wad ((0 0) (0 4))
           (:errors ((((0 4) (0 4)) eclector.reader:end-of-input-after-sharpsign-equals)))
         (inc:reader-macro-wad ((0 3) (0 4))
-         (:errors ((((0 3) (0 4)) eclector.reader:invalid-context-for-consing-dot)))))))))
+         (:errors ((((0 3) (0 4)) eclector.reader:invalid-context-for-consing-dot)))))))
+    ;; There used to be a problem with inherited symbols being
+    ;; processed like (re)exported symbols.
+    ("incrementalist.test.using-package:floor"
+     '((inc:atom-wad ((0 0) (0 39))
+        (:errors ((((0 34) (0 39)) eclector.reader:symbol-is-not-external))))))))
 
 (test spell-checking.smoke
   "Test for spell-checking in symbols, strings and comments."

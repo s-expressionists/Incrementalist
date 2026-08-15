@@ -9,6 +9,12 @@ Release 0.4 (not yet released)
   not called by Incrementalist and no methods were defined on it, it is
   unlikely that the removal impacts clients in any way.
 
+* Incrementalist no longer processes inherited symbols like CL:FLOOR when
+  spelled as, for example, cl-user:floor as if they were exported. Instead,
+  Incrementalist now produces an INCREMENTALIST:ERROR-WAD that represents the
+  corresponding error of type ECLECTOR.READER:SYMBOL-IS-NOT-EXTERNAL for inputs
+  like the above.
+
 Release 0.3 (2026-08-08)
 
 * Incrementalist now uses the text.editor-buffer library instead of the Cluffer

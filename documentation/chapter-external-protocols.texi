@@ -396,9 +396,9 @@ its subclasses represent read-time conditionals that were @emph{skipped}
 (as opposed to read) due to the respective feature expression.
 @end deftp
 
-@defgena{feature-expression,@toppackage{}} sharpsign-wad
+@defgena{feature-expression,@toppackage{}} conditional-wad
 
-Return the feature expression of @var{sharpsign-wad}.
+Return the feature expression of @var{conditional-wad}.
 @end deffn
 
 @defclassa{cst-wad,@toppackage{}}

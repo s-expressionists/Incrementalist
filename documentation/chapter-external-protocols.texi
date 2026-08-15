@@ -387,14 +387,13 @@ read-time conditional expressions which consist of a ``positive'' or
 
 The direct subclass @classref{read-conditional-wad,@toppackage{}} is
 also a subclass of @classref{cst-wad,@toppackage{}}.  Instances of its
-subclasses and represent read-time conditionals that were @emph{read}
-(as opposed to skipped) due to the respective feature expression.
+subclasses represent read-time conditionals that were @emph{read} (as
+opposed to skipped) due to the respective feature expression.
 
 The direct subclass @classref{skipped-conditional-wad,@toppackage{}} is
 also a subclass of @classref{skipped-wad,@toppackage{}}.  Instances of
-its subclasses and represent read-time conditionals that were
-@emph{skipped} (as opposed to read) due to the respective feature
-expression.
+its subclasses represent read-time conditionals that were @emph{skipped}
+(as opposed to read) due to the respective feature expression.
 @end deftp
 
 @defgena{feature-expression,@toppackage{}} sharpsign-wad

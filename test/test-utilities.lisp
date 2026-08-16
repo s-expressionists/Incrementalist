@@ -341,16 +341,20 @@
 
 (defun expected-symbol-wad
     (location symbol-name
-     &key (package-name "INCREMENTALIST.TEST.TEST-PACKAGE")
-          (token-class  'inc:non-existing-symbol-token)
+     &key (package-name (if (symbolp symbol-name)
+                            (package-name (symbol-package symbol-name))
+                            "INCREMENTALIST.TEST.TEST-PACKAGE"))
+          (token-class  (if (symbolp symbol-name)
+                            'inc:existing-symbol-token
+                            'inc:non-existing-symbol-token))
           (words        (cond ((equal package-name "COMMON-LISP")
                                '())
-                              ((> (length symbol-name) 1)
+                              ((> (length (string symbol-name)) 1)
                                `((inc:word-wad ,location)))
                               (t
                                `((inc:text-wad ,location))))))
   `(inc:atom-wad ,location
-    (:raw (,token-class :symbol (,package-name ,symbol-name)))
+    (:raw (,token-class :symbol (,package-name ,(string symbol-name))))
     ,@words))
 
 (defun analysis-test-case (input-and-arguments expected-result)

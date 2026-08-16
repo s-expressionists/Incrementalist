@@ -6,9 +6,7 @@
   "Initial smoke test for the incrementalist system."
   (analysis-cases ()
     ("()"
-     `(,(expected-symbol-wad '((0 0) (0 2)) "NIL"
-                             :token-class  'inc:existing-symbol-token
-                             :package-name "COMMON-LISP")))
+     `(,(expected-symbol-wad '((0 0) (0 2)) 'nil)))
     ("#\\Return"
      '((inc:atom-wad ((0 0) (0 8)) (:raw #\Return))))
     ("\"foo\""
@@ -125,58 +123,43 @@
      `((inc:read-positive-conditional-wad ((0 0) (0 15))
           (:feature-expression (inc:existing-symbol-token
                                 :symbol ("KEYWORD" "COMMON-LISP")))
-        ,(expected-symbol-wad '((0 2) (0 13)) "COMMON-LISP"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "KEYWORD"
-                              :words        '(:ignore-children))
+        ,(expected-symbol-wad '((0 2) (0 13)) :common-lisp
+                              :words '(:ignore-children))
         (inc:atom-wad ((0 14) (0 15)) (:raw 1)))))
     ("#+a b"
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
           (:feature-expression (inc:existing-symbol-token :symbol ("KEYWORD" "A")))
-        ,(expected-symbol-wad '((0 2) (0 3)) "A"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "KEYWORD")
+        ,(expected-symbol-wad '((0 2) (0 3)) :a)
        (inc:read-suppress-wad ((0 4) (0 5)) ()))))
     ("#-a b"
      `((inc:read-negative-conditional-wad ((0 0) (0 5))
           (:raw (inc:non-existing-symbol-token :symbol ("INCREMENTALIST.TEST.TEST-PACKAGE" "B")))
-        ,(expected-symbol-wad '((0 2) (0 3)) "A"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "KEYWORD")
+        ,(expected-symbol-wad '((0 2) (0 3)) :a)
         ,(expected-symbol-wad '((0 4) (0 5)) "B"))))
     ("#-
 a b"
      `((inc:read-negative-conditional-wad ((0 0) (1 3)) ()
-        ,(expected-symbol-wad '((1 0) (1 1)) "A"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "KEYWORD")
+        ,(expected-symbol-wad '((1 0) (1 1)) :a)
         ,(expected-symbol-wad '((1 2) (1 3)) "B"))))
     ;; Read in a different package that uses the CL package
     ('("floor" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
-     '((inc:atom-wad ((0 0) (0 5))
-          (:raw (inc:existing-symbol-token :symbol ("COMMON-LISP" "FLOOR"))))))))
+     `(,(expected-symbol-wad '((0 0) (0 5)) 'floor)))))
 
 (test nil-spellings
   "Test for reading various spellings of `nil'."
   (analysis-cases ()
     ("()"
-     '((inc:atom-wad ((0 0) (0 2)) (:raw (inc:existing-symbol-token
-                                          :symbol ("COMMON-LISP" "NIL"))))))
+     `(,(expected-symbol-wad '((0 0) (0 2)) 'nil)))
     ('("nil" :initial-package "INCREMENTALIST.TEST.USING-PACKAGE")
-     '((inc:atom-wad ((0 0) (0 3)) (:raw (inc:existing-symbol-token
-                                          :symbol ("COMMON-LISP" "NIL"))))))
+     `(,(expected-symbol-wad '((0 0) (0 3)) 'nil)))
     ("cl:nil"
-     '((inc:atom-wad ((0 0) (0 6)) (:raw (inc:existing-symbol-token
-                                          :symbol ("COMMON-LISP" "NIL"))))))
+     `(,(expected-symbol-wad '((0 0) (0 6)) 'nil)))
     ("cl::nil"
-     '((inc:atom-wad ((0 0) (0 7)) (:raw (inc:existing-symbol-token
-                                          :symbol ("COMMON-LISP" "NIL"))))))
+     `(,(expected-symbol-wad '((0 0) (0 7)) 'nil)))
     ("common-lisp:nil"
-     '((inc:atom-wad ((0 0) (0 15)) (:raw (inc:existing-symbol-token
-                                           :symbol ("COMMON-LISP" "NIL"))))))
+     `(,(expected-symbol-wad '((0 0) (0 15)) 'nil)))
     ("common-lisp::nil"
-     '((inc:atom-wad ((0 0) (0 16)) (:raw (inc:existing-symbol-token
-                                           :symbol ("COMMON-LISP" "NIL"))))))))
+     `(,(expected-symbol-wad '((0 0) (0 16)) 'nil)))))
 
 (test incomplete
   "Tests for incomplete expressions."

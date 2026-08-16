@@ -132,9 +132,7 @@ correctly."
         (inc:skipped-positive-conditional-wad ((1 2) (2 3))
            (:feature-expression (inc:existing-symbol-token
                                  :symbol ("KEYWORD" "A")))
-         ,(expected-symbol-wad '((1 4) (1 5)) "A"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "KEYWORD")
+         ,(expected-symbol-wad '((1 4) (1 5)) :a)
          (inc:read-suppress-wad ((2 2) (2 3))))
         ,(expected-symbol-wad '((3 2) (3 3)) "C")))
      ;; Remove the wad for the whole reader conditional from the
@@ -147,9 +145,7 @@ correctly."
         (inc:skipped-positive-conditional-wad ((1 3) (2 3))
            (:feature-expression (inc:existing-symbol-token
                                  :symbol ("KEYWORD" "A")))
-         ,(expected-symbol-wad '((1 5) (1 6)) "A"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "KEYWORD")
+         ,(expected-symbol-wad '((1 5) (1 6)) :a)
          (inc:read-suppress-wad ((2 2) (2 3))))
         ,(expected-symbol-wad '((3 2) (3 3)) "C"))))
     (;; A `read-suppress-wad' for the negative conditional is added to
@@ -158,13 +154,9 @@ correctly."
 #-bar defun
 111"
      #1=`((inc:skipped-positive-conditional-wad ((0 0) (1 11)) ()
-           ,(expected-symbol-wad '((0 2) (0 5)) "FOO"
-                                 :token-class 'inc:existing-symbol-token
-                                 :package-name "KEYWORD")
+           ,(expected-symbol-wad '((0 2) (0 5)) :foo)
            (inc:read-suppress-wad ((1 0) (1 11)) ()
-            ,(expected-symbol-wad '((1 2) (1 5)) "BAR"
-                                  :token-class  'inc:existing-symbol-token
-                                  :package-name "KEYWORD")
+            ,(expected-symbol-wad '((1 2) (1 5)) :bar)
             (inc:read-suppress-wad ((1 6) (1 11)) ())))
           (inc:atom-wad ((2 0) (2 3)) (:raw 111)))
      ;; The positive conditional is re-read. If the

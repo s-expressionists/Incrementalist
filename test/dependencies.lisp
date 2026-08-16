@@ -15,10 +15,7 @@
      `((inc:cons-wad ((0 0) (2 5)) ()
         ,(expected-symbol-wad '((0 1) (0 4)) "FOO")
         (inc:cons-wad ((1 1) (1 22)) ()
-         ,(expected-symbol-wad
-           '((1 2) (1 15)) "IN-PACKAGE"
-           :token-class  'incrementalist:existing-symbol-token
-           :package-name "COMMON-LISP")
+         ,(expected-symbol-wad '((1 2) (1 15)) 'in-package)
          ,(expected-symbol-wad
            '((1 16) (1 21)) "BAZ"
            :token-class  'incrementalist:uninterned-symbol-token
@@ -47,12 +44,8 @@
         (inc:atom-wad ((0 1) (0 3)) (:raw 10))
         (inc:atom-wad ((1 1) (1 30)) (:raw 16)
          (inc:cons-wad ((1 3) (1 30)) ()
-          ,#1=(expected-symbol-wad '((1 4) (1 11)) "SETF"
-               :token-class  'incrementalist:existing-symbol-token
-               :package-name "COMMON-LISP")
-          ,#2=(expected-symbol-wad '((1 12) (1 26)) "*READ-BASE*"
-               :token-class  'incrementalist:existing-symbol-token
-               :package-name "COMMON-LISP")
+          ,#1=(expected-symbol-wad '((1 4) (1 11)) 'setf)
+          ,#2=(expected-symbol-wad '((1 12) (1 26)) '*read-base*)
           (inc:atom-wad ((1 27) (1 29)) (:raw 16))))
         (inc:atom-wad ((2 1) (2 3)) (:raw 16))))
      ;; Set `*read-base*' to 17 instead of 16.
@@ -172,9 +165,7 @@ bar"
      '(:insert (1 0) "(cl:in-package #:BAZ)")
      `(,(expected-symbol-wad '((0 0) (0 3)) "FOO")
        (inc:cons-wad ((1 0) (1 21)) ()
-        ,(expected-symbol-wad '((1 1) (1 14)) "IN-PACKAGE"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((1 1) (1 14)) 'in-package)
         ,(expected-symbol-wad '((1 15) (1 20)) "BAZ"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
@@ -202,14 +193,8 @@ bar"
      `((inc:atom-wad ((0 0) (0 2)) (:raw 10))
        (inc:atom-wad ((1 0) (1 29)) (:raw 16)
         (inc:cons-wad ((1 2) (1 29)) ()
-         ,#1=(expected-symbol-wad
-              '((1 3) (1 10)) "SETF"
-              :token-class  'incrementalist:existing-symbol-token
-              :package-name "COMMON-LISP")
-         ,#2=(expected-symbol-wad
-              '((1 11) (1 25)) "*READ-BASE*"
-              :token-class  'incrementalist:existing-symbol-token
-              :package-name "COMMON-LISP")
+         ,#1=(expected-symbol-wad '((1 3) (1 10)) 'setf)
+         ,#2=(expected-symbol-wad '((1 11) (1 25)) '*read-base*)
          (inc:atom-wad ((1 26) (1 28)) (:raw 16))))
        (inc:atom-wad ((2 0) (2 2)) (:raw 16)))
      ;; Set `*read-base*' to 17 instead of 16.
@@ -245,20 +230,14 @@ bar"
 foo"
      `(#1=(inc:atom-wad ((1 0) (1 29)) (:raw 10)
         (inc:cons-wad ((1 2) (1 29)) ()
-         ,(expected-symbol-wad '((1 3) (1 10)) "SETF"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "COMMON-LISP")
-         ,(expected-symbol-wad '((1 11) (1 25)) "*READ-BASE*"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "COMMON-LISP")
+         ,(expected-symbol-wad '((1 3) (1 10)) 'setf)
+         ,(expected-symbol-wad '((1 11) (1 25)) '*read-base*)
          (inc:atom-wad ((1 26) (1 28)) (:raw 10))))
        ,(expected-symbol-wad '((2 0) (2 3)) "FOO"))
      ;; Change the current package.
      '(:insert (0 0) "(cl:in-package #:foo)")
      `((inc:cons-wad ((0 0) (0 21)) ()
-        ,(expected-symbol-wad '((0 1) (0 14)) "IN-PACKAGE"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((0 1) (0 14)) 'in-package)
         ,(expected-symbol-wad '((0 15) (0 20)) "FOO"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
@@ -295,29 +274,19 @@ bar
 #-bar baz
 111"
      #1=`((inc:skipped-positive-conditional-wad ((1 0) (2 9)) ()
-           ,(expected-symbol-wad '((1 2) (1 5)) "FOO"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "KEYWORD")
+           ,(expected-symbol-wad '((1 2) (1 5)) :foo)
            (inc:read-suppress-wad ((2 0) (2 9)) ()
-            ,(expected-symbol-wad '((2 2) (2 5)) "BAR"
-                                  :token-class  'inc:existing-symbol-token
-                                  :package-name "KEYWORD")
+            ,(expected-symbol-wad '((2 2) (2 5)) :bar)
          (inc:read-suppress-wad ((2 6) (2 9)) ())))
        (inc:atom-wad ((3 0) (3 3)) (:raw 111)))
      ;; Add reader conditional before everything
      '(:insert (0 0) "#+()")
      `((inc:skipped-positive-conditional-wad ((0 0) (3 3)) ()
-        ,(expected-symbol-wad '((0 2) (0 4)) "NIL"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((0 2) (0 4)) 'nil)
         (inc:skipped-positive-conditional-wad ((1 0) (2 9)) ()
-         ,(expected-symbol-wad '((1 2) (1 5)) "FOO"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "KEYWORD")
+         ,(expected-symbol-wad '((1 2) (1 5)) :foo)
          (inc:read-suppress-wad ((2 0) (2 9)) ()
-          ,(expected-symbol-wad '((2 2) (2 5)) "BAR"
-                                :token-class  'inc:existing-symbol-token
-                                :package-name "KEYWORD")
+          ,(expected-symbol-wad '((2 2) (2 5)) :bar)
           (inc:read-suppress-wad ((2 6) (2 9)) ())))
         (inc:read-suppress-wad ((3 0) (3 3)))))
      ;; Delete the initial reader conditional again
@@ -331,19 +300,13 @@ bar
 1"
      `((inc:skipped-positive-conditional-wad ((0 0) (2 1))
           (:errors ((((2 1) (2 1)) eclector.reader:end-of-file)))
-        ,(expected-symbol-wad '((0 2) (0 4)) "NIL"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((0 2) (0 4)) 'nil)
         (inc:skipped-positive-conditional-wad ((1 0) (2 1)) ()
-         ,(expected-symbol-wad '((1 2) (1 4)) "NIL"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "COMMON-LISP")
+         ,(expected-symbol-wad '((1 2) (1 4)) 'nil)
          (inc:read-suppress-wad ((2 0) (2 1))))))
      '(:erase (0 0) 4)
      `((inc:skipped-positive-conditional-wad ((1 0) (2 1)) ()
-       ,(expected-symbol-wad '((1 2) (1 4)) "NIL"
-                             :token-class  'inc:existing-symbol-token
-                             :package-name "COMMON-LISP")
+       ,(expected-symbol-wad '((1 2) (1 4)) 'nil)
        (inc:read-suppress-wad ((2 0) (2 1))))))))
 
 (test dependencies.between-expressions.7
@@ -353,32 +316,24 @@ bar
 ;;;
 defun"
      `((inc:cons-wad ((0 0) (0 29)) ()
-        ,(expected-symbol-wad '((0 1) (0 14)) "IN-PACKAGE"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((0 1) (0 14)) 'in-package)
         ,(expected-symbol-wad '((0 15) (0 28)) "COMMON-LISP"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
                               :words        '(:ignore-children)))
        (inc:semicolon-comment-wad ((1 0) (2 0)) () :ignore-children)
        (inc:semicolon-comment-wad ((2 0) (3 0)) () :ignore-children)
-       ,(expected-symbol-wad '((3 0) (3 5)) "DEFUN"
-                             :token-class  'inc:existing-symbol-token
-                             :package-name "COMMON-LISP"))
+       ,(expected-symbol-wad '((3 0) (3 5)) 'defun))
      ;; Activate the second `in-package' form.
      '(:erase (1 0) 2)
      `((inc:cons-wad ((0 0) (0 29)) ()
-        ,(expected-symbol-wad '((0 1) (0 14)) "IN-PACKAGE"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((0 1) (0 14)) 'in-package)
         ,(expected-symbol-wad '((0 15) (0 28)) "COMMON-LISP"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
                               :words        '(:ignore-children)))
        (inc:cons-wad ((1 0) (1 50)) ()
-        ,(expected-symbol-wad '((1 1) (1 14)) "IN-PACKAGE"
-                              :token-class  'inc:existing-symbol-token
-                              :package-name "COMMON-LISP")
+        ,(expected-symbol-wad '((1 1) (1 14)) 'in-package)
         ,(expected-symbol-wad '((1 15) (1 49)) "INCREMENTALIST.TEST.TEST-PACKAGE"
                               :token-class  'inc:uninterned-symbol-token
                               :package-name nil
@@ -421,9 +376,7 @@ foo
 bar
 "
      #1=`((inc:skipped-positive-conditional-wad ((0 0) (3 3)) ()
-           ,(expected-symbol-wad '((2 0) (2 3)) "FOO"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "KEYWORD")
+           ,(expected-symbol-wad '((2 0) (2 3)) :foo)
            (inc:read-suppress-wad ((3 0) (3 3)) ())))
      ;; Make both symbols part of the feature expression
      '(:insert (1 0) "(")
@@ -432,12 +385,8 @@ bar
                      eclector.reader:end-of-input-after-feature-expression)))
         (inc:cons-wad ((1 0) (4 0))
            (:errors ((((4 0) (4 0)) eclector.reader:unterminated-list)))
-         ,(expected-symbol-wad '((2 0) (2 3)) "FOO"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "KEYWORD")
-         ,(expected-symbol-wad '((3 0) (3 3)) "BAR"
-                               :token-class  'inc:existing-symbol-token
-                               :package-name "KEYWORD"))))
+         ,(expected-symbol-wad '((2 0) (2 3)) :foo)
+         ,(expected-symbol-wad '((3 0) (3 3)) :bar))))
      ;; Restore previous state
      '(:replace (1 0) " ")
      #1#)))
@@ -480,12 +429,8 @@ bar
           (inc:atom-wad ((0 5) (0 7)) (:raw 20)))
          (inc:atom-wad ((0 8) (0 37)) (:raw 11)
           (inc:cons-wad ((0 10) (0 37)) ()
-           ,(expected-symbol-wad '((0 11) (0 18)) "SETF"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "COMMON-LISP")
-           ,(expected-symbol-wad '((0 19) (0 33)) "*READ-BASE*"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "COMMON-LISP")
+           ,(expected-symbol-wad '((0 11) (0 18)) 'setf)
+           ,(expected-symbol-wad '((0 19) (0 33)) '*read-base*)
            (inc:atom-wad ((0 34) (0 36)) (:raw 11))))))
        (inc:atom-wad ((1 0) (1 2)) (:raw 11))))
     ("'(#.(cl:setf cl:*read-base* 11) #1=20)
@@ -494,12 +439,8 @@ bar
         (inc:cons-wad ((0 1) (0 38)) ()
          (inc:atom-wad ((0 2) (0 31)) (:raw 11)
           (inc:cons-wad ((0 4) (0 31)) ()
-           ,(expected-symbol-wad '((0 5) (0 12)) "SETF"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "COMMON-LISP")
-           ,(expected-symbol-wad '((0 13) (0 27)) "*READ-BASE*"
-                                 :token-class  'inc:existing-symbol-token
-                                 :package-name "COMMON-LISP")
+           ,(expected-symbol-wad '((0 5) (0 12)) 'setf)
+           ,(expected-symbol-wad '((0 13) (0 27)) '*read-base*)
            (inc:atom-wad ((0 28) (0 30)) (:raw 11))))
          (inc:labeled-object-definition-wad ((0 32) (0 37)) ()
           (inc:atom-wad ((0 35) (0 37)) (:raw 22)))))

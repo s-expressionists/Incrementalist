@@ -15,7 +15,7 @@
     ("\".\""
      '((inc:atom-wad ((0 0) (0 3)) (:raw ".")
         (inc:text-wad ((0 1) (0 2))))))
-    ("||"
+    ('("||" :initial-package "TEST")
      '((inc:atom-wad ((0 0) (0 2))
           (:raw (inc:interned-symbol-token :symbol ("TEST" "")))
         (inc:punctuation-wad ((0 0) (0 1)))
@@ -26,7 +26,7 @@
         (inc:punctuation-wad ((0 0) (0 1)))
         (inc:punctuation-wad ((0 1) (0 2)))
         (inc:word-wad ((0 2) (0 5))))))
-    ("test::bar"
+    ('("test::bar" :extra-packages ("TEST"))
      '((inc:atom-wad ((0 0) (0 9))
           (:raw (inc:symbol-token :symbol ("TEST" "BAR")))
         (inc:word-wad ((0 0) (0 4)))
@@ -125,24 +125,23 @@
         ,(expected-symbol-wad '((0 2) (0 13)) :common-lisp
                               :words '(:ignore-children))
         (inc:atom-wad ((0 14) (0 15)) (:raw 1)))))
-    ("#+a b"
+    ('("#+a b" :initial-package "TEST")
      `((inc:skipped-positive-conditional-wad ((0 0) (0 5))
           (:feature-expression (inc:interned-symbol-token :symbol ("KEYWORD" "A")))
         ,(expected-symbol-wad '((0 2) (0 3)) :a)
        (inc:read-suppress-wad ((0 4) (0 5)) ()))))
-    ("#-a b"
+    ('("#-a b" :initial-package "TEST")
      `((inc:read-negative-conditional-wad ((0 0) (0 5))
           (:raw (inc:interned-symbol-token :symbol ("TEST" "B")))
         ,(expected-symbol-wad '((0 2) (0 3)) :a)
-        ,(expected-symbol-wad '((0 4) (0 5)) "B"))))
+        ,(expected-symbol-wad '((0 4) (0 5)) "B" :package-name "TEST"))))
     ("#-
 a b"
      `((inc:read-negative-conditional-wad ((0 0) (1 3)) ()
         ,(expected-symbol-wad '((1 0) (1 1)) :a)
         ,(expected-symbol-wad '((1 2) (1 3)) "B"))))
     ;; Read in a different package that uses the CL package
-    ('("floor" :extra-packages  ((#1="USING-PACKAGE" :use "CL"))
-               :initial-package #1#)
+    ('("floor" :initial-package (#1="USING-PACKAGE" :use ("CL")))
      `(,(expected-symbol-wad '((0 0) (0 5)) 'floor)))))
 
 (test nil-spellings
@@ -150,8 +149,7 @@ a b"
   (analysis-cases ()
     ("()"
      `(,(expected-symbol-wad '((0 0) (0 2)) 'nil)))
-    ('("nil" :extra-packages  ((#1="USING-PACKAGE" :use ("CL")))
-             :initial-package #1#)
+    ('("nil" :initial-package (#1="USING-PACKAGE" :use ("CL")))
      `(,(expected-symbol-wad '((0 0) (0 3)) 'nil)))
     ("cl:nil"
      `(,(expected-symbol-wad '((0 0) (0 6)) 'nil)))
@@ -304,8 +302,7 @@ a b"
          (:errors ((((0 3) (0 4)) eclector.reader:invalid-context-for-consing-dot)))))))
     ;; There used to be a problem with inherited symbols being
     ;; processed like (re)exported symbols.
-    (`("using-package:floor"
-       :extra-packages (("USING-PACKAGE" :use ("CL"))))
+    (`("using-package:floor" :extra-packages (("USING-PACKAGE" :use ("CL"))))
      '((inc:atom-wad ((0 0) (0 19))
         (:errors ((((0 14) (0 19)) eclector.reader:symbol-is-not-external))))))))
 
@@ -330,11 +327,11 @@ a b"
     ("\"bar\""
      '((inc:atom-wad ((0 0) (0 5)) (:raw "bar")
         (inc:word-wad ((0 1) (0 4)) (:misspelled nil)))))
-    ("foo"
+    ('("foo" :initial-package "TEST")
      '((inc:atom-wad ((0 0) (0 3))
           (:raw (inc:interned-symbol-token :symbol ("TEST" "FOO")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled t)))))
-    ("bar"
+    ('("bar" :initial-package "TEST")
      '((inc:atom-wad ((0 0) (0 3))
         (:raw (inc:interned-symbol-token :symbol ("TEST" "BAR")))
         (inc:word-wad ((0 0) (0 3)) (:misspelled nil)))))))

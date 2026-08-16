@@ -119,10 +119,9 @@ correctly."
 (test regressions.kind-of-restored-read-suppressed-wad
   "Ensure that `read-maybe-nothing' returns the correct kind for a
 `read-suppress-wad' that has been restored from the cache."
-  ;; Make sure the keywords used in the test are interned.
-  :a :foo :bar
   (edits-cases ()
     (;; A `read-suppress-wad' for `b' is added to the cache.
+     ()
      "(
   #+a
   b
@@ -150,6 +149,7 @@ correctly."
         ,(expected-symbol-wad '((3 2) (3 3)) "C"))))
     (;; A `read-suppress-wad' for the negative conditional is added to
      ;; the cache.
+     ()
      "#+foo
 #-bar defun
 111"
@@ -171,6 +171,7 @@ correctly."
 another wad."
   (edits-cases ()
     (;; An incomplete reader conditional with two errors.
+     ()
      "
 #+"
      '(#1=(inc:skipped-positive-conditional-wad ((1 0) (1 2))
@@ -189,6 +190,7 @@ another wad."
 inherited cells in the first element of the cache suffix."
   (edits-cases ()
     (;; A "second" line.
+     ()
      "2
 "
      :ignore
@@ -205,7 +207,8 @@ inherited cells in the first element of the cache suffix."
   "For an incomplete labeled object with only skipped input expressions
 as its children, Eclector used to produce incorrect parse results."
   (edits-cases ()
-    (;; Two line comments.  Completely harmless so far.
+    (()
+     ;; Two line comments.  Completely harmless so far.
      "
 ;;1
 ;;2"

@@ -65,13 +65,13 @@
                    :for (path expected-state-values) :in specs
                    :do (check-wad result path expected-state-values))))
     (test-case
-     "1"
+     '("1" :initial-package "TEST")
      '(((0) ((*package*       . "TEST")
              (*read-suppress* . nil)
              (*read-base*     . 10)
              (foo             . :missing)))))
     (test-case
-     "#-common-lisp 1"
+     '("#-common-lisp 1" :initial-package "TEST")
      '(((0 0) ((*package*       . "KEYWORD")
                (*read-suppress* . nil)
                (*read-base*     . 10)))
@@ -79,7 +79,7 @@
                (*read-suppress* . t)
                (*read-base*     . 10)))))
     (test-case
-     "#.(cl:setf cl:*read-base* 11) 1"
+     '("#.(cl:setf cl:*read-base* 11) 1" :initial-package "TEST")
      '(((1) ((*package*       . "TEST")
              (*read-suppress* . nil)
              (*read-base*     . 11)))))

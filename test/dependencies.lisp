@@ -5,7 +5,8 @@
 
 (test dependencies.within-expression.1
   (edits-cases ()
-    ("(foo
+    (()
+     "(foo
 
  bar)"
      `((inc:cons-wad ((0 0) (2 5)) ()
@@ -32,7 +33,8 @@
   ;; As sub-expressions of a single toplevel expression, a form that
   ;; sets `*read-base*' at read-time between other expressions.
   (edits-cases ()
-    ("(10
+    (()
+     "(10
 
  10)"
      '((inc:cons-wad ((0 0) (2 4)) ()
@@ -80,45 +82,51 @@
   ;; Insert and delete a labeled object definition and a reference
   ;; within the same expression.
   (edits-cases ()
-    ("(progn
+    (()
+     "(progn
 
  #1#)"
      `((inc:cons-wad ((0 0) (2 5)) ()
-        ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+        ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
         (inc:atom-wad ((2 1) (2 4))
          (:errors ((((2 2) (2 3))
                     eclector.reader:sharpsign-sharpsign-undefined-label))))))
+     ;; Make the label defined
      '(:insert (1 0) " #1=foo")
      `((inc:cons-wad ((0 0) (2 5)) ()
-        ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+        ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
         (inc:labeled-object-definition-wad ((1 1) (1 7)) ()
          ,(expected-symbol-wad '((1 4) (1 7)) "FOO"))
         (inc:labeled-object-reference-wad ((2 1) (2 4)) ())))
+     ;; Change the spelling of the reference to "01" (which is still defined)
      '(:insert (2 2) "0")
      `((inc:cons-wad ((0 0) (2 6)) ()
-        ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+        ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
         (inc:labeled-object-definition-wad ((1 1) (1 7)) ()
          ,(expected-symbol-wad '((1 4) (1 7)) "FOO"))
         (inc:labeled-object-reference-wad ((2 1) (2 5)) ())))
+     ;; Remove the definition so the reference becomes undefined again
      '(:erase (1 0) 7)
      `((inc:cons-wad ((0 0) (2 6)) ()
-        ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+        ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
         (inc:atom-wad ((2 1) (2 5))
          (:errors ((((2 3) (2 4))
           eclector.reader:sharpsign-sharpsign-undefined-label))))))
+     ;; Add a definition in a sub-expression
      '(:insert (1 0) " (progn #1=foo)")
      `((inc:cons-wad ((0 0) (2 6)) ()
-       ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+       ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
        (inc:cons-wad ((1 1) (1 15)) ()
-        ,(expected-symbol-wad '((1 2) (1 7)) "PROGN")
+        ,(expected-symbol-wad '((1 2) (1 7)) 'progn)
         (inc:labeled-object-definition-wad ((1 8) (1 14)) ()
         ,(expected-symbol-wad '((1 11) (1 14)) "FOO")))
        (inc:labeled-object-reference-wad ((2 1) (2 5)) ())))
+     ;; Change the spelling of the reference back to "1"
      '(:erase (2 2) 1)
      `((inc:cons-wad ((0 0) (2 5)) ()
-        ,(expected-symbol-wad '((0 1) (0 6)) "PROGN")
+        ,(expected-symbol-wad '((0 1) (0 6)) 'progn)
         (inc:cons-wad ((1 1) (1 15)) ()
-         ,(expected-symbol-wad '((1 2) (1 7)) "PROGN")
+         ,(expected-symbol-wad '((1 2) (1 7)) 'progn)
          (inc:labeled-object-definition-wad ((1 8) (1 14)) ()
           ,(expected-symbol-wad '((1 11) (1 14)) "FOO")))
         (inc:labeled-object-reference-wad ((2 1) (2 4)) ()))))))
@@ -127,7 +135,8 @@
   "Splitting and joining expressions must propagate labeled objects aspect
 correctly."
   (edits-cases ()
-    ("(#1=1 #2=2
+    (()
+     "(#1=1 #2=2
 
  #1=1 #2=2)"
      #1=`((inc:cons-wad ((0 0) (2 11)) ()
@@ -156,8 +165,9 @@ correctly."
      #1#)))
 
 (test dependencies.between-expressions.1
-  (edits-cases (:extra-packages '("BAZ"))
-    ("foo
+  (edits-cases ()
+    ('(:extra-packages ("BAZ"))
+     "foo
 
 bar"
      `(,(expected-symbol-wad '((0 0) (0 3)) "FOO")
@@ -183,7 +193,8 @@ bar"
   ;; Two toplevel expressions, a form that sets `*read-base*' at
   ;; read-time between other expressions.
   (edits-cases ()
-    ("10
+    (()
+     "10
 
 10"
      '((inc:atom-wad ((0 0) (0 2)) (:raw 10))
@@ -223,10 +234,11 @@ bar"
 
 #-ccl ; CCL doesn't allow the way we mix labeled objects and quasiquote
 (test dependencies.between-expressions.3
-  ;; TODO: make sure package "FOO" is defined
-  (edits-cases (:extra-packages '("FOO"))
+  (edits-cases ()
     ;;
-    ("
+    ;; TODO: make sure package "FOO" is defined
+    ('(:extra-packages ("FOO"))
+     "
 #.(cl:setf cl:*read-base* 10)
 foo"
      `(#1=(inc:atom-wad ((1 0) (1 29)) (:raw 10)
@@ -252,7 +264,8 @@ foo"
 (test dependencies.between-expressions.4
   (edits-cases ()
     ;; A string followed by a symbol.
-    ("\"
+    (()
+     "\"
 foo
 \"
 bar
@@ -270,7 +283,8 @@ bar
 
 (test dependencies.between-expressions.5
   (edits-cases ()
-    ("
+    (()
+     "
 #+foo
 #-bar baz
 111"
@@ -296,7 +310,8 @@ bar
 
 (test dependencies.between-expressions.6
   (edits-cases ()
-    ("#+()
+    (()
+     "#+()
 #+()
 1"
      `((inc:skipped-positive-conditional-wad ((0 0) (2 1))
@@ -312,7 +327,8 @@ bar
 
 (test dependencies.between-expressions.7
   (edits-cases ()
-    ("(cl:in-package #:common-lisp)
+    ('(:extra-packages ("TEST"))
+     "(cl:in-package #:common-lisp)
 ; (cl:in-package #:test)
 ;;;
 defun"
@@ -347,7 +363,8 @@ defun"
 (test dependencies.between-expressions.8
   "Labeled objects must not propagate between toplevel expressions."
   (edits-cases ()
-    ("(#1=1 #2=2)
+    (()
+     "(#1=1 #2=2)
 (#1=1 #2=2)"
      #1=`((inc:cons-wad ((0 0) (0 11)) ()
            (inc:labeled-object-definition-wad ((0 1) (0 5)) ()
@@ -371,7 +388,8 @@ defun"
   "Changing whether a symbol is part of a feature expression has to
 update the symbol package correctly."
   (edits-cases ()
-    ("#+
+    (()
+     "#+
 
 foo
 bar
@@ -395,7 +413,8 @@ bar
 (test dependencies.between-expressions.10
   "Ensure that invalidation works for inherited cells without users."
   (edits-cases ()
-    ("(cl:in-package #:common-lisp-user)
+    (()
+     "(cl:in-package #:common-lisp-user)
 10
 11"
      #1='((inc:cons-wad ((0 0) (0 34)) () :ignore-children)
@@ -422,7 +441,8 @@ bar
   ;; one for the labeled object definition and one for the read-time
   ;; evaluation.
   (edits-cases ()
-    ("'(#1=20 #.(cl:setf cl:*read-base* 11))
+    (()
+     "'(#1=20 #.(cl:setf cl:*read-base* 11))
 10"
      `((inc:cons-wad ((0 0) (0 38)) ()
         (inc:cons-wad ((0 1) (0 38)) ()
@@ -434,7 +454,8 @@ bar
            ,(expected-symbol-wad '((0 19) (0 33)) '*read-base*)
            (inc:atom-wad ((0 34) (0 36)) (:raw 11))))))
        (inc:atom-wad ((1 0) (1 2)) (:raw 11))))
-    ("'(#.(cl:setf cl:*read-base* 11) #1=20)
+    (()
+     "'(#.(cl:setf cl:*read-base* 11) #1=20)
 10"
      `((inc:cons-wad ((0 0) (0 38)) ()
         (inc:cons-wad ((0 1) (0 38)) ()

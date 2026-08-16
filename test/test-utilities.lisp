@@ -39,15 +39,19 @@
     (mapc #'parcl:make-package extra-packages)
     client))
 
-(defun prepared-analyzer (buffer-content
-                          &key (extra-packages  '())
-                               (parcl-client    (prepared-package-system
-                                                 :extra-packages extra-packages))
-                               (initial-package *test-package-name*)
-                               (initial-reader-state
-                                (let ((parcl:*client* parcl-client))
-                                  (inc:make-initial-reader-state
-                                   :package (parcl:find-package initial-package)))))
+(defun prepared-analyzer
+    (buffer-content
+     &key (extra-packages    '())
+          (initial-package   "COMMON-LISP-USER")
+          (parcl-client      (prepared-package-system
+                              :extra-packages (union (list initial-package)
+                                                     extra-packages
+                                                     :key  #'a:ensure-car
+                                                     :test #'string=)))
+       (initial-reader-state (let ((parcl:*client* parcl-client))
+                               (inc:make-initial-reader-state
+                                :package (parcl:find-package
+                                          (a:ensure-car initial-package))))))
   (multiple-value-bind (buffer cursor) (prepared-buffer buffer-content)
     (let* ((analyzer (make-instance 'inc:analyzer
                                     :buffer               buffer
@@ -507,8 +511,10 @@
     (do-it :small-step t)   ; like above but call `map-wads-and-spaces' after
     (do-it :big-step   t))) ; each update
 
-(defmacro edits-cases ((&rest analyzer-initargs) &body cases)
+(defmacro edits-cases (() &body cases)
   `(progn
      ,@(mapcar (lambda (case)
-                 `(edits-test-case (list ,@analyzer-initargs) ,@case))
+                 (destructuring-bind (analyzer-initargs &rest edits-and-results)
+                     case
+                   `(edits-test-case ,analyzer-initargs ,@edits-and-results)))
                cases)))

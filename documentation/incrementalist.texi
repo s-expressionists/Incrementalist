@@ -31,6 +31,10 @@ Copyright @copyright{} 2024, 2025, 2026 Jan Moringen
 @titlepage
 @title @sysname{} User's Manual
 
+@author Robert Strandh
+@author Jan Moringen
+
+@vskip 0pt plus 1filll
 @insertcopying
 @end titlepage
 

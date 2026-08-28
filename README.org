@@ -31,17 +31,15 @@
 
   #+BEGIN_SRC lisp :exports both :results value :wrap example
     (defun example-buffer (&key (content "(((1)))"))
-      (multiple-value-bind (buffer cursor) (text.editor-buffer:make-buffer)
-        (text.editor-buffer:insert-items-at cursor content)
-        (values buffer cursor)))
+      (text.editor-buffer:make-buffer :initial-contents content))
 
     (example-buffer)
   #+END_SRC
 
   #+RESULTS:
   #+begin_example
-  #<TEXT.EDITOR-BUFFER.STANDARD-BUFFER:BUFFER {120D7F5FC3}>
-  #<TEXT.EDITOR-BUFFER.STANDARD-LINE:RIGHT-STICKY-CURSOR {120D6970A3}>
+  #<TEXT.EDITOR-BUFFER.STANDARD-BUFFER:BUFFER 1 line 7 items; time 1 {120CAF9583}>
+  #<TEXT.EDITOR-BUFFER.STANDARD-LINE:RIGHT-STICKY-CURSOR 0:7 {120CAF94F3}>
   #+end_example
 
   We can now attach an analyzer to a buffer:
